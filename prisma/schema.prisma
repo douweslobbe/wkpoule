@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  isAdmin      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  memberships   PoolMembership[]
+  predictions   Prediction[]
+  bonusAnswers  BonusAnswer[]
+  championPicks ChampionPick[]
+
+  @@index([email])
+}
+
+model Pool {
+  id          String   @id @default(cuid())
+  name        String
+  inviteCode  String   @unique
+  createdAt   DateTime @default(now())
+  createdById String
+
+  memberships    PoolMembership[]
+  bonusQuestions BonusQuestion[]
+  championPicks  ChampionPick[]
+  leaderboard    LeaderboardEntry[]
+}
+
+model PoolMembership {
+  id       String   @id @default(cuid())
+  userId   String
+  poolId   String
+  role     PoolRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poolId])
+  @@index([poolId])
+}
+
+enum PoolRole {
+  ADMIN
+  MEMBER
+}
+
+model Team {
+  id         String  @id @default(cuid())
+  name       String  @unique
+  nameNl     String?
+  code       String  @unique
+  flagUrl    String?
+  externalId Int?    @unique
+
+  homeMatches   Match[]        @relation("HomeTeam")
+  awayMatches   Match[]        @relation("AwayTeam")
+  championPicks ChampionPick[]
+}
+
+model Match {
+  id           String      @id @default(cuid())
+  externalId   Int         @unique
+  stage        MatchStage
+  groupName    String?
+  matchday     Int?
+  homeTeamId   String?
+  awayTeamId   String?
+  homeScore    Int?
+  awayScore    Int?
+  status       MatchStatus @default(SCHEDULED)
+  kickoff      DateTime
+  venue        String?
+  lastSyncedAt DateTime?
+
+  homeTeam    Team?        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team?        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  predictions Prediction[]
+
+  @@index([stage])
+  @@index([kickoff])
+  @@index([status])
+}
+
+enum MatchStage {
+  GROUP
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  THIRD_PLACE
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  POSTPONED
+}
+
+model Prediction {
+  id            String   @id @default(cuid())
+  userId        String
+  matchId       String
+  homeScore     Int
+  awayScore     Int
+  submittedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  pointsAwarded Int?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+  @@index([matchId])
+  @@index([userId])
+}
+
+model ChampionPick {
+  id            String @id @default(cuid())
+  userId        String
+  poolId        String
+  teamId        String
+  pointsAwarded Int?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, poolId])
+}
+
+model BonusQuestion {
+  id            String            @id @default(cuid())
+  poolId        String
+  type          BonusQuestionType
+  question      String
+  description   String?
+  orderIndex    Int               @default(0)
+  correctAnswer String?
+  deadline      DateTime?
+
+  pool    Pool          @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  answers BonusAnswer[]
+
+  @@index([poolId])
+}
+
+enum BonusQuestionType {
+  OPEN
+  ESTIMATION
+  STATEMENT
+}
+
+model BonusAnswer {
+  id            String   @id @default(cuid())
+  userId        String
+  questionId    String
+  answer        String
+  submittedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  pointsAwarded Int?
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question BonusQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([questionId])
+}
+
+model LeaderboardEntry {
+  id               String   @id @default(cuid())
+  userId           String
+  poolId           String
+  totalPoints      Int      @default(0)
+  matchPoints      Int      @default(0)
+  bonusPoints      Int      @default(0)
+  championPoints   Int      @default(0)
+  lastCalculatedAt DateTime @default(now())
+
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poolId])
+  @@index([poolId, totalPoints(sort: Desc)])
+}

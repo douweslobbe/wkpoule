@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  output: "standalone",
+  images: {
+    remotePatterns: [
+      { hostname: "crests.football-data.org" },
+      { hostname: "upload.wikimedia.org" },
+    ],
+  },
+}
 
-export default nextConfig;
+export default nextConfig
