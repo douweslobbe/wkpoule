@@ -1,17 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --oranje: #FF6200;
-  --oranje-dark: #e05500;
+@theme inline {
+  --color-background: #fefef2;
+  --color-foreground: #1a1a2e;
+  --color-pitch: #0a3d1f;
+  --color-pitch-light: #1a6b36;
+  --color-orange: #FF6200;
+  --color-orange-dark: #cc4f00;
+  --color-gold: #FFD700;
+  --color-pixel-black: #1a1a2e;
+  --font-sans: var(--font-geist-sans);
+  --font-pixel: var(--font-pixel);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-oranje: var(--oranje);
-  --color-oranje-dark: var(--oranje-dark);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Pixel art card - chunky black border + offset shadow */
+.pixel-card {
+  border: 3px solid #1a1a2e;
+  box-shadow: 4px 4px 0 #1a1a2e;
+  background: #fefef2;
+}
+
+.pixel-card-orange {
+  border: 3px solid #1a1a2e;
+  box-shadow: 4px 4px 0 #1a1a2e;
+  background: #FF6200;
+  color: white;
+}
+
+/* Pixel art button */
+.pixel-btn {
+  border: 3px solid #1a1a2e;
+  box-shadow: 3px 3px 0 #1a1a2e;
+  transition: all 0.05s;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: bold;
+  text-decoration: none;
+}
+.pixel-btn:hover {
+  box-shadow: 2px 2px 0 #1a1a2e;
+  transform: translate(1px, 1px);
+}
+.pixel-btn:active {
+  box-shadow: 0px 0px 0 #1a1a2e;
+  transform: translate(3px, 3px);
+}
+
+/* Pixel font utility */
+.font-pixel {
+  font-family: var(--font-pixel), monospace;
+}
+
+/* Pitch background grid pattern */
+.pitch-bg {
+  background-color: #0a3d1f;
+  background-image:
+    linear-gradient(rgba(26, 107, 54, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 107, 54, 0.3) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Pixel art tab active */
+.pixel-tab-active {
+  background: #FF6200;
+  color: white;
+  border: 3px solid #1a1a2e;
+  box-shadow: 3px 3px 0 #1a1a2e;
+}
+
+.pixel-tab-inactive {
+  background: #fefef2;
+  color: #1a1a2e;
+  border: 3px solid #1a1a2e;
+  box-shadow: 2px 2px 0 #1a1a2e;
+}
+.pixel-tab-inactive:hover {
+  background: #fff8e0;
 }

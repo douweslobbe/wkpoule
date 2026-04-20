@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { PoolSubNav } from "./PoolSubNav"
 
 export default async function PoolPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -50,78 +51,61 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+      <PoolSubNav poolId={poolId} />
+
+      <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pool.name}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Uitnodigingscode:{" "}
-            <span className="font-mono font-semibold tracking-widest bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+          <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>{pool.name.toUpperCase()}</h1>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs text-green-300">CODE:</span>
+            <span className="font-mono font-bold tracking-widest px-2 py-0.5 text-sm" style={{ background: "#FFD700", color: "#1a1a2e", border: "2px solid #1a1a2e" }}>
               {pool.inviteCode}
             </span>
-          </p>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        {isAdmin && (
           <Link
-            href={`/pools/${poolId}/predictions`}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+            href={`/admin/pools/${poolId}/bonus`}
+            className="pixel-btn px-3 py-1.5 text-xs font-bold"
+            style={{ background: "#fefef2", color: "#1a1a2e" }}
           >
-            Voorspellingen
+            ⚙ BEHEER
           </Link>
-          <Link
-            href={`/pools/${poolId}/bonus`}
-            className="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors"
-          >
-            Bonusvragen
-          </Link>
-          <Link
-            href={`/pools/${poolId}/champion`}
-            className="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors"
-          >
-            Kampioen 🏆
-          </Link>
-          {isAdmin && (
-            <Link
-              href={`/admin/pools/${poolId}/bonus`}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
-            >
-              Beheer
-            </Link>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Leaderboard */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Ranglijst</h2>
+      <div className="pixel-card overflow-hidden">
+        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #1a1a2e" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 RANGLIJST</h2>
         </div>
 
         {ranked.length === 0 ? (
-          <p className="text-center text-gray-500 py-10">Nog geen scores</p>
+          <p className="text-center text-gray-500 py-10 text-sm">Nog geen scores</p>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y-2 divide-gray-200">
             {ranked.map((entry, i) => {
               const isMe = entry.userId === session.user.id
               const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
               return (
                 <div
                   key={entry.userId}
-                  className={`flex items-center px-5 py-3.5 gap-4 ${isMe ? "bg-orange-50" : ""}`}
+                  className={`flex items-center px-5 py-3.5 gap-4 ${isMe ? "bg-yellow-50" : "bg-background"}`}
                 >
                   <span className="w-8 text-center text-lg">{medal}</span>
-                  <span className={`flex-1 font-medium ${isMe ? "text-orange-700" : "text-gray-800"}`}>
+                  <span className={`flex-1 font-bold text-sm ${isMe ? "text-orange" : "text-gray-800"}`} style={{ color: isMe ? "#FF6200" : undefined }}>
                     {memberMap.get(entry.userId) ?? "Onbekend"}
-                    {isMe && <span className="ml-1.5 text-xs text-orange-500">(jij)</span>}
+                    {isMe && <span className="ml-1.5 text-xs font-normal text-orange-500"> ◄ jij</span>}
                   </span>
                   <div className="flex items-center gap-3 text-sm text-right">
-                    <div className="hidden sm:block text-gray-400">
+                    <div className="hidden sm:block text-gray-400 text-xs">
                       <span title="Wedstrijdpunten">{entry.matchPoints}w</span>
                       {" + "}
                       <span title="Bonuspunten">{entry.bonusPoints}b</span>
                       {" + "}
                       <span title="Kampioenspunten">{entry.championPoints}k</span>
                     </div>
-                    <span className={`font-bold text-base ${isMe ? "text-orange-600" : "text-gray-900"}`}>
+                    <span className={`font-pixel text-sm ${isMe ? "" : ""}`} style={{ color: isMe ? "#FF6200" : "#1a1a2e", fontSize: "11px" }}>
                       {entry.totalPoints}
                     </span>
                   </div>

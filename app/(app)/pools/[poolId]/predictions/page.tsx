@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PredictionForm } from "./PredictionForm"
 import { MatchStage } from "@prisma/client"
+import { PoolSubNav } from "../PoolSubNav"
 
 const STAGE_LABELS: Record<MatchStage, string> = {
   GROUP: "Groepsfase",
@@ -74,12 +75,7 @@ export default async function PredictionsPage({
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <Link href={`/pools/${poolId}`} className="text-sm text-gray-500 hover:text-gray-700">
-          ← {viewMembership?.user.name ?? "Terug"}
-        </Link>
-        <h1 className="text-xl font-bold text-gray-900">Voorspellingen</h1>
-      </div>
+      <PoolSubNav poolId={poolId} />
 
       {/* Wie bekijken we? */}
       <div className="flex gap-2 flex-wrap mb-4">
@@ -111,16 +107,12 @@ export default async function PredictionsPage({
       </div>
 
       {/* Stage tabs */}
-      <div className="flex gap-1 flex-wrap mb-5 bg-gray-100 rounded-xl p-1">
+      <div className="flex gap-1 flex-wrap mb-5">
         {STAGE_ORDER.map((s) => (
           <Link
             key={s}
             href={`/pools/${poolId}/predictions?stage=${s}&view=${viewUserId}`}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              stage === s
-                ? "bg-white shadow text-orange-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-3 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
           >
             {STAGE_LABELS[s]}
           </Link>
@@ -128,7 +120,7 @@ export default async function PredictionsPage({
       </div>
 
       {matches.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center text-gray-500">
+        <div className="pixel-card p-10 text-center text-gray-500">
           Nog geen wedstrijden gepland voor deze ronde.
         </div>
       ) : (
@@ -144,7 +136,7 @@ export default async function PredictionsPage({
             return (
               <div
                 key={match.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4"
+                className="pixel-card p-4 rounded-none"
               >
                 {/* Match header */}
                 <div className="flex items-center justify-between mb-3 text-xs text-gray-400">
