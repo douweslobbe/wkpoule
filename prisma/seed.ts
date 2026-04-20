@@ -7,12 +7,27 @@ const prisma = new PrismaClient()
 function mapStage(fdStage: string): MatchStage {
   const map: Record<string, MatchStage> = {
     GROUP_STAGE: "GROUP",
+    GROUP: "GROUP",
     ROUND_OF_32: "ROUND_OF_32",
+    LAST_32: "ROUND_OF_32",
+    PLAYOFFS_ROUND_1: "ROUND_OF_32",
+    ROUND_OF_32_FIRST_PHASE: "ROUND_OF_32",
     ROUND_OF_16: "ROUND_OF_16",
+    LAST_16: "ROUND_OF_16",
+    PLAYOFFS_ROUND_2: "ROUND_OF_16",
     QUARTER_FINALS: "QUARTER_FINAL",
+    QUARTER_FINAL: "QUARTER_FINAL",
+    LAST_8: "QUARTER_FINAL",
     SEMI_FINALS: "SEMI_FINAL",
+    SEMI_FINAL: "SEMI_FINAL",
+    LAST_4: "SEMI_FINAL",
     THIRD_PLACE: "THIRD_PLACE",
+    THIRD_PLACE_MATCH: "THIRD_PLACE",
+    PLAY_OFF_3RD_PLACE: "THIRD_PLACE",
     FINAL: "FINAL",
+  }
+  if (!map[fdStage]) {
+    console.warn(`⚠️  Onbekende stage: "${fdStage}" → GROUP`)
   }
   return map[fdStage] ?? "GROUP"
 }

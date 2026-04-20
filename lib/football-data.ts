@@ -58,15 +58,37 @@ export async function fetchMatches(): Promise<FDMatch[]> {
 
 export function mapStage(fdStage: string): string {
   const map: Record<string, string> = {
+    // Groepsfase
     GROUP_STAGE: "GROUP",
+    GROUP: "GROUP",
+    // Ronde van 32 — football-data.org gebruikt meerdere namen voor WK 2026
     ROUND_OF_32: "ROUND_OF_32",
+    LAST_32: "ROUND_OF_32",
+    PLAYOFFS_ROUND_1: "ROUND_OF_32",
+    ROUND_OF_32_FIRST_PHASE: "ROUND_OF_32",
+    // Ronde van 16
     ROUND_OF_16: "ROUND_OF_16",
+    LAST_16: "ROUND_OF_16",
+    PLAYOFFS_ROUND_2: "ROUND_OF_16",
+    // Kwartfinale
     QUARTER_FINALS: "QUARTER_FINAL",
+    QUARTER_FINAL: "QUARTER_FINAL",
+    LAST_8: "QUARTER_FINAL",
+    // Halve finale
     SEMI_FINALS: "SEMI_FINAL",
+    SEMI_FINAL: "SEMI_FINAL",
+    LAST_4: "SEMI_FINAL",
+    // Derde/finale
     THIRD_PLACE: "THIRD_PLACE",
+    THIRD_PLACE_MATCH: "THIRD_PLACE",
+    PLAY_OFF_3RD_PLACE: "THIRD_PLACE",
     FINAL: "FINAL",
   }
-  return map[fdStage] ?? "GROUP"
+  const result = map[fdStage]
+  if (!result) {
+    console.warn(`⚠️  Onbekende stage van football-data.org: "${fdStage}" → valt terug op GROUP`)
+  }
+  return result ?? "GROUP"
 }
 
 export function mapStatus(fdStatus: string): string {

@@ -22,9 +22,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
             <span className="text-xl">⚽</span>
-            <span className="font-pixel text-white hidden sm:block" style={{ fontSize: "8px", lineHeight: "1.4" }}>
-              WK POULE<br/>
-              <span style={{ color: "#FFD700" }}>2026</span>
+            <span className="font-pixel text-white hidden lg:block" style={{ fontSize: "6px", lineHeight: "1.7" }}>
+              DOUWE&apos;S SUPER<br/>
+              MEGALOMANE<br/>
+              <span style={{ color: "#FFD700" }}>WK POULE 2026</span>
+            </span>
+            <span className="font-pixel text-white hidden sm:block lg:hidden" style={{ fontSize: "7px", lineHeight: "1.5" }}>
+              MEGALOMANE<br/>
+              <span style={{ color: "#FFD700" }}>WK POULE &apos;26</span>
             </span>
           </Link>
 

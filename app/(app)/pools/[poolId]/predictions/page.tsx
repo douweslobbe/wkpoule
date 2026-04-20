@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { PredictionForm } from "./PredictionForm"
 import { MatchStage } from "@prisma/client"
 import { PoolSubNav } from "../PoolSubNav"
+import { PixelFlag } from "@/components/PixelFlag"
 
 const STAGE_LABELS: Record<MatchStage, string> = {
   GROUP: "Groepsfase",
@@ -147,42 +148,42 @@ export default async function PredictionsPage({
                       hour: "2-digit", minute: "2-digit",
                     })}
                   </span>
-                  <span className={locked ? "text-red-400" : "text-green-500"}>
-                    {locked ? "Vergrendeld" : `Sluiting: ${deadline.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`}
+                  <span className={`text-xs font-bold ${locked ? "text-red-400" : "text-green-400"}`}>
+                    {locked ? "🔒 VERGRENDELD" : `Sluit: ${deadline.toLocaleString("nl-NL", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 mt-3">
                   {/* Thuis */}
                   <div className="flex-1 flex items-center gap-2">
-                    {match.homeTeam?.flagUrl && (
-                      <img src={match.homeTeam.flagUrl} alt="" className="w-7 h-5 object-contain" />
+                    {match.homeTeam?.code && (
+                      <PixelFlag code={match.homeTeam.code} size="md" />
                     )}
-                    <span className="font-medium text-gray-900">
-                      {match.homeTeam?.nameNl ?? match.homeTeam?.name ?? "TBD"}
+                    <span className="font-bold text-sm text-gray-900">
+                      {match.homeTeam?.nameNl ?? match.homeTeam?.name ?? "?"}
                     </span>
                   </div>
 
                   {/* Score */}
-                  <div className="shrink-0">
+                  <div className="shrink-0 text-center">
                     {finished ? (
                       <div className="flex items-center gap-1 font-bold text-lg">
-                        <span className="w-8 text-center bg-gray-100 rounded py-1">{match.homeScore}</span>
+                        <span className="w-8 text-center py-1 font-pixel" style={{ background: "#1a1a2e", color: "#FFD700", fontSize: "13px" }}>{match.homeScore}</span>
                         <span className="text-gray-400">–</span>
-                        <span className="w-8 text-center bg-gray-100 rounded py-1">{match.awayScore}</span>
+                        <span className="w-8 text-center py-1 font-pixel" style={{ background: "#1a1a2e", color: "#FFD700", fontSize: "13px" }}>{match.awayScore}</span>
                       </div>
                     ) : (
-                      <span className="text-gray-300 font-bold text-lg">vs</span>
+                      <span className="font-pixel text-gray-400" style={{ fontSize: "10px" }}>VS</span>
                     )}
                   </div>
 
                   {/* Uit */}
                   <div className="flex-1 flex items-center justify-end gap-2">
-                    <span className="font-medium text-gray-900">
-                      {match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "TBD"}
+                    <span className="font-bold text-sm text-gray-900">
+                      {match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "?"}
                     </span>
-                    {match.awayTeam?.flagUrl && (
-                      <img src={match.awayTeam.flagUrl} alt="" className="w-7 h-5 object-contain" />
+                    {match.awayTeam?.code && (
+                      <PixelFlag code={match.awayTeam.code} size="md" />
                     )}
                   </div>
                 </div>

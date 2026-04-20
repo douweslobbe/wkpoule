@@ -16,6 +16,13 @@ export default async function AdminPage() {
     prisma.pool.count(),
   ])
 
+  // Debug: matches per stage
+  const stageGroups = await prisma.match.groupBy({
+    by: ["stage"],
+    _count: { stage: true },
+    orderBy: { stage: "asc" },
+  })
+
   const recentMatches = await prisma.match.findMany({
     where: { status: "FINISHED" },
     include: { homeTeam: true, awayTeam: true },
@@ -57,6 +64,22 @@ export default async function AdminPage() {
         <p className="text-xs text-gray-400 mt-3">
           Sync haalt teams en wedstrijden op van football-data.org. Herberekening herberekent alle punten.
         </p>
+        {/* Stage debug */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-xs font-semibold text-gray-600 mb-2">Wedstrijden per fase (na sync):</p>
+          <div className="flex gap-2 flex-wrap">
+            {stageGroups.map((s) => (
+              <span key={s.stage} className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                {s.stage}: <strong>{s._count.stage}</strong>
+              </span>
+            ))}
+          </div>
+          {stageGroups.find(s => s.stage === "GROUP" && s._count.stage > 80) && (
+            <p className="text-xs text-red-500 mt-2">
+              ⚠️ Te veel wedstrijden in GROUP ({stageGroups.find(s => s.stage === "GROUP")?._count.stage}) — stage-mapping issue. Klik Sync om opnieuw te synchroniseren met verbeterde mapping.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Poules */}
