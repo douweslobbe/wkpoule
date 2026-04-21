@@ -121,14 +121,12 @@ export default async function DashboardPage() {
                 <Link
                   key={pool.id}
                   href={`/pools/${pool.id}`}
-                  className="block transition-colors"
+                  className="block pool-row"
                   style={{ borderBottom: "2px solid #1a1d30" }}
                 >
                   {/* Desktop */}
                   <div className="hidden sm:grid px-5 py-3 items-center gap-2"
-                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#1a1d30")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
                     <div>
                       <span className="font-bold text-sm" style={{ color: "#e0e0f0" }}>{pool.name}</span>
                       {role === "ADMIN" && (

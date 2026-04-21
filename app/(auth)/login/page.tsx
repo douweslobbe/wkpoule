@@ -32,34 +32,43 @@ export default function LoginPage() {
 
   return (
     <div className="pixel-card p-6">
-      <h2 className="font-pixel text-xs text-pixel-black mb-6 text-center">INLOGGEN</h2>
+      <h2 className="font-pixel text-center mb-6" style={{ fontSize: "10px", color: "#FFD700" }}>
+        INLOGGEN
+      </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">E-mailadres</label>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+            E-mailadres
+          </label>
           <input
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="w-full border-3 border-pixel-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange bg-background text-sm"
-            style={{ border: "3px solid #1a1a2e" }}
+            className="pixel-input w-full px-3 py-2"
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Wachtwoord</label>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+            Wachtwoord
+          </label>
           <input
             name="password"
             type="password"
             required
             autoComplete="current-password"
-            className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange bg-background text-sm"
-            style={{ border: "3px solid #1a1a2e" }}
+            className="pixel-input w-full px-3 py-2"
           />
         </div>
 
         {error && (
-          <div className="bg-red-100 border-2 border-red-600 text-red-700 text-xs font-bold px-3 py-2">
+          <div className="px-3 py-2 font-pixel" style={{
+            background: "#2a0000",
+            border: "2px solid #cc0000",
+            color: "#ff6666",
+            fontSize: "8px",
+          }}>
             ❌ {error}
           </div>
         )}
@@ -67,17 +76,21 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="pixel-btn w-full bg-orange text-white py-2.5 text-sm font-pixel text-xs"
-          style={{ background: loading ? "#cc4f00" : "#FF6200" }}
+          className="pixel-btn w-full py-3 font-pixel"
+          style={{
+            background: loading ? "#cc4f00" : "#FF6200",
+            color: "white",
+            fontSize: "9px",
+          }}
         >
           {loading ? "BEZIG..." : "INLOGGEN ▶"}
         </button>
       </form>
 
-      <p className="text-center text-xs text-gray-500 mt-5">
+      <p className="text-center mt-5 font-pixel" style={{ fontSize: "7px", color: "#555577" }}>
         Nog geen account?{" "}
-        <Link href="/register" className="text-orange font-bold hover:underline" style={{ color: "#FF6200" }}>
-          Registreren
+        <Link href="/register" className="font-bold hover:underline" style={{ color: "#FF6200" }}>
+          REGISTREREN
         </Link>
       </p>
     </div>

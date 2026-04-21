@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="nl" className={`${geist.variable} ${pressStart.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-pitch font-sans antialiased">
+      <body className="min-h-full flex flex-col bg-pitch font-sans" style={{ WebkitFontSmoothing: "none", MozOsxFontSmoothing: "unset" }}>
         {children}
       </body>
     </html>

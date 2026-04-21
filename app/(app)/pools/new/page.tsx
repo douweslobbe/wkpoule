@@ -32,40 +32,65 @@ export default function NewPoolPage() {
 
   return (
     <div className="max-w-md mx-auto">
-      <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">
-        ← Terug
+      <Link
+        href="/dashboard"
+        className="inline-block mb-4 font-pixel"
+        style={{ fontSize: "7px", color: "#7070a0" }}
+      >
+        ◄ TERUG
       </Link>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">Nieuwe poule aanmaken</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Geef je poule een naam. Je krijgt een uitnodigingscode waarmee vrienden kunnen meedoen.
-          De standaard bonusvragen worden automatisch aangemaakt — je kunt ze daarna aanpassen.
-        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Naam van de poule</label>
-            <input
-              name="name"
-              type="text"
-              required
-              placeholder="bijv. WK Poule Collega's"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
-          </div>
+      <div className="pixel-card overflow-hidden">
+        {/* Header */}
+        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
+          <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>➕ NIEUWE POULE</h1>
+        </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
-          )}
+        <div className="p-5">
+          <p className="mb-5" style={{ color: "#7070a0", fontSize: "8px", lineHeight: "2", fontFamily: "var(--font-pixel), monospace" }}>
+            Geef je poule een naam. Je krijgt een uitnodigingscode waarmee vrienden kunnen meedoen.
+            Bonusvragen worden automatisch aangemaakt.
+          </p>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
-            {loading ? "Aanmaken..." : "Poule aanmaken"}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+                Naam van de poule
+              </label>
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder="bijv. WK Poule Collega's"
+                className="pixel-input w-full px-3 py-2"
+              />
+            </div>
+
+            {error && (
+              <div className="px-3 py-2 font-pixel" style={{
+                background: "#2a0000",
+                border: "2px solid #cc0000",
+                color: "#ff6666",
+                fontSize: "8px",
+              }}>
+                ❌ {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="pixel-btn w-full py-3 font-pixel"
+              style={{
+                background: loading ? "#0a2a00" : "#FF6200",
+                color: "white",
+                fontSize: "9px",
+              }}
+            >
+              {loading ? "AANMAKEN..." : "POULE AANMAKEN ▶"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

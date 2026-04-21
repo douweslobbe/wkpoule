@@ -40,59 +40,82 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Account aanmaken</h2>
+    <div className="pixel-card p-6">
+      <h2 className="font-pixel text-center mb-6" style={{ fontSize: "10px", color: "#4af56a" }}>
+        ACCOUNT AANMAKEN
+      </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+            Naam
+          </label>
           <input
             name="name"
             type="text"
             required
             autoComplete="name"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="pixel-input w-full px-3 py-2"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+            E-mailadres
+          </label>
           <input
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="pixel-input w-full px-3 py-2"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+            Wachtwoord
+          </label>
           <input
             name="password"
             type="password"
             required
             minLength={6}
             autoComplete="new-password"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="pixel-input w-full px-3 py-2"
           />
+          <p className="mt-1 font-pixel" style={{ fontSize: "6px", color: "#444466" }}>
+            Minimaal 6 tekens
+          </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
+          <div className="px-3 py-2 font-pixel" style={{
+            background: "#2a0000",
+            border: "2px solid #cc0000",
+            color: "#ff6666",
+            fontSize: "8px",
+          }}>
+            ❌ {error}
+          </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg transition-colors"
+          className="pixel-btn w-full py-3 font-pixel"
+          style={{
+            background: loading ? "#0d3318" : "#16a34a",
+            color: "white",
+            fontSize: "9px",
+          }}
         >
-          {loading ? "Bezig..." : "Account aanmaken"}
+          {loading ? "BEZIG..." : "ACCOUNT AANMAKEN ▶"}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-4">
+      <p className="text-center mt-5 font-pixel" style={{ fontSize: "7px", color: "#555577" }}>
         Al een account?{" "}
-        <Link href="/login" className="text-orange-600 font-medium hover:underline">
-          Inloggen
+        <Link href="/login" className="font-bold hover:underline" style={{ color: "#FF6200" }}>
+          INLOGGEN
         </Link>
       </p>
     </div>

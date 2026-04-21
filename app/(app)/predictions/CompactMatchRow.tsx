@@ -36,6 +36,7 @@ export function CompactMatchRow({
   locked: boolean
 }) {
   const finished = match.status === "FINISHED"
+  const live = match.status === "LIVE"
   const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
 
   const [home, setHome] = useState(myPred?.homeScore?.toString() ?? "")
@@ -69,7 +70,11 @@ export function CompactMatchRow({
   })
 
   return (
-    <div style={{ background: "#161928", borderBottom: "2px solid #1a1d30" }}>
+    <div style={{
+      background: live ? "#1a0d00" : "#161928",
+      borderBottom: "2px solid #1a1d30",
+      borderLeft: live ? "3px solid #ff4444" : "3px solid transparent",
+    }}>
       {/* Top meta bar */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1" style={{ borderBottom: "1px solid #1a1d30", fontSize: "10px" }}>
         <span style={{ color: "#444466" }}>
@@ -78,8 +83,14 @@ export function CompactMatchRow({
           )}
           {dateStr}
         </span>
-        <span className="font-bold" style={{ color: locked ? "#cc2222" : "#4af56a", fontSize: "9px" }}>
-          {locked ? "🔒 GESLOTEN" : `Deadline: ${deadlineStr}`}
+        <span className="font-bold" style={{ fontSize: "9px" }}>
+          {live ? (
+            <span className="pixel-live">● LIVE</span>
+          ) : locked ? (
+            <span style={{ color: "#cc2222" }}>🔒 GESLOTEN</span>
+          ) : (
+            <span style={{ color: "#4af56a" }}>Deadline: {deadlineStr}</span>
+          )}
         </span>
       </div>
 
@@ -130,15 +141,23 @@ export function CompactMatchRow({
                 {isPending ? "..." : saved && !error ? "✓ OK" : "OPSLAAN"}
               </button>
             </>
-          ) : finished ? (
-            /* Eindstand */
+          ) : finished || live ? (
+            /* Eindstand / Live score */
             <div className="flex items-center gap-1">
-              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#000", color: "#FFD700", border: "2px solid #333" }}>
-                {match.homeScore}
+              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{
+                background: "#000",
+                color: live ? "#ff4444" : "#FFD700",
+                border: live ? "2px solid #ff4444" : "2px solid #333",
+              }}>
+                {match.homeScore ?? "?"}
               </span>
-              <span style={{ color: "#444466" }}>–</span>
-              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#000", color: "#FFD700", border: "2px solid #333" }}>
-                {match.awayScore}
+              <span style={{ color: live ? "#ff4444" : "#444466" }}>–</span>
+              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{
+                background: "#000",
+                color: live ? "#ff4444" : "#FFD700",
+                border: live ? "2px solid #ff4444" : "2px solid #333",
+              }}>
+                {match.awayScore ?? "?"}
               </span>
             </div>
           ) : (

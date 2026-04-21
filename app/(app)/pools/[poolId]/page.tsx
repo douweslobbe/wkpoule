@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PoolSubNav } from "./PoolSubNav"
+import { CopyButton } from "./CopyButton"
 
 export default async function PoolPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -68,11 +69,12 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
           <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>{pool.name.toUpperCase()}</h1>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>CODE:</span>
             <span className="font-pixel font-bold tracking-widest px-2 py-0.5 text-sm" style={{ background: "#FFD700", color: "#000", border: "2px solid #000", boxShadow: "2px 2px 0 #000" }}>
               {pool.inviteCode}
             </span>
+            <CopyButton text={pool.inviteCode} />
           </div>
         </div>
         {isAdmin && (
