@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { logout } from "@/lib/actions"
 import { prisma } from "@/lib/prisma"
+import { PixelBackground } from "@/components/PixelBackground"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -15,7 +16,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   })
 
   return (
-    <div className="min-h-screen flex flex-col pitch-bg scanlines">
+    <div className="min-h-screen flex flex-col pitch-bg scanlines" style={{ position: "relative" }}>
+      <PixelBackground />
       {/* SNES-style header */}
       <header className="sticky top-0 z-50" style={{ background: "#071810", borderBottom: "4px solid #000", boxShadow: "0 4px 0 #0a3d1f" }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
@@ -95,11 +97,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6" style={{ position: "relative", zIndex: 1 }}>
         {children}
       </main>
 
-      <footer className="text-center py-4" style={{ borderTop: "3px solid #0a3d1f" }}>
+      <footer className="text-center py-4" style={{ borderTop: "3px solid #0a3d1f", position: "relative", zIndex: 1 }}>
         <span className="font-pixel" style={{ fontSize: "7px", color: "#2d6b3d" }}>
           HUP HOLLAND HUP 🇳🇱 · WK 2026
         </span>
