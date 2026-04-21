@@ -1,10 +1,10 @@
-import { redirect, notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { PredictionForm } from "../pools/[poolId]/predictions/PredictionForm"
 import { MatchStage } from "@prisma/client"
-import { PixelFlag } from "@/components/PixelFlag"
+import { PoolSubNav } from "../pools/[poolId]/PoolSubNav"
+import { CompactMatchRow } from "./CompactMatchRow"
 
 const STAGE_LABELS: Record<MatchStage, string> = {
   GROUP: "Groepsfase",
@@ -33,14 +33,14 @@ export default async function PredictionsPage({
   const activePoolId = sp.pool ?? null
   const viewUserId = sp.view ?? session.user.id
 
-  // Load all pools the user is in (for the pool picker)
+  // Alle poules van de gebruiker
   const myPools = await prisma.poolMembership.findMany({
     where: { userId: session.user.id },
     include: { pool: { select: { id: true, name: true } } },
     orderBy: { joinedAt: "asc" },
   })
 
-  // Members to show depends on active pool
+  // Leden van de actieve poule (voor andere picks bekijken)
   let poolMembers: { userId: string; user: { id: string; name: string } }[] = []
   if (activePoolId) {
     const membership = await prisma.poolMembership.findUnique({
@@ -58,7 +58,7 @@ export default async function PredictionsPage({
   const matches = await prisma.match.findMany({
     where: { stage },
     include: { homeTeam: true, awayTeam: true },
-    orderBy: [{ kickoff: "asc" }],
+    orderBy: { kickoff: "asc" },
   })
 
   const myPredictions = await prisma.prediction.findMany({
@@ -75,34 +75,41 @@ export default async function PredictionsPage({
   const viewPredMap = new Map(viewPredictions.map((p) => [p.matchId, p]))
 
   const viewUser = viewUserId !== session.user.id
-    ? poolMembers.find(m => m.userId === viewUserId)?.user
+    ? poolMembers.find((m) => m.userId === viewUserId)?.user
     : null
 
   const now = new Date()
   const myPredCount = myPredictions.length
 
+  // Gebruik eerste pool als geen pool geselecteerd
+  const navPoolId = activePoolId ?? myPools[0]?.pool.id ?? ""
+
   return (
     <div>
-      {/* Header */}
-      <div className="pixel-card mb-5 p-4" style={{ background: "#0a3d1f" }}>
-        <h1 className="font-pixel text-white mb-1" style={{ fontSize: "9px" }}>⚽ DE WEDSTRIJDEN</h1>
+      {/* Pool navigatie tabs — altijd zichtbaar */}
+      {navPoolId && <PoolSubNav poolId={navPoolId} />}
+
+      {/* Banner */}
+      <div className="pixel-card mb-4 px-4 py-2.5" style={{ background: "#0a3d1f" }}>
         <p className="text-green-300 text-xs">
-          Jouw voorspellingen gelden voor <strong className="text-yellow-300">alle poules tegelijk</strong> —
-          je vult ze maar één keer in.
-          {myPredCount > 0 && <span className="ml-1 text-green-400">({myPredCount} ingevuld)</span>}
+          ⚽ Voorspellingen gelden voor{" "}
+          <strong className="text-yellow-300">alle poules tegelijk</strong> — één keer invullen.
+          {myPredCount > 0 && (
+            <span className="ml-2 text-green-400">({myPredCount} ingevuld in deze ronde)</span>
+          )}
         </p>
       </div>
 
-      {/* Pool picker voor anderen bekijken */}
+      {/* Poule-kiezer voor anderen bekijken */}
       {myPools.length > 0 && (
-        <div className="mb-4">
-          <p className="text-xs font-bold text-gray-400 uppercase mb-2 font-pixel" style={{ fontSize: "7px" }}>
-            Bekijk voorspellingen van:
-          </p>
-          <div className="flex gap-2 flex-wrap">
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-gray-400 shrink-0" style={{ fontFamily: "var(--font-pixel)", fontSize: "7px" }}>
+              BEKIJK:
+            </span>
             <Link
-              href={`/predictions?stage=${stage}&pool=${activePoolId ?? ""}&view=${session.user.id}`}
-              className={`px-3 py-1.5 text-xs font-bold transition-all ${
+              href={`/predictions?stage=${stage}${activePoolId ? `&pool=${activePoolId}` : ""}&view=${session.user.id}`}
+              className={`px-2.5 py-1 text-xs font-bold transition-all ${
                 viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"
               }`}
               style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
@@ -110,52 +117,52 @@ export default async function PredictionsPage({
               🙋 Mijn picks
             </Link>
 
-            {/* Pool selector */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {myPools.map(({ pool }) => (
+            {myPools.map(({ pool }) => (
+              <span key={pool.id} className="flex items-center gap-1">
                 <Link
-                  key={pool.id}
-                  href={`/predictions?stage=${stage}&pool=${pool.id}&view=${activePoolId === pool.id ? viewUserId : session.user.id}`}
-                  className={`px-2.5 py-1.5 text-xs font-bold transition-all ${
+                  href={`/predictions?stage=${stage}&pool=${pool.id}&view=${session.user.id}`}
+                  className={`px-2 py-1 text-xs font-bold transition-all ${
                     activePoolId === pool.id ? "pixel-tab-active" : "pixel-tab-inactive"
                   }`}
                   style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
                 >
                   {pool.name}
                 </Link>
-              ))}
-            </div>
+                {/* Leden van deze poule */}
+                {activePoolId === pool.id &&
+                  poolMembers
+                    .filter((m) => m.userId !== session.user.id)
+                    .map((m) => (
+                      <Link
+                        key={m.userId}
+                        href={`/predictions?stage=${stage}&pool=${pool.id}&view=${m.userId}`}
+                        className={`px-2 py-1 text-xs font-bold transition-all ${
+                          viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"
+                        }`}
+                        style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
+                      >
+                        {m.user.name}
+                      </Link>
+                    ))}
+              </span>
+            ))}
           </div>
 
-          {/* Members of active pool */}
-          {activePoolId && poolMembers.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-2 pl-2 border-l-4" style={{ borderColor: "#FF6200" }}>
-              {poolMembers
-                .filter(m => m.userId !== session.user.id)
-                .map(m => (
-                  <Link
-                    key={m.userId}
-                    href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${m.userId}`}
-                    className={`px-2.5 py-1 text-xs font-bold transition-all ${
-                      viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"
-                    }`}
-                    style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
-                  >
-                    {m.user.name}
-                  </Link>
-                ))}
+          {viewUser && (
+            <div className="mt-2 px-2 py-1 text-xs font-bold inline-block" style={{ background: "#FFD700", border: "2px solid #1a1a2e", color: "#1a1a2e" }}>
+              👁 Picks van {viewUser.name}
             </div>
           )}
         </div>
       )}
 
-      {/* Stage tabs */}
-      <div className="flex gap-1.5 flex-wrap mb-5">
+      {/* Fase-tabs */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
         {STAGE_ORDER.map((s) => (
           <Link
             key={s}
             href={`/predictions?stage=${s}${activePoolId ? `&pool=${activePoolId}` : ""}${viewUserId !== session.user.id ? `&view=${viewUserId}` : ""}`}
-            className={`px-3 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            className={`px-2.5 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
             style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
           >
             {STAGE_LABELS[s]}
@@ -163,102 +170,54 @@ export default async function PredictionsPage({
         ))}
       </div>
 
-      {viewUser && (
-        <div className="mb-4 px-3 py-2 text-xs font-bold" style={{ background: "#FFD700", border: "2px solid #1a1a2e", color: "#1a1a2e" }}>
-          👁 Je bekijkt de picks van <strong>{viewUser.name}</strong>
-        </div>
-      )}
-
+      {/* Wedstrijdlijst */}
       {matches.length === 0 ? (
-        <div className="pixel-card p-10 text-center text-gray-500">
+        <div className="pixel-card p-8 text-center text-gray-500 text-sm">
           Nog geen wedstrijden gepland voor deze ronde.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="pixel-card overflow-hidden">
           {matches.map((match) => {
             const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
             const locked = now > deadline
-            const finished = match.status === "FINISHED"
             const myPred = myPredMap.get(match.id)
             const viewPred = viewPredMap.get(match.id)
             const isOwnView = viewUserId === session.user.id
 
             return (
-              <div key={match.id} className="pixel-card p-4 rounded-none">
-                {/* Match header */}
-                <div className="flex items-center justify-between mb-3 text-xs text-gray-400">
-                  <span>
-                    {match.groupName && <span className="mr-1 font-bold">{match.groupName} ·</span>}
-                    {new Date(match.kickoff).toLocaleString("nl-NL", {
-                      weekday: "short", day: "numeric", month: "short",
-                      hour: "2-digit", minute: "2-digit",
-                    })}
-                  </span>
-                  <span className={`text-xs font-bold ${locked ? "text-red-400" : "text-green-400"}`}>
-                    {locked ? "🔒 VERGRENDELD" : `Sluit: ${deadline.toLocaleString("nl-NL", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Thuis */}
-                  <div className="flex-1 flex items-center gap-2">
-                    {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="md" />}
-                    <span className="font-bold text-sm text-gray-900">
-                      {match.homeTeam?.nameNl ?? match.homeTeam?.name ?? "?"}
-                    </span>
-                  </div>
-
-                  {/* Score */}
-                  <div className="shrink-0 text-center">
-                    {finished ? (
-                      <div className="flex items-center gap-1 font-bold text-lg">
-                        <span className="w-8 text-center py-1 font-pixel" style={{ background: "#1a1a2e", color: "#FFD700", fontSize: "13px" }}>{match.homeScore}</span>
-                        <span className="text-gray-400">–</span>
-                        <span className="w-8 text-center py-1 font-pixel" style={{ background: "#1a1a2e", color: "#FFD700", fontSize: "13px" }}>{match.awayScore}</span>
-                      </div>
-                    ) : (
-                      <span className="font-pixel text-gray-400" style={{ fontSize: "10px" }}>VS</span>
-                    )}
-                  </div>
-
-                  {/* Uit */}
-                  <div className="flex-1 flex items-center justify-end gap-2">
-                    <span className="font-bold text-sm text-gray-900">
-                      {match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "?"}
-                    </span>
-                    {match.awayTeam?.code && <PixelFlag code={match.awayTeam.code} size="md" />}
-                  </div>
-                </div>
-
-                {/* Voorspelling */}
-                {isOwnView && !locked ? (
-                  <PredictionForm
-                    matchId={match.id}
-                    initialHome={myPred?.homeScore}
-                    initialAway={myPred?.awayScore}
-                  />
-                ) : (
-                  <div className="mt-3 pt-3 border-t-2 border-gray-100 flex items-center justify-center gap-3 text-sm">
-                    {isOwnView && myPred && (
-                      <span className="text-xs text-gray-400">Jouw pick (vergrendeld):</span>
-                    )}
-                    {viewPred ? (
-                      <>
-                        {!isOwnView && <span className="text-gray-500 text-xs">Voorspelling:</span>}
-                        <span className="font-pixel" style={{ color: "#FF6200", fontSize: "11px" }}>
-                          {viewPred.homeScore} – {viewPred.awayScore}
-                        </span>
-                        {viewPred.pointsAwarded !== null && (
-                          <span className="font-pixel text-xs px-2 py-0.5" style={{ background: viewPred.pointsAwarded > 0 ? "#16a34a" : "#6b7280", color: "white" }}>
-                            +{viewPred.pointsAwarded}pt
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-gray-400 italic text-xs">Geen voorspelling</span>
-                    )}
-                  </div>
-                )}
+              <div key={match.id} style={{ borderBottom: "2px solid #e5e7eb" }}>
+                <CompactMatchRow
+                  match={{
+                    id: match.id,
+                    groupName: match.groupName,
+                    kickoff: match.kickoff,
+                    status: match.status,
+                    homeScore: match.homeScore,
+                    awayScore: match.awayScore,
+                    homeTeam: match.homeTeam ? {
+                      code: match.homeTeam.code,
+                      nameNl: match.homeTeam.nameNl,
+                      name: match.homeTeam.name,
+                    } : null,
+                    awayTeam: match.awayTeam ? {
+                      code: match.awayTeam.code,
+                      nameNl: match.awayTeam.nameNl,
+                      name: match.awayTeam.name,
+                    } : null,
+                  }}
+                  myPred={myPred ? {
+                    homeScore: myPred.homeScore,
+                    awayScore: myPred.awayScore,
+                    pointsAwarded: myPred.pointsAwarded,
+                  } : undefined}
+                  viewPred={viewPred ? {
+                    homeScore: viewPred.homeScore,
+                    awayScore: viewPred.awayScore,
+                    pointsAwarded: viewPred.pointsAwarded,
+                  } : undefined}
+                  isOwnView={isOwnView}
+                  locked={locked}
+                />
               </div>
             )
           })}
