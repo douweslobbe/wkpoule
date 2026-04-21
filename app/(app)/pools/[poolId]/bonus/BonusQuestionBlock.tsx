@@ -46,7 +46,7 @@ export function BonusQuestionBlock({
   const isCorrect = correctAnswer && answer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()
 
   return (
-    <div className="px-5 py-4">
+    <div>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <p className="font-medium text-gray-900">{question.question}</p>

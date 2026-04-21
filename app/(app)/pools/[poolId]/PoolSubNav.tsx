@@ -7,7 +7,7 @@ export function PoolSubNav({ poolId }: { poolId: string }) {
   const pathname = usePathname()
 
   const tabs = [
-    { href: `/pools/${poolId}/predictions`, label: "⚽ De Wedstrijden", match: "/predictions" },
+    { href: `/predictions?pool=${poolId}`, label: "⚽ De Wedstrijden", match: "/predictions" },
     { href: `/pools/${poolId}/bonus`, label: "🏆 Het Grote Plaatje", match: "/bonus" },
     { href: `/pools/${poolId}`, label: "📊 De Megalomane Ranglijst", match: null },
   ]
