@@ -69,8 +69,8 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
         <div>
           <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>{pool.name.toUpperCase()}</h1>
           <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-green-300">CODE:</span>
-            <span className="font-mono font-bold tracking-widest px-2 py-0.5 text-sm" style={{ background: "#FFD700", color: "#1a1a2e", border: "2px solid #1a1a2e" }}>
+            <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>CODE:</span>
+            <span className="font-pixel font-bold tracking-widest px-2 py-0.5 text-sm" style={{ background: "#FFD700", color: "#000", border: "2px solid #000", boxShadow: "2px 2px 0 #000" }}>
               {pool.inviteCode}
             </span>
           </div>
@@ -79,7 +79,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
           <Link
             href={`/admin/pools/${poolId}/bonus`}
             className="pixel-btn px-3 py-1.5 text-xs font-bold"
-            style={{ background: "#fefef2", color: "#1a1a2e" }}
+            style={{ background: "#FFD700", color: "#000", fontFamily: "var(--font-pixel)", fontSize: "7px" }}
           >
             ⚙ BEHEER
           </Link>
@@ -88,31 +88,37 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
 
       {/* Leaderboard */}
       <div className="pixel-card overflow-hidden">
-        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #1a1a2e" }}>
+        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 DE MEGALOMANE RANGLIJST</h2>
           {completedMatches > 0 && (
-            <p className="text-green-300 text-xs mt-1">
+            <p className="mt-1" style={{ color: "#4af56a", fontSize: "11px" }}>
               {completedMatches}/{totalMatches} wedstrijden gespeeld · prognose op basis van huidige score/wedstrijd
             </p>
           )}
         </div>
 
         {ranked.length === 0 ? (
-          <p className="text-center text-gray-500 py-10 text-sm">Nog geen scores</p>
+          <p className="text-center py-10 text-sm" style={{ color: "#444466" }}>Nog geen scores</p>
         ) : (
           <div>
             {/* Header row */}
-            <div className="hidden sm:grid px-5 py-2 text-xs font-bold text-gray-400 uppercase tracking-wide border-b-2 border-gray-200"
-              style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
+            <div className="hidden sm:grid px-5 py-2 font-bold uppercase tracking-wide"
+              style={{
+                gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem",
+                fontSize: "9px",
+                color: "#555577",
+                borderBottom: "2px solid #1a1d30",
+                fontFamily: "var(--font-pixel), monospace",
+              }}>
               <span>#</span>
               <span>Speler</span>
-              <span className="text-center">⚽ De Wedstrijden</span>
-              <span className="text-center">🏆 Het Grote Plaatje</span>
-              <span className="text-center font-pixel" style={{ fontSize: "7px" }}>TOTAAL</span>
-              <span className="text-center text-blue-400">📈 Prognose</span>
+              <span className="text-center">⚽ Wedstr.</span>
+              <span className="text-center">🏆 Plaatje</span>
+              <span className="text-center">TOTAAL</span>
+              <span className="text-center" style={{ color: "#4499ff" }}>📈 Prognose</span>
             </div>
 
-            <div className="divide-y-2 divide-gray-200">
+            <div style={{ borderTop: "none" }}>
               {ranked.map((entry, i) => {
                 const isMe = entry.userId === session.user.id
                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
@@ -133,55 +139,58 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                 return (
                   <div
                     key={entry.userId}
-                    className={`px-5 py-3 ${isMe ? "bg-yellow-50" : "bg-background"}`}
+                    style={{
+                      background: isMe ? "#1e1200" : "#161928",
+                      borderBottom: "2px solid #1a1d30",
+                      borderLeft: isMe ? "3px solid #FF6200" : "3px solid transparent",
+                    }}
                   >
                     {/* Desktop: grid layout */}
-                    <div className="hidden sm:grid items-center gap-2"
+                    <div className="hidden sm:grid items-center gap-2 px-5 py-3"
                       style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
                       <span className="text-lg">{medal}</span>
-                      <span className={`font-bold text-sm truncate ${isMe ? "" : "text-gray-800"}`}
-                        style={{ color: isMe ? "#FF6200" : undefined }}>
+                      <span className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "#e0e0f0" }}>
                         {memberMap.get(entry.userId) ?? "?"}
-                        {isMe && <span className="ml-1 text-xs font-normal opacity-60">◄ jij</span>}
+                        {isMe && <span className="ml-1 text-xs font-normal" style={{ color: "#FF6200", opacity: 0.7 }}>◄ jij</span>}
                       </span>
-                      <span className="text-center text-sm text-gray-700">{entry.matchPoints}</span>
-                      <span className="text-center text-sm text-gray-700">{entry.bonusPoints + entry.championPoints}</span>
+                      <span className="text-center text-sm" style={{ color: "#9999cc" }}>{entry.matchPoints}</span>
+                      <span className="text-center text-sm" style={{ color: "#9999cc" }}>{entry.bonusPoints + entry.championPoints}</span>
                       <span className="text-center font-pixel"
-                        style={{ color: isMe ? "#FF6200" : "#1a1a2e", fontSize: "11px" }}>
+                        style={{ color: isMe ? "#FF6200" : "#FFD700", fontSize: "11px" }}>
                         {entry.totalPoints}
                       </span>
-                      <span className="text-center text-sm font-semibold text-blue-600">
+                      <span className="text-center text-sm font-semibold" style={{ color: "#4499ff" }}>
                         {projectedTotal !== null ? (
                           <span title={`Max mogelijk: ${maxPossible}`}>
                             ~{projectedTotal}
                             {completedMatches < totalMatches && (
-                              <span className="text-xs text-gray-400 ml-0.5">/{maxPossible}</span>
+                              <span className="text-xs ml-0.5" style={{ color: "#333366" }}>/{maxPossible}</span>
                             )}
                           </span>
                         ) : (
-                          <span className="text-gray-300 text-xs">—</span>
+                          <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
                         )}
                       </span>
                     </div>
 
                     {/* Mobile: compact layout */}
-                    <div className="sm:hidden flex items-center gap-3">
+                    <div className="sm:hidden flex items-center gap-3 px-4 py-3">
                       <span className="text-lg w-7">{medal}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "#1a1a2e" }}>
+                        <div className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "#e0e0f0" }}>
                           {memberMap.get(entry.userId) ?? "?"}
-                          {isMe && <span className="ml-1 text-xs font-normal opacity-60">◄</span>}
+                          {isMe && <span className="ml-1 text-xs font-normal" style={{ opacity: 0.6, color: "#FF6200" }}>◄</span>}
                         </div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          ⚽{entry.matchPoints} + ❓{entry.bonusPoints} + 🏆{entry.championPoints}
+                        <div className="text-xs mt-0.5" style={{ color: "#555577" }}>
+                          ⚽{entry.matchPoints} + 🏆{entry.bonusPoints + entry.championPoints}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-pixel" style={{ color: isMe ? "#FF6200" : "#1a1a2e", fontSize: "11px" }}>
+                        <div className="font-pixel" style={{ color: isMe ? "#FF6200" : "#FFD700", fontSize: "11px" }}>
                           {entry.totalPoints}
                         </div>
                         {projectedTotal !== null && (
-                          <div className="text-xs text-blue-500">~{projectedTotal}</div>
+                          <div className="text-xs" style={{ color: "#4499ff" }}>~{projectedTotal}</div>
                         )}
                       </div>
                     </div>
@@ -191,10 +200,11 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
             </div>
 
             {/* Legend */}
-            <div className="px-5 py-3 border-t-2 border-gray-200 bg-gray-50 text-xs text-gray-500 flex gap-4 flex-wrap">
+            <div className="px-5 py-3 flex gap-4 flex-wrap"
+              style={{ borderTop: "2px solid #1a1d30", background: "#0d0f1a", fontSize: "10px", color: "#444466" }}>
               <span>⚽ wedstrijdpunten</span>
-              <span>🏆 bonuspunten + kampioenspunten</span>
-              {completedMatches > 0 && <span className="text-blue-500">📈 prognose = huidig tempo × 104 wedstrijden</span>}
+              <span>🏆 bonus + kampioen</span>
+              {completedMatches > 0 && <span style={{ color: "#4499ff" }}>📈 prognose = huidig tempo × 104 wedstrijden</span>}
               {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn (start 11 juni)</span>}
             </div>
           </div>

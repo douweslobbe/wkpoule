@@ -90,12 +90,12 @@ export default async function PredictionsPage({
       {navPoolId && <PoolSubNav poolId={navPoolId} />}
 
       {/* Banner */}
-      <div className="pixel-card mb-4 px-4 py-2.5" style={{ background: "#0a3d1f" }}>
-        <p className="text-green-300 text-xs">
+      <div className="pixel-card mb-4 px-4 py-2.5" style={{ background: "#071810", borderLeft: "4px solid #4af56a" }}>
+        <p style={{ fontSize: "11px", color: "#4af56a" }}>
           ⚽ Voorspellingen gelden voor{" "}
-          <strong className="text-yellow-300">alle poules tegelijk</strong> — één keer invullen.
+          <strong style={{ color: "#FFD700" }}>alle poules tegelijk</strong> — één keer invullen.
           {myPredCount > 0 && (
-            <span className="ml-2 text-green-400">({myPredCount} ingevuld in deze ronde)</span>
+            <span className="ml-2" style={{ color: "#2d5a2d" }}>({myPredCount} ingevuld in deze ronde)</span>
           )}
         </p>
       </div>
@@ -104,7 +104,7 @@ export default async function PredictionsPage({
       {myPools.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-gray-400 shrink-0" style={{ fontFamily: "var(--font-pixel)", fontSize: "7px" }}>
+            <span className="font-bold shrink-0" style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#555577" }}>
               BEKIJK:
             </span>
             <Link
@@ -149,7 +149,7 @@ export default async function PredictionsPage({
           </div>
 
           {viewUser && (
-            <div className="mt-2 px-2 py-1 text-xs font-bold inline-block" style={{ background: "#FFD700", border: "2px solid #1a1a2e", color: "#1a1a2e" }}>
+            <div className="mt-2 px-2 py-1 font-bold inline-block" style={{ background: "#1a1200", border: "2px solid #FFD700", color: "#FFD700", fontSize: "11px", boxShadow: "2px 2px 0 #000" }}>
               👁 Picks van {viewUser.name}
             </div>
           )}
@@ -172,7 +172,7 @@ export default async function PredictionsPage({
 
       {/* Wedstrijdlijst */}
       {matches.length === 0 ? (
-        <div className="pixel-card p-8 text-center text-gray-500 text-sm">
+        <div className="pixel-card p-8 text-center text-sm" style={{ color: "#444466" }}>
           Nog geen wedstrijden gepland voor deze ronde.
         </div>
       ) : (
@@ -185,7 +185,7 @@ export default async function PredictionsPage({
             const isOwnView = viewUserId === session.user.id
 
             return (
-              <div key={match.id} style={{ borderBottom: "2px solid #e5e7eb" }}>
+              <div key={match.id}>
                 <CompactMatchRow
                   match={{
                     id: match.id,

@@ -69,18 +69,17 @@ export function CompactMatchRow({
   })
 
   return (
-    <div
-      className="pixel-card rounded-none"
-      style={{ borderLeft: "none", borderRight: "none", borderTop: "none", boxShadow: "none" }}
-    >
+    <div style={{ background: "#161928", borderBottom: "2px solid #1a1d30" }}>
       {/* Top meta bar */}
-      <div className="flex items-center justify-between px-3 pt-2 pb-1 text-xs" style={{ borderBottom: "1px solid #e5e7eb" }}>
-        <span className="text-gray-400">
-          {match.groupName && <span className="font-semibold text-gray-500 mr-1">{formatGroup(match.groupName)} ·</span>}
+      <div className="flex items-center justify-between px-3 pt-2 pb-1" style={{ borderBottom: "1px solid #1a1d30", fontSize: "10px" }}>
+        <span style={{ color: "#444466" }}>
+          {match.groupName && (
+            <span className="font-semibold mr-1" style={{ color: "#555577" }}>{formatGroup(match.groupName)} ·</span>
+          )}
           {dateStr}
         </span>
-        <span className={`font-bold ${locked ? "text-red-400" : "text-green-500"}`}>
-          {locked ? "🔒" : `Sluit: ${deadlineStr}`}
+        <span className="font-bold" style={{ color: locked ? "#cc2222" : "#4af56a", fontSize: "9px" }}>
+          {locked ? "🔒 GESLOTEN" : `Sluit: ${deadlineStr}`}
         </span>
       </div>
 
@@ -89,7 +88,7 @@ export function CompactMatchRow({
         {/* Thuisploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="sm" />}
-          <span className="font-semibold text-sm text-gray-900 truncate">{homeName}</span>
+          <span className="font-semibold text-sm truncate" style={{ color: "#e0e0f0" }}>{homeName}</span>
         </div>
 
         {/* Midden: score of invoer */}
@@ -102,28 +101,27 @@ export function CompactMatchRow({
                 value={home}
                 onChange={(e) => { setHome(e.target.value); setSaved(false) }}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                className="w-10 text-center font-bold text-sm py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                style={{ border: "2px solid #1a1a2e" }}
+                className="pixel-input w-10 text-center font-bold text-sm py-1"
                 placeholder="–"
               />
-              <span className="text-gray-400 font-bold text-sm">–</span>
+              <span className="font-bold text-sm" style={{ color: "#444466" }}>–</span>
               <input
                 type="number" min={0} max={20}
                 value={away}
                 onChange={(e) => { setAway(e.target.value); setSaved(false) }}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                className="w-10 text-center font-bold text-sm py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                style={{ border: "2px solid #1a1a2e" }}
+                className="pixel-input w-10 text-center font-bold text-sm py-1"
                 placeholder="–"
               />
               <button
                 onClick={handleSave}
                 disabled={isPending || home === "" || away === ""}
-                className="px-2 py-1 text-xs font-bold disabled:opacity-40 transition-all"
+                className="px-2 py-1 font-bold disabled:opacity-40 transition-all"
                 style={{
                   background: saved && !error ? "#16a34a" : "#FF6200",
                   color: "white",
-                  border: "2px solid #1a1a2e",
+                  border: "2px solid #000",
+                  boxShadow: "2px 2px 0 #000",
                   fontFamily: "var(--font-pixel), monospace",
                   fontSize: "7px",
                   minWidth: "4rem",
@@ -135,51 +133,52 @@ export function CompactMatchRow({
           ) : finished ? (
             /* Eindstand */
             <div className="flex items-center gap-1">
-              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#1a1a2e", color: "#FFD700" }}>
+              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#000", color: "#FFD700", border: "2px solid #333" }}>
                 {match.homeScore}
               </span>
-              <span className="text-gray-400">–</span>
-              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#1a1a2e", color: "#FFD700" }}>
+              <span style={{ color: "#444466" }}>–</span>
+              <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{ background: "#000", color: "#FFD700", border: "2px solid #333" }}>
                 {match.awayScore}
               </span>
             </div>
           ) : (
-            <span className="font-pixel text-gray-300 px-2" style={{ fontSize: "9px" }}>VS</span>
+            <span className="font-pixel px-2" style={{ fontSize: "9px", color: "#333355" }}>VS</span>
           )}
         </div>
 
         {/* Uitploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-          <span className="font-semibold text-sm text-gray-900 truncate text-right">{awayName}</span>
+          <span className="font-semibold text-sm truncate text-right" style={{ color: "#e0e0f0" }}>{awayName}</span>
           {match.awayTeam?.code && <PixelFlag code={match.awayTeam.code} size="sm" />}
         </div>
       </div>
 
       {/* Voorspelling tonen (vergrendeld of anderen bekijken) */}
       {(!isOwnView || (isOwnView && locked)) && (
-        <div className="flex items-center justify-center gap-2 px-3 pb-2 text-xs" style={{ borderTop: "1px solid #f3f4f6" }}>
+        <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid #1a1d30", fontSize: "11px" }}>
           {viewPred ? (
             <>
-              <span className="text-gray-400">{isOwnView ? "Jouw pick:" : "Pick:"}</span>
+              <span style={{ color: "#444466" }}>{isOwnView ? "Jouw pick:" : "Pick:"}</span>
               <span className="font-pixel" style={{ color: "#FF6200", fontSize: "10px" }}>
                 {viewPred.homeScore} – {viewPred.awayScore}
               </span>
               {viewPred.pointsAwarded !== null && (
                 <span className="font-pixel px-1.5 py-0.5 text-white" style={{
-                  background: viewPred.pointsAwarded > 0 ? "#16a34a" : "#6b7280",
+                  background: viewPred.pointsAwarded > 0 ? "#16a34a" : "#333355",
                   fontSize: "7px",
+                  border: "1px solid #000",
                 }}>
                   +{viewPred.pointsAwarded}pt
                 </span>
               )}
             </>
           ) : (
-            <span className="text-gray-300 italic">Geen voorspelling</span>
+            <span className="italic" style={{ color: "#333355", fontSize: "10px" }}>Geen voorspelling</span>
           )}
         </div>
       )}
 
-      {error && <p className="text-center text-xs text-red-500 pb-2">{error}</p>}
+      {error && <p className="text-center text-xs pb-2" style={{ color: "#ff4444" }}>{error}</p>}
     </div>
   )
 }

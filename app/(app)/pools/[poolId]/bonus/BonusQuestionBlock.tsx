@@ -49,24 +49,22 @@ export function BonusQuestionBlock({
     <div>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="font-medium text-gray-900">{question.question}</p>
+          <p className="font-medium text-sm" style={{ color: "#e0e0f0" }}>{question.question}</p>
           {question.description && (
-            <p className="text-xs text-gray-500 mt-0.5">{question.description}</p>
+            <p className="text-xs mt-0.5" style={{ color: "#555577" }}>{question.description}</p>
           )}
         </div>
         {pointsAwarded !== null && pointsAwarded !== undefined && (
-          <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
-            pointsAwarded > 0 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-          }`}>
+          <span className={pointsAwarded > 0 ? "pixel-badge-green" : "pixel-badge-gray"}>
             {pointsAwarded > 0 ? `+${pointsAwarded} pt` : "0 pt"}
           </span>
         )}
       </div>
 
       {correctAnswer && (
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs mt-1" style={{ color: "#555577" }}>
           Correct antwoord:{" "}
-          <span className={`font-semibold ${isCorrect ? "text-green-600" : "text-gray-700"}`}>
+          <span className="font-semibold" style={{ color: isCorrect ? "#4af56a" : "#9999cc" }}>
             {correctAnswer}
           </span>
         </p>
@@ -75,11 +73,11 @@ export function BonusQuestionBlock({
       {locked ? (
         <div className="mt-2">
           {answer ? (
-            <span className="text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded-lg inline-block">
+            <span className="text-sm px-3 py-1 inline-block" style={{ background: "#0d0f1a", color: "#9999cc", border: "2px solid #2d2d50" }}>
               {answer}
             </span>
           ) : (
-            <span className="text-sm text-gray-400 italic">Geen antwoord opgegeven</span>
+            <span className="text-sm italic" style={{ color: "#333355" }}>Geen antwoord opgegeven</span>
           )}
         </div>
       ) : (
@@ -91,11 +89,13 @@ export function BonusQuestionBlock({
                   key={opt}
                   type="button"
                   onClick={() => { setAnswer(opt); setSaved(false) }}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    answer === opt
-                      ? "bg-orange-500 text-white border-orange-500"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-orange-400"
-                  }`}
+                  className="px-4 py-1.5 text-sm font-bold transition-all"
+                  style={{
+                    background: answer === opt ? "#FF6200" : "#1a1d30",
+                    color: answer === opt ? "white" : "#7070a0",
+                    border: answer === opt ? "2px solid #000" : "2px solid #2d2d50",
+                    boxShadow: answer === opt ? "2px 2px 0 #000" : "none",
+                  }}
                 >
                   {opt.charAt(0).toUpperCase() + opt.slice(1)}
                 </button>
@@ -108,7 +108,7 @@ export function BonusQuestionBlock({
               value={answer}
               onChange={(e) => { setAnswer(e.target.value); setSaved(false) }}
               placeholder="Schatting..."
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="pixel-input px-3 py-1.5 w-32"
             />
           ) : (
             <input
@@ -117,17 +117,25 @@ export function BonusQuestionBlock({
               value={answer}
               onChange={(e) => { setAnswer(e.target.value); setSaved(false) }}
               placeholder="Jouw antwoord..."
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="pixel-input px-3 py-1.5 flex-1 min-w-0"
             />
           )}
           <button
             type="submit"
             disabled={isPending || !answer}
-            className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0"
+            className="px-3 py-1.5 text-sm font-bold transition-colors disabled:opacity-50"
+            style={{
+              background: saved && !error ? "#16a34a" : "#FF6200",
+              color: "white",
+              border: "2px solid #000",
+              boxShadow: "2px 2px 0 #000",
+              fontFamily: "var(--font-pixel), monospace",
+              fontSize: "7px",
+            }}
           >
-            {isPending ? "..." : saved && !error ? "Opgeslagen ✓" : "Opslaan"}
+            {isPending ? "..." : saved && !error ? "✓ OPGESLAGEN" : "OPSLAAN"}
           </button>
-          {error && <p className="text-xs text-red-600 w-full">{error}</p>}
+          {error && <p className="text-xs w-full" style={{ color: "#ff4444" }}>{error}</p>}
         </form>
       )}
     </div>

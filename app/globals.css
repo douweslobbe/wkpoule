@@ -1,36 +1,41 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fefef2;
-  --color-foreground: #1a1a2e;
-  --color-pitch: #0a3d1f;
-  --color-pitch-light: #1a6b36;
+  --color-background: #0d0f1a;
+  --color-foreground: #e8e8f8;
+  --color-pitch: #071810;
+  --color-pitch-light: #0a2e18;
   --color-orange: #FF6200;
   --color-orange-dark: #cc4f00;
   --color-gold: #FFD700;
-  --color-pixel-black: #1a1a2e;
+  --color-pixel-black: #000000;
   --font-sans: var(--font-geist-sans);
   --font-pixel: var(--font-pixel);
 }
 
-/* Pixel art card - chunky black border + offset shadow */
+/* ═══════════════════════════════════════
+   PIXEL CARD — SNES dark panel
+═══════════════════════════════════════ */
 .pixel-card {
-  border: 3px solid #1a1a2e;
-  box-shadow: 4px 4px 0 #1a1a2e;
-  background: #fefef2;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  background: #161928;
+  color: #e8e8f8;
 }
 
 .pixel-card-orange {
-  border: 3px solid #1a1a2e;
-  box-shadow: 4px 4px 0 #1a1a2e;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
   background: #FF6200;
   color: white;
 }
 
-/* Pixel art button */
+/* ═══════════════════════════════════════
+   PIXEL BUTTON
+═══════════════════════════════════════ */
 .pixel-btn {
-  border: 3px solid #1a1a2e;
-  box-shadow: 3px 3px 0 #1a1a2e;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
   transition: all 0.05s;
   cursor: pointer;
   display: inline-block;
@@ -38,42 +43,140 @@
   text-decoration: none;
 }
 .pixel-btn:hover {
-  box-shadow: 2px 2px 0 #1a1a2e;
+  box-shadow: 2px 2px 0 #000;
   transform: translate(1px, 1px);
 }
 .pixel-btn:active {
-  box-shadow: 0px 0px 0 #1a1a2e;
+  box-shadow: 0px 0px 0 #000;
   transform: translate(3px, 3px);
 }
 
-/* Pixel font utility */
+/* ═══════════════════════════════════════
+   PIXEL FONT
+═══════════════════════════════════════ */
 .font-pixel {
   font-family: var(--font-pixel), monospace;
 }
 
-/* Pitch background grid pattern */
+/* ═══════════════════════════════════════
+   PITCH BACKGROUND — dark SNES grid
+═══════════════════════════════════════ */
 .pitch-bg {
-  background-color: #0a3d1f;
+  background-color: #060a06;
   background-image:
-    linear-gradient(rgba(26, 107, 54, 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26, 107, 54, 0.3) 1px, transparent 1px);
+    linear-gradient(rgba(0, 100, 30, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 100, 30, 0.18) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
-/* Pixel art tab active */
+/* ═══════════════════════════════════════
+   PIXEL TABS
+═══════════════════════════════════════ */
 .pixel-tab-active {
   background: #FF6200;
-  color: white;
-  border: 3px solid #1a1a2e;
-  box-shadow: 3px 3px 0 #1a1a2e;
+  color: #fff;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .pixel-tab-inactive {
-  background: #fefef2;
-  color: #1a1a2e;
-  border: 3px solid #1a1a2e;
-  box-shadow: 2px 2px 0 #1a1a2e;
+  background: #1a1d30;
+  color: #7070a0;
+  border: 2px solid #2d2d50;
+  box-shadow: 1px 1px 0 #000;
 }
 .pixel-tab-inactive:hover {
-  background: #fff8e0;
+  background: #222540;
+  color: #a0a0cc;
+  border-color: #4444aa;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL INPUT — retro dark style
+═══════════════════════════════════════ */
+.pixel-input {
+  background: #0a0c18;
+  border: 2px solid #333360;
+  color: #e8e8f8;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 0.875rem;
+}
+.pixel-input:focus {
+  outline: none;
+  border-color: #FF6200;
+  box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.25);
+}
+.pixel-input::placeholder {
+  color: #33335a;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL LIST — team picker, etc.
+═══════════════════════════════════════ */
+.pixel-list {
+  background: #0a0c18;
+  border: 2px solid #2d2d50;
+  overflow-y: auto;
+  max-height: 16rem;
+}
+.pixel-list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #1a1d30;
+  cursor: pointer;
+  color: #c0c0e0;
+  text-align: left;
+  background: transparent;
+  transition: background 0.05s;
+}
+.pixel-list-item:hover {
+  background: #1e2140;
+}
+.pixel-list-item.selected {
+  background: #2a1500;
+  color: #FF6200;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL BADGE — points pill
+═══════════════════════════════════════ */
+.pixel-badge-green {
+  background: #0d3318;
+  color: #4ade80;
+  border: 1px solid #16a34a;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  font-weight: 700;
+}
+.pixel-badge-gray {
+  background: #1e1e30;
+  color: #6b6b90;
+  border: 1px solid #333354;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════
+   CRT SCANLINES — subtle overlay
+═══════════════════════════════════════ */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
 }

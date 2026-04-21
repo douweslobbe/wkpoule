@@ -98,34 +98,35 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
     <div>
       <PoolSubNav poolId={poolId} />
 
-      <div className="pixel-card p-4 mb-6" style={{ background: "#fff8e0" }}>
-        <p className="text-xs text-gray-700">
-          <strong>7 punten</strong> per goed beantwoorde bonusvraag ·{" "}
-          <strong>15 punten</strong> voor de juiste kampioen<br />
-          Deadline: <strong>
+      <div className="pixel-card p-4 mb-6" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
+        <p className="text-xs" style={{ color: "#9999cc" }}>
+          <span style={{ color: "#FFD700", fontWeight: "bold" }}>7 punten</span> per goed beantwoorde bonusvraag ·{" "}
+          <span style={{ color: "#FFD700", fontWeight: "bold" }}>15 punten</span> voor de juiste kampioen<br />
+          Deadline:{" "}
+          <span style={{ color: "#FF6200", fontWeight: "bold" }}>
             {TOURNAMENT_START.toLocaleString("nl-NL", {
               weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
             })}
-          </strong>
+          </span>
         </p>
       </div>
 
       {/* Kampioen kiezen */}
       <div className="pixel-card mb-6 overflow-hidden">
-        <div className="px-5 py-3" style={{ background: "#FFD700", borderBottom: "3px solid #1a1a2e" }}>
-          <h2 className="font-pixel text-pixel-black" style={{ fontSize: "9px" }}>🏆 KAMPIOEN KIEZEN</h2>
-          <p className="text-xs mt-1 font-bold text-gray-700">15 punten · deadline start toernooi</p>
+        <div className="px-5 py-3" style={{ background: "#1a1200", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel" style={{ fontSize: "9px", color: "#FFD700" }}>🏆 KAMPIOEN KIEZEN</h2>
+          <p className="mt-1 font-bold" style={{ fontSize: "10px", color: "#666644" }}>15 punten · deadline start toernooi</p>
         </div>
         <div className="p-5">
           {locked ? (
             <div>
               {myPick && (
-                <div className="flex items-center gap-3 mb-4 p-3 bg-yellow-50" style={{ border: "2px solid #1a1a2e" }}>
+                <div className="flex items-center gap-3 mb-4 p-3" style={{ background: "#1e1200", border: "2px solid #FF6200", boxShadow: "2px 2px 0 #000" }}>
                   <span className="text-2xl">🔒</span>
                   <PixelFlag code={myPick.team.code} size="md" />
-                  <span className="font-bold text-gray-900">{myPick.team.nameNl ?? myPick.team.name}</span>
+                  <span className="font-bold" style={{ color: "#e0e0f0" }}>{myPick.team.nameNl ?? myPick.team.name}</span>
                   {myPick.pointsAwarded !== null && (
-                    <span className="ml-auto font-pixel text-xs" style={{ color: myPick.pointsAwarded > 0 ? "#16a34a" : "#6b7280" }}>
+                    <span className="ml-auto font-pixel" style={{ fontSize: "9px", color: myPick.pointsAwarded > 0 ? "#4af56a" : "#444466" }}>
                       {myPick.pointsAwarded > 0 ? `+${myPick.pointsAwarded}pt` : "0pt"}
                     </span>
                   )}
@@ -133,14 +134,14 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
               )}
               {poolChampionPicks.length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-bold text-gray-500 uppercase mb-2">Alle picks:</p>
+                  <p className="mb-2 font-pixel uppercase" style={{ fontSize: "7px", color: "#555577" }}>Alle picks:</p>
                   {poolChampionPicks.map((pick) => (
-                    <div key={pick.id} className="flex items-center gap-2 py-1.5 text-sm">
+                    <div key={pick.id} className="flex items-center gap-2 py-1.5 text-sm" style={{ borderBottom: "1px solid #1a1d30" }}>
                       <PixelFlag code={pick.team.code} size="sm" />
-                      <span className="flex-1 text-gray-700">{pick.user.name}</span>
-                      <span className="font-semibold">{pick.team.nameNl ?? pick.team.name}</span>
+                      <span className="flex-1" style={{ color: "#8888aa" }}>{pick.user.name}</span>
+                      <span className="font-semibold" style={{ color: "#e0e0f0" }}>{pick.team.nameNl ?? pick.team.name}</span>
                       {pick.pointsAwarded !== null && (
-                        <span className="font-pixel text-xs ml-2" style={{ color: pick.pointsAwarded > 0 ? "#16a34a" : "#6b7280" }}>
+                        <span className="font-pixel ml-2" style={{ fontSize: "7px", color: pick.pointsAwarded > 0 ? "#4af56a" : "#444466" }}>
                           {pick.pointsAwarded > 0 ? `+${pick.pointsAwarded}` : "0"}
                         </span>
                       )}
@@ -159,8 +160,8 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
 
           {/* Poule-verdeling (altijd zichtbaar, ook voor deadline) */}
           {sortedChampPicks.length > 0 && (
-            <div className="mt-5 pt-4 border-t-2 border-gray-200">
-              <p className="text-xs font-bold text-gray-500 uppercase mb-3">
+            <div className="mt-5 pt-4" style={{ borderTop: "2px solid #1a1d30" }}>
+              <p className="mb-3 font-pixel uppercase" style={{ fontSize: "7px", color: "#555577" }}>
                 Kampioenskeuze in de pool ({poolChampionPicks.length}/{memberCount} gekozen):
               </p>
               <div className="space-y-2">
@@ -170,25 +171,25 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                   return (
                     <div key={teamId} className="flex items-center gap-2">
                       <PixelFlag code={info.teamCode} size="sm" />
-                      <div className="flex-1 relative h-6 overflow-hidden" style={{ border: "2px solid #1a1a2e" }}>
+                      <div className="flex-1 relative h-6 overflow-hidden" style={{ border: "2px solid #000" }}>
                         <div
                           className="h-full transition-all"
-                          style={{ width: `${pct}%`, background: isMyPick ? "#FF6200" : "#1a6b36" }}
+                          style={{ width: `${pct}%`, background: isMyPick ? "#FF6200" : "#0a3d1f" }}
                         />
-                        <span className="absolute inset-0 flex items-center px-2 text-xs font-bold" style={{ color: "#fefef2" }}>
+                        <span className="absolute inset-0 flex items-center px-2 text-xs font-bold" style={{ color: "#e0e0f0" }}>
                           {info.teamName}
                         </span>
                       </div>
-                      <span className="text-xs font-bold w-8 text-right">{info.count}×</span>
+                      <span className="text-xs font-bold w-8 text-right" style={{ color: "#9999cc" }}>{info.count}×</span>
                       {isMyPick && (
-                        <span className="text-xs font-pixel" style={{ color: "#FF6200", fontSize: "7px" }}>◄ JIJ</span>
+                        <span className="font-pixel" style={{ color: "#FF6200", fontSize: "7px" }}>◄ JIJ</span>
                       )}
                     </div>
                   )
                 })}
               </div>
               {!locked && myPick && (
-                <p className="text-xs text-gray-400 mt-2 italic">
+                <p className="text-xs mt-2 italic" style={{ color: "#444466" }}>
                   Tip: anderen zien jouw keuze pas na de deadline.
                 </p>
               )}
@@ -204,22 +205,22 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
           if (!qs?.length) return null
           return (
             <div key={type} className="pixel-card overflow-hidden">
-              <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #1a1a2e" }}>
+              <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
                 <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>{TYPE_LABELS[type].toUpperCase()}</h2>
                 {type === "ESTIMATION" && (
-                  <p className="text-xs text-green-300 mt-0.5">3 dichtstbijzijnde voorspellingen worden beloond.</p>
+                  <p className="mt-0.5" style={{ fontSize: "10px", color: "#4af56a" }}>3 dichtstbijzijnde voorspellingen worden beloond.</p>
                 )}
                 {type === "STATEMENT" && (
-                  <p className="text-xs text-green-300 mt-0.5">Kies Eens of Oneens.</p>
+                  <p className="mt-0.5" style={{ fontSize: "10px", color: "#4af56a" }}>Kies Eens of Oneens.</p>
                 )}
               </div>
-              <div className="divide-y-2 divide-gray-200">
+              <div>
                 {qs.map((q) => {
                   const ans = answerMap.get(q.id)
                   const deadline = q.deadline ?? TOURNAMENT_START
                   const qLocked = now > deadline
                   return (
-                    <div key={q.id} className="px-5 py-4">
+                    <div key={q.id} className="px-5 py-4" style={{ borderBottom: "2px solid #1a1d30" }}>
                       <BonusQuestionBlock
                         question={q}
                         currentAnswer={ans?.answer}

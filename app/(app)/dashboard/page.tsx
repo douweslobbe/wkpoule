@@ -51,7 +51,6 @@ export default async function DashboardPage() {
         : null
 
     const maxBonus = myEntry ? myEntry.bonusPoints + (bonusTotal - bonusScored) * 7 : bonusTotal * 7
-    const hasChampion = lb.some((e) => e.userId === session.user.id && e.championPoints === 0)
     const maxPossible = (projectedMatchPts ?? 0) + maxBonus + (myEntry?.championPoints === 0 ? 15 : myEntry?.championPoints ?? 0)
 
     return { pool, role, myEntry, rank, total, projectedTotal, maxPossible, bonusTotal, bonusScored }
@@ -62,20 +61,20 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-pixel text-white mb-1" style={{ fontSize: "10px" }}>
-          WELKOM, {session.user.name.toUpperCase()}!
+          WELKOM, <span style={{ color: "#FFD700" }}>{session.user.name?.toUpperCase()}!</span>
         </h1>
-        <p className="text-green-300 text-xs">
+        <p className="font-pixel mt-1" style={{ fontSize: "7px", color: completedMatches > 0 ? "#4af56a" : "#555577" }}>
           {completedMatches > 0
-            ? `${completedMatches}/${TOTAL_MATCHES} wedstrijden gespeeld`
-            : "WK 2026 start 11 juni · Zet alvast je voorspellingen klaar!"}
+            ? `${completedMatches}/${TOTAL_MATCHES} WEDSTRIJDEN GESPEELD`
+            : "WK 2026 START 11 JUNI · ZET ALVAST JE VOORSPELLINGEN KLAAR!"}
         </p>
       </div>
 
       {memberships.length === 0 ? (
         <div className="pixel-card p-10 text-center">
           <div className="text-5xl mb-4">⚽</div>
-          <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#1a1a2e" }}>GEEN POULES</h2>
-          <p className="text-gray-500 text-sm mb-6">
+          <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#FFD700" }}>GEEN POULES</h2>
+          <p className="text-sm mb-6" style={{ color: "#666688" }}>
             Maak een nieuwe poule aan of doe mee via een uitnodigingscode.
           </p>
           <div className="flex gap-3 justify-center">
@@ -84,7 +83,7 @@ export default async function DashboardPage() {
               Poule aanmaken
             </Link>
             <Link href="/pools/join" className="pixel-btn px-5 py-2.5 text-sm font-bold"
-              style={{ background: "#fefef2", color: "#1a1a2e" }}>
+              style={{ background: "#1a1d30", color: "#e0e0f0", border: "2px solid #333360" }}>
               Meedoen met code
             </Link>
           </div>
@@ -93,68 +92,80 @@ export default async function DashboardPage() {
         <>
           {/* Mijn standings per poule */}
           <div className="pixel-card overflow-hidden mb-6">
-            <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #1a1a2e" }}>
+            <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
               <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 MIJN TUSSENSTANDEN</h2>
               {completedMatches > 0 && (
-                <p className="text-green-300 text-xs mt-1">Prognose = huidig tempo × 104 wedstrijden</p>
+                <p className="mt-1" style={{ fontSize: "10px", color: "#4af56a" }}>Prognose = huidig tempo × 104 wedstrijden</p>
               )}
             </div>
 
             {/* Header */}
-            <div className="hidden sm:grid px-5 py-2 text-xs font-bold text-gray-400 uppercase border-b-2 border-gray-200"
-              style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
+            <div className="hidden sm:grid px-5 py-2 font-bold uppercase"
+              style={{
+                gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem",
+                fontSize: "8px",
+                color: "#555577",
+                borderBottom: "2px solid #1a1d30",
+                fontFamily: "var(--font-pixel), monospace",
+              }}>
               <span>Poule</span>
               <span className="text-center">Positie</span>
-              <span className="text-center">⚽ De Wedstrijden</span>
-              <span className="text-center">🏆 Het Grote Plaatje</span>
-              <span className="text-center font-pixel" style={{ fontSize: "7px" }}>TOTAAL</span>
-              <span className="text-center text-blue-400">📈 Prognose</span>
+              <span className="text-center">⚽ Wedstr.</span>
+              <span className="text-center">🏆 Plaatje</span>
+              <span className="text-center">TOTAAL</span>
+              <span className="text-center" style={{ color: "#4499ff" }}>📈 Prognose</span>
             </div>
 
-            <div className="divide-y-2 divide-gray-200">
+            <div>
               {poolStandings.map(({ pool, role, myEntry, rank, total, projectedTotal, maxPossible }) => (
                 <Link
                   key={pool.id}
                   href={`/pools/${pool.id}`}
-                  className="block hover:bg-yellow-50 transition-colors"
+                  className="block transition-colors"
+                  style={{ borderBottom: "2px solid #1a1d30" }}
                 >
                   {/* Desktop */}
                   <div className="hidden sm:grid px-5 py-3 items-center gap-2"
-                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
+                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#1a1d30")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "")}>
                     <div>
-                      <span className="font-bold text-sm text-gray-900">{pool.name}</span>
+                      <span className="font-bold text-sm" style={{ color: "#e0e0f0" }}>{pool.name}</span>
                       {role === "ADMIN" && (
-                        <span className="ml-2 text-xs px-1.5 py-0.5 font-pixel"
-                          style={{ background: "#FFD700", color: "#1a1a2e", fontSize: "6px" }}>
+                        <span className="ml-2 px-1.5 py-0.5 font-pixel"
+                          style={{ background: "#FFD700", color: "#000", fontSize: "6px" }}>
                           ADMIN
                         </span>
                       )}
                     </div>
                     <div className="text-center">
                       {rank ? (
-                        <span className="font-pixel text-sm" style={{ color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "#1a1a2e", fontSize: "11px" }}>
+                        <span className="font-pixel" style={{
+                          color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "#9999cc",
+                          fontSize: "11px",
+                        }}>
                           {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
-                          <span className="text-xs font-normal text-gray-400">/{total}</span>
+                          <span style={{ fontSize: "9px", color: "#444466" }}>/{total}</span>
                         </span>
                       ) : (
-                        <span className="text-gray-300 text-xs">—</span>
+                        <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
                       )}
                     </div>
-                    <span className="text-center text-sm text-gray-700">{myEntry?.matchPoints ?? 0}</span>
-                    <span className="text-center text-sm text-gray-700">{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
-                    <span className="text-center font-pixel" style={{ color: "#FF6200", fontSize: "11px" }}>
+                    <span className="text-center text-sm" style={{ color: "#9999cc" }}>{myEntry?.matchPoints ?? 0}</span>
+                    <span className="text-center text-sm" style={{ color: "#9999cc" }}>{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
+                    <span className="text-center font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
                       {myEntry?.totalPoints ?? 0}
                     </span>
-                    <span className="text-center text-sm font-semibold text-blue-600">
+                    <span className="text-center text-sm font-semibold" style={{ color: "#4499ff" }}>
                       {projectedTotal !== null ? (
                         <span title={`Max mogelijk: ${maxPossible}`}>
                           ~{projectedTotal}
                           {completedMatches < TOTAL_MATCHES && (
-                            <span className="text-xs text-gray-400 ml-0.5">/{maxPossible}</span>
+                            <span className="text-xs ml-0.5" style={{ color: "#333366" }}>/{maxPossible}</span>
                           )}
                         </span>
                       ) : (
-                        <span className="text-gray-300 text-xs">—</span>
+                        <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
                       )}
                     </span>
                   </div>
@@ -162,20 +173,20 @@ export default async function DashboardPage() {
                   {/* Mobile */}
                   <div className="sm:hidden px-4 py-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm text-gray-900 truncate">{pool.name}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">
-                        ⚽{myEntry?.matchPoints ?? 0} + ❓{myEntry?.bonusPoints ?? 0} + 🏆{myEntry?.championPoints ?? 0}
+                      <div className="font-bold text-sm truncate" style={{ color: "#e0e0f0" }}>{pool.name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "#444466" }}>
+                        ⚽{myEntry?.matchPoints ?? 0} + 🏆{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}
                       </div>
                     </div>
                     <div className="text-right">
                       {rank && (
-                        <div className="text-xs text-gray-500">#{rank}/{total}</div>
+                        <div style={{ fontSize: "10px", color: "#555577" }}>#{rank}/{total}</div>
                       )}
-                      <div className="font-pixel" style={{ color: "#FF6200", fontSize: "11px" }}>
+                      <div className="font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
                         {myEntry?.totalPoints ?? 0}pt
                       </div>
                       {projectedTotal !== null && (
-                        <div className="text-xs text-blue-500">~{projectedTotal}</div>
+                        <div className="text-xs" style={{ color: "#4499ff" }}>~{projectedTotal}</div>
                       )}
                     </div>
                   </div>
@@ -183,46 +194,49 @@ export default async function DashboardPage() {
               ))}
             </div>
 
-            <div className="px-5 py-3 border-t-2 border-gray-200 bg-gray-50 text-xs text-gray-500 flex flex-wrap gap-4">
-              <span>⚽ wedstrijdpunten · 🏆 bonuspunten + kampioenspunten</span>
+            <div className="px-5 py-3 flex flex-wrap gap-4"
+              style={{ borderTop: "2px solid #1a1d30", background: "#0d0f1a", fontSize: "10px", color: "#444466" }}>
+              <span>⚽ wedstrijdpunten · 🏆 bonus + kampioen</span>
               {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn</span>}
             </div>
           </div>
 
           {/* Snelle acties */}
           <div className="grid gap-3 sm:grid-cols-3 mb-6">
-            <Link href="/predictions" className="pixel-card p-4 flex items-center gap-3 hover:bg-yellow-50 transition-colors">
+            <Link href="/predictions" className="pixel-card p-4 flex items-center gap-3 transition-colors"
+              style={{ borderLeft: "4px solid #FF6200" }}>
               <span className="text-2xl">⚽</span>
               <div>
-                <div className="font-pixel" style={{ fontSize: "8px", color: "#1a1a2e" }}>DE WEDSTRIJDEN</div>
-                <div className="text-xs text-gray-500 mt-0.5">Voorspellingen invullen</div>
-                <div className="text-xs text-green-600 font-semibold mt-0.5">Geldt voor alle poules</div>
+                <div className="font-pixel" style={{ fontSize: "8px", color: "#FF6200" }}>DE WEDSTRIJDEN</div>
+                <div className="text-xs mt-0.5" style={{ color: "#666688" }}>Voorspellingen invullen</div>
+                <div className="text-xs font-semibold mt-0.5" style={{ color: "#4af56a" }}>Geldt voor alle poules</div>
               </div>
             </Link>
 
             {memberships.slice(0, 1).map(({ pool }) => (
-              <Link key={pool.id} href={`/pools/${pool.id}/bonus`} className="pixel-card p-4 flex items-center gap-3 hover:bg-yellow-50 transition-colors">
+              <Link key={pool.id} href={`/pools/${pool.id}/bonus`} className="pixel-card p-4 flex items-center gap-3 transition-colors"
+                style={{ borderLeft: "4px solid #FFD700" }}>
                 <span className="text-2xl">🏆</span>
                 <div>
-                  <div className="font-pixel" style={{ fontSize: "8px", color: "#1a1a2e" }}>HET GROTE PLAATJE</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Bonus & kampioen kiezen</div>
+                  <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>HET GROTE PLAATJE</div>
+                  <div className="text-xs mt-0.5" style={{ color: "#666688" }}>Bonus & kampioen kiezen</div>
                 </div>
               </Link>
             ))}
 
-            <Link href="/pools/new" className="pixel-card p-4 flex items-center gap-3 hover:bg-yellow-50 transition-colors"
-              style={{ borderStyle: "dashed" }}>
-              <span className="text-2xl">+</span>
+            <Link href="/pools/new" className="pixel-card p-4 flex items-center gap-3 transition-colors"
+              style={{ borderStyle: "dashed", borderLeft: "4px dashed #2d2d50" }}>
+              <span className="text-2xl" style={{ color: "#4af56a" }}>+</span>
               <div>
-                <div className="font-pixel" style={{ fontSize: "8px", color: "#1a1a2e" }}>NIEUWE POULE</div>
-                <div className="text-xs text-gray-500 mt-0.5">Aanmaken of meedoen</div>
+                <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>NIEUWE POULE</div>
+                <div className="text-xs mt-0.5" style={{ color: "#444466" }}>Aanmaken of meedoen</div>
               </div>
             </Link>
           </div>
 
           {/* Code meedoen link */}
           <div className="text-center">
-            <Link href="/pools/join" className="text-sm font-bold hover:underline" style={{ color: "#FFD700" }}>
+            <Link href="/pools/join" className="font-bold text-sm hover:underline" style={{ color: "#FFD700" }}>
               Meedoen met een bestaande poule via uitnodigingscode →
             </Link>
           </div>

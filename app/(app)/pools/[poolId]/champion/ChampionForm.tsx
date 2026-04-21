@@ -41,15 +41,21 @@ export function ChampionForm({
 
   return (
     <div>
-      <h2 className="font-semibold text-gray-900 mb-3">Wie wordt wereldkampioen?</h2>
+      <h2 className="font-pixel mb-3" style={{ fontSize: "8px", color: "#9999cc" }}>
+        WIE WORDT WERELDKAMPIOEN?
+      </h2>
 
       {selectedTeam && (
-        <div className="flex items-center gap-2 mb-4 p-3 bg-orange-50 rounded-xl border border-orange-200">
+        <div className="flex items-center gap-2 mb-4 p-3" style={{
+          background: "#1e1200",
+          border: "2px solid #FF6200",
+          boxShadow: "2px 2px 0 #000",
+        }}>
           {selectedTeam.flagUrl && (
-            <img src={selectedTeam.flagUrl} alt="" className="w-9 h-7 object-contain" />
+            <img src={selectedTeam.flagUrl} alt="" className="w-9 h-7 object-contain" style={{ imageRendering: "pixelated" }} />
           )}
-          <span className="font-semibold text-orange-800">{selectedTeam.name}</span>
-          <span className="ml-auto text-xs text-orange-600">geselecteerd</span>
+          <span className="font-bold text-sm" style={{ color: "#FF6200" }}>{selectedTeam.name}</span>
+          <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>GESELECTEERD ◄</span>
         </div>
       )}
 
@@ -58,40 +64,48 @@ export function ChampionForm({
         placeholder="Zoek land..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        className="pixel-input w-full px-3 py-2 mb-3"
       />
 
-      <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
+      <div className="pixel-list">
         {filtered.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => { setSelected(t.id); setSaved(false) }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors ${
-              selected === t.id ? "bg-orange-50" : ""
-            }`}
+            className={`pixel-list-item ${selected === t.id ? "selected" : ""}`}
           >
-            {t.flagUrl && <img src={t.flagUrl} alt="" className="w-7 h-5 object-contain shrink-0" />}
-            <span className={`text-sm font-medium ${selected === t.id ? "text-orange-700" : "text-gray-700"}`}>
-              {t.name}
-            </span>
-            {selected === t.id && <span className="ml-auto text-orange-500 text-xs">✓</span>}
+            {t.flagUrl && (
+              <img src={t.flagUrl} alt="" className="w-7 h-5 object-contain shrink-0" style={{ imageRendering: "pixelated" }} />
+            )}
+            <span className="text-sm font-medium">{t.name}</span>
+            {selected === t.id && (
+              <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>✓</span>
+            )}
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-6">Geen landen gevonden</p>
+          <p className="text-center text-sm py-6" style={{ color: "#333355" }}>Geen landen gevonden</p>
         )}
       </div>
 
-      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-xs mt-2" style={{ color: "#ff4444" }}>{error}</p>}
 
       <button
         type="button"
         onClick={handleSave}
         disabled={!selected || isPending}
-        className="mt-4 w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
+        className="mt-4 w-full py-2.5 font-bold transition-colors disabled:opacity-50"
+        style={{
+          background: saved && !error ? "#16a34a" : "#FF6200",
+          color: "white",
+          border: "3px solid #000",
+          boxShadow: "3px 3px 0 #000",
+          fontFamily: "var(--font-pixel), monospace",
+          fontSize: "8px",
+        }}
       >
-        {isPending ? "Opslaan..." : saved ? "Opgeslagen ✓" : "Kampioen opslaan"}
+        {isPending ? "OPSLAAN..." : saved && !error ? "✓ OPGESLAGEN" : "KAMPIOEN OPSLAAN"}
       </button>
     </div>
   )
