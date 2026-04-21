@@ -1,5 +1,6 @@
 import { PrismaClient, MatchStage, MatchStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { getDutchName } from "../lib/dutch-names"
 
 const prisma = new PrismaClient()
 
@@ -93,14 +94,14 @@ async function main() {
         where: { externalId: t.id },
         create: {
           name: t.name,
-          nameNl: t.shortName ?? t.name,
+          nameNl: getDutchName(t.name) !== t.name ? getDutchName(t.name) : (t.shortName ?? t.name),
           code: t.tla,
           flagUrl: t.crest,
           externalId: t.id,
         },
         update: {
           name: t.name,
-          nameNl: t.shortName ?? t.name,
+          nameNl: getDutchName(t.name) !== t.name ? getDutchName(t.name) : (t.shortName ?? t.name),
           code: t.tla,
           flagUrl: t.crest,
         },

@@ -4,6 +4,11 @@ import { useState, useTransition } from "react"
 import { savePrediction } from "@/lib/actions"
 import { PixelFlag } from "@/components/PixelFlag"
 
+function formatGroup(g: string | null): string {
+  if (!g) return ""
+  return g.replace(/^GROUP_/, "Groep ").replace(/_/g, " ")
+}
+
 type Match = {
   id: string
   groupName: string | null
@@ -71,7 +76,7 @@ export function CompactMatchRow({
       {/* Top meta bar */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1 text-xs" style={{ borderBottom: "1px solid #e5e7eb" }}>
         <span className="text-gray-400">
-          {match.groupName && <span className="font-semibold text-gray-500 mr-1">{match.groupName}</span>}
+          {match.groupName && <span className="font-semibold text-gray-500 mr-1">{formatGroup(match.groupName)} ·</span>}
           {dateStr}
         </span>
         <span className={`font-bold ${locked ? "text-red-400" : "text-green-500"}`}>

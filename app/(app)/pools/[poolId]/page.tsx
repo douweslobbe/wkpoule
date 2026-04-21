@@ -103,12 +103,11 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
           <div>
             {/* Header row */}
             <div className="hidden sm:grid px-5 py-2 text-xs font-bold text-gray-400 uppercase tracking-wide border-b-2 border-gray-200"
-              style={{ gridTemplateColumns: "2rem 1fr 4.5rem 4.5rem 4.5rem 5rem 5rem" }}>
+              style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
               <span>#</span>
               <span>Speler</span>
-              <span className="text-center">⚽ Wedstr.</span>
-              <span className="text-center">❓ Bonus</span>
-              <span className="text-center">🏆 Kamp.</span>
+              <span className="text-center">⚽ De Wedstrijden</span>
+              <span className="text-center">🏆 Het Grote Plaatje</span>
               <span className="text-center font-pixel" style={{ fontSize: "7px" }}>TOTAAL</span>
               <span className="text-center text-blue-400">📈 Prognose</span>
             </div>
@@ -138,7 +137,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                   >
                     {/* Desktop: grid layout */}
                     <div className="hidden sm:grid items-center gap-2"
-                      style={{ gridTemplateColumns: "2rem 1fr 4.5rem 4.5rem 4.5rem 5rem 5rem" }}>
+                      style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
                       <span className="text-lg">{medal}</span>
                       <span className={`font-bold text-sm truncate ${isMe ? "" : "text-gray-800"}`}
                         style={{ color: isMe ? "#FF6200" : undefined }}>
@@ -146,8 +145,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                         {isMe && <span className="ml-1 text-xs font-normal opacity-60">◄ jij</span>}
                       </span>
                       <span className="text-center text-sm text-gray-700">{entry.matchPoints}</span>
-                      <span className="text-center text-sm text-gray-700">{entry.bonusPoints}</span>
-                      <span className="text-center text-sm text-gray-700">{entry.championPoints}</span>
+                      <span className="text-center text-sm text-gray-700">{entry.bonusPoints + entry.championPoints}</span>
                       <span className="text-center font-pixel"
                         style={{ color: isMe ? "#FF6200" : "#1a1a2e", fontSize: "11px" }}>
                         {entry.totalPoints}
@@ -195,8 +193,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
             {/* Legend */}
             <div className="px-5 py-3 border-t-2 border-gray-200 bg-gray-50 text-xs text-gray-500 flex gap-4 flex-wrap">
               <span>⚽ wedstrijdpunten</span>
-              <span>❓ bonuspunten</span>
-              <span>🏆 kampioenspunten</span>
+              <span>🏆 bonuspunten + kampioenspunten</span>
               {completedMatches > 0 && <span className="text-blue-500">📈 prognose = huidig tempo × 104 wedstrijden</span>}
               {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn (start 11 juni)</span>}
             </div>

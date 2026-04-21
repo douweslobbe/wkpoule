@@ -260,12 +260,14 @@ export async function syncMatches() {
   const { fetchMatches, fetchTeams, mapStage, mapStatus } = await import("./football-data")
 
   // Sync teams
+  const { getDutchName } = await import("./dutch-names")
   const teams = await fetchTeams()
   for (const t of teams) {
+    const nameNl = getDutchName(t.name) !== t.name ? getDutchName(t.name) : (getDutchName(t.shortName) !== t.shortName ? getDutchName(t.shortName) : t.shortName ?? t.name)
     await prisma.team.upsert({
       where: { externalId: t.id },
-      create: { name: t.name, nameNl: t.shortName, code: t.tla, flagUrl: t.crest, externalId: t.id },
-      update: { name: t.name, nameNl: t.shortName, code: t.tla, flagUrl: t.crest },
+      create: { name: t.name, nameNl, code: t.tla, flagUrl: t.crest, externalId: t.id },
+      update: { name: t.name, nameNl, code: t.tla, flagUrl: t.crest },
     })
   }
 

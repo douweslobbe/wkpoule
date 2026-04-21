@@ -102,12 +102,11 @@ export default async function DashboardPage() {
 
             {/* Header */}
             <div className="hidden sm:grid px-5 py-2 text-xs font-bold text-gray-400 uppercase border-b-2 border-gray-200"
-              style={{ gridTemplateColumns: "1fr 4rem 4.5rem 4.5rem 4.5rem 5rem 5rem" }}>
+              style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
               <span>Poule</span>
               <span className="text-center">Positie</span>
-              <span className="text-center">⚽</span>
-              <span className="text-center">❓</span>
-              <span className="text-center">🏆</span>
+              <span className="text-center">⚽ De Wedstrijden</span>
+              <span className="text-center">🏆 Het Grote Plaatje</span>
               <span className="text-center font-pixel" style={{ fontSize: "7px" }}>TOTAAL</span>
               <span className="text-center text-blue-400">📈 Prognose</span>
             </div>
@@ -121,7 +120,7 @@ export default async function DashboardPage() {
                 >
                   {/* Desktop */}
                   <div className="hidden sm:grid px-5 py-3 items-center gap-2"
-                    style={{ gridTemplateColumns: "1fr 4rem 4.5rem 4.5rem 4.5rem 5rem 5rem" }}>
+                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
                     <div>
                       <span className="font-bold text-sm text-gray-900">{pool.name}</span>
                       {role === "ADMIN" && (
@@ -142,8 +141,7 @@ export default async function DashboardPage() {
                       )}
                     </div>
                     <span className="text-center text-sm text-gray-700">{myEntry?.matchPoints ?? 0}</span>
-                    <span className="text-center text-sm text-gray-700">{myEntry?.bonusPoints ?? 0}</span>
-                    <span className="text-center text-sm text-gray-700">{myEntry?.championPoints ?? 0}</span>
+                    <span className="text-center text-sm text-gray-700">{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
                     <span className="text-center font-pixel" style={{ color: "#FF6200", fontSize: "11px" }}>
                       {myEntry?.totalPoints ?? 0}
                     </span>
@@ -186,7 +184,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="px-5 py-3 border-t-2 border-gray-200 bg-gray-50 text-xs text-gray-500 flex flex-wrap gap-4">
-              <span>⚽ wedstrijdpunten · ❓ bonuspunten · 🏆 kampioenspunten</span>
+              <span>⚽ wedstrijdpunten · 🏆 bonuspunten + kampioenspunten</span>
               {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn</span>}
             </div>
           </div>
