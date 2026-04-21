@@ -99,7 +99,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
       <PoolSubNav poolId={poolId} />
 
       <div className="pixel-card p-4 mb-6" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
-        <p className="text-xs" style={{ color: "#9999cc" }}>
+        <p style={{ color: "#9999cc", fontSize: "8px", fontFamily: "var(--font-pixel), monospace", lineHeight: "2" }}>
           <span style={{ color: "#FFD700", fontWeight: "bold" }}>7 punten</span> per goed beantwoorde bonusvraag ·{" "}
           <span style={{ color: "#FFD700", fontWeight: "bold" }}>15 punten</span> voor de juiste kampioen<br />
           Deadline:{" "}
@@ -136,7 +136,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                 <div className="space-y-1.5">
                   <p className="mb-2 font-pixel uppercase" style={{ fontSize: "7px", color: "#555577" }}>Alle picks:</p>
                   {poolChampionPicks.map((pick) => (
-                    <div key={pick.id} className="flex items-center gap-2 py-1.5 text-sm" style={{ borderBottom: "1px solid #1a1d30" }}>
+                    <div key={pick.id} className="flex items-center gap-2 py-1.5" style={{ borderBottom: "1px solid #1a1d30", fontSize: "8px", fontFamily: "var(--font-pixel), monospace" }}>
                       <PixelFlag code={pick.team.code} size="sm" />
                       <span className="flex-1" style={{ color: "#8888aa" }}>{pick.user.name}</span>
                       <span className="font-semibold" style={{ color: "#e0e0f0" }}>{pick.team.nameNl ?? pick.team.name}</span>

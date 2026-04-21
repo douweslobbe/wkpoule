@@ -79,7 +79,7 @@ export function CompactMatchRow({
           {dateStr}
         </span>
         <span className="font-bold" style={{ color: locked ? "#cc2222" : "#4af56a", fontSize: "9px" }}>
-          {locked ? "🔒 GESLOTEN" : `Sluit: ${deadlineStr}`}
+          {locked ? "🔒 GESLOTEN" : `Deadline: ${deadlineStr}`}
         </span>
       </div>
 
@@ -88,7 +88,7 @@ export function CompactMatchRow({
         {/* Thuisploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="sm" />}
-          <span className="font-semibold text-sm truncate" style={{ color: "#e0e0f0" }}>{homeName}</span>
+          <span className="font-bold truncate" style={{ color: "#e0e0f0", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{homeName}</span>
         </div>
 
         {/* Midden: score of invoer */}
@@ -148,7 +148,7 @@ export function CompactMatchRow({
 
         {/* Uitploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-          <span className="font-semibold text-sm truncate text-right" style={{ color: "#e0e0f0" }}>{awayName}</span>
+          <span className="font-bold truncate text-right" style={{ color: "#e0e0f0", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{awayName}</span>
           {match.awayTeam?.code && <PixelFlag code={match.awayTeam.code} size="sm" />}
         </div>
       </div>

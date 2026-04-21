@@ -12,7 +12,7 @@ export function QuestionStats({
   myAnswer?: string
 }) {
   if (answers.length === 0) {
-    return <p className="text-xs mt-1 italic" style={{ color: "#333355" }}>Nog niemand beantwoord</p>
+    return <p className="mt-1 italic" style={{ color: "#333355", fontSize: "7px" }}>Nog niemand beantwoord</p>
   }
 
   if (type === "STATEMENT") {
@@ -23,7 +23,7 @@ export function QuestionStats({
     const oneensPct = 100 - eensPct
 
     return (
-      <div className="mt-2" style={{ fontSize: "10px", color: "#555577" }}>
+      <div className="mt-2" style={{ fontSize: "8px", color: "#555577", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
         <div className="flex items-center gap-2 mb-1">
           <span className="shrink-0" style={{ color: "#444466" }}>{total} picks:</span>
           <div className="flex-1 h-4 flex overflow-hidden" style={{ border: "2px solid #000" }}>
@@ -76,7 +76,7 @@ export function QuestionStats({
     const myRankAmongAll = nums.filter((n) => distToMedian(n) < myDist).length + 1
 
     return (
-      <div className="mt-2 space-y-1" style={{ fontSize: "10px", color: "#555577" }}>
+      <div className="mt-2 space-y-1" style={{ fontSize: "8px", color: "#555577", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
         <div className="flex flex-wrap gap-x-4 gap-y-0.5">
           <span>📊 {nums.length} schattingen</span>
           <span>Gem: <strong style={{ color: "#9999cc" }}>{avg}</strong></span>
@@ -106,7 +106,7 @@ export function QuestionStats({
             )
           })}
         </div>
-        <p style={{ fontSize: "9px", color: "#333355" }}>
+        <p style={{ fontSize: "7px", color: "#333355" }}>
           Oranje = jouw schatting · groen = anderen (gesorteerd)
         </p>
       </div>
@@ -126,7 +126,7 @@ export function QuestionStats({
     const myKey = myAnswer?.toLowerCase().trim()
 
     return (
-      <div className="mt-2" style={{ fontSize: "10px", color: "#555577" }}>
+      <div className="mt-2" style={{ fontSize: "8px", color: "#555577", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
         <span style={{ color: "#444466" }}>Pool kiest ({answers.length}×): </span>
         <div className="flex flex-wrap gap-1.5 mt-1">
           {sorted.map(([ans, cnt]) => (
