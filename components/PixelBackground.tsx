@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 
 // 8-bit football scenes from 8bit-football.com
 // All images courtesy of 8bit-football.com
@@ -37,7 +36,8 @@ export function PixelBackground() {
         justifyContent: "center",
         pointerEvents: "none",
         zIndex: 0,
-        opacity: 0.10,
+        opacity: 0.22,
+        mixBlendMode: "screen",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
