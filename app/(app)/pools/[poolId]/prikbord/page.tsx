@@ -31,9 +31,9 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
       <PoolSubNav poolId={poolId} />
 
       <div className="pixel-card overflow-hidden mb-5">
-        <div className="px-5 py-3" style={{ background: "#0a1a3d", borderBottom: "3px solid #000" }}>
+        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📌 PRIKBORD — {membership.pool.name.toUpperCase()}</h2>
-          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#5566aa" }}>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>
             Praat met je poulegenoten over het WK
           </p>
         </div>
@@ -42,7 +42,7 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
         <div style={{ minHeight: "200px" }}>
           {messages.length === 0 ? (
             <div className="text-center py-12">
-              <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-5)" }}>
+              <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-4)" }}>
                 Nog geen berichten. Wees de eerste!
               </p>
             </div>
@@ -61,19 +61,19 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
                   className="px-5 py-4"
                   style={{
                     borderBottom: "2px solid var(--c-border)",
-                    background: isMe ? "#0e1a0e" : "var(--c-surface-alt)",
+                    background: isMe ? "var(--c-surface-deep)" : "var(--c-surface-alt)",
                     borderLeft: isMe ? "3px solid #FF6200" : "3px solid transparent",
                   }}
                 >
                   <div className="flex items-baseline gap-2 mb-1.5">
                     <span
                       className="font-pixel"
-                      style={{ fontSize: "7px", color: isMe ? "#FF6200" : "#FFD700" }}
+                      style={{ fontSize: "7px", color: isMe ? "#FF6200" : "var(--c-text-2)" }}
                     >
                       {msg.user.name}
                       {isMe && <span style={{ color: "#FF6200", opacity: 0.6 }}> ◄ jij</span>}
                     </span>
-                    <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>
+                    <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
                       {timeAgo}
                     </span>
                     {canDelete && (
@@ -94,7 +94,7 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
 
       {/* Nieuw bericht */}
       <div className="pixel-card overflow-hidden">
-        <div className="px-5 py-3" style={{ background: "#0a1a3d", borderBottom: "3px solid #000" }}>
+        <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h3 className="font-pixel text-white" style={{ fontSize: "8px" }}>✏ NIEUW BERICHT</h3>
         </div>
         <div className="p-5">
