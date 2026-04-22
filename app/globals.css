@@ -56,8 +56,8 @@
   opacity: 0.22;
 }
 [data-theme="light"] .pixel-bg {
-  mix-blend-mode: multiply;
-  opacity: 0.35;
+  mix-blend-mode: normal;
+  opacity: 0.15;
 }
 
 @theme inline {
