@@ -57,12 +57,7 @@
 }
 [data-theme="light"] .pixel-bg {
   mix-blend-mode: multiply;
-  opacity: 0.30;
-}
-/* Invert in light mode: zwart → wit (onzichtbaar bij multiply),
-   gekleurde pixels worden zichtbaar als subtiele tinten */
-[data-theme="light"] .pixel-bg img {
-  filter: invert(1);
+  opacity: 0.35;
 }
 
 @theme inline {
