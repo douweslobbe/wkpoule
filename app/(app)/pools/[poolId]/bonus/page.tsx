@@ -100,8 +100,6 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
 
       <div className="pixel-card p-4 mb-6" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
         <p style={{ color: "var(--c-text-2)", fontSize: "8px", fontFamily: "var(--font-pixel), monospace", lineHeight: "2" }}>
-          <span style={{ color: "#FFD700", fontWeight: "bold" }}>7 punten</span> per goed beantwoorde bonusvraag ·{" "}
-          <span style={{ color: "#FFD700", fontWeight: "bold" }}>15 punten</span> voor de juiste kampioen<br />
           Deadline:{" "}
           <span style={{ color: "#FF6200", fontWeight: "bold" }}>
             {TOURNAMENT_START.toLocaleString("nl-NL", {
@@ -115,7 +113,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
       <div className="pixel-card mb-6 overflow-hidden">
         <div className="px-5 py-3" style={{ background: "#1a1200", borderBottom: "3px solid #000" }}>
           <h2 className="font-pixel" style={{ fontSize: "9px", color: "#FFD700" }}>🏆 KAMPIOEN KIEZEN</h2>
-          <p className="mt-1 font-bold" style={{ fontSize: "10px", color: "#666644" }}>15 punten · deadline start toernooi</p>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#666644" }}>15 punten</p>
         </div>
         <div className="p-5">
           {locked ? (
@@ -207,12 +205,11 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
             <div key={type} className="pixel-card overflow-hidden">
               <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
                 <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>{TYPE_LABELS[type].toUpperCase()}</h2>
-                {type === "ESTIMATION" && (
-                  <p className="mt-0.5" style={{ fontSize: "10px", color: "#4af56a" }}>3 dichtstbijzijnde voorspellingen worden beloond.</p>
-                )}
-                {type === "STATEMENT" && (
-                  <p className="mt-0.5" style={{ fontSize: "10px", color: "#4af56a" }}>Kies Eens of Oneens.</p>
-                )}
+                <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4a7a4a" }}>
+                  7 punten per vraag
+                  {type === "ESTIMATION" && " · 3 dichtstbijzijnde voorspellingen worden beloond"}
+                  {type === "STATEMENT" && " · kies Eens of Oneens"}
+                </p>
               </div>
               <div>
                 {qs.map((q) => {

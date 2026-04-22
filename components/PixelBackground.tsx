@@ -28,6 +28,7 @@ export function PixelBackground() {
 
   return (
     <div
+      className="pixel-bg"
       style={{
         position: "fixed",
         inset: 0,
@@ -36,8 +37,6 @@ export function PixelBackground() {
         justifyContent: "center",
         pointerEvents: "none",
         zIndex: 0,
-        opacity: 0.22,
-        mixBlendMode: "screen",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

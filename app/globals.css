@@ -50,6 +50,21 @@
   display: none;
 }
 
+/* ── 8-bit background image blend ── */
+.pixel-bg {
+  mix-blend-mode: screen;
+  opacity: 0.22;
+}
+[data-theme="light"] .pixel-bg {
+  mix-blend-mode: multiply;
+  opacity: 0.30;
+}
+/* Invert in light mode: zwart → wit (onzichtbaar bij multiply),
+   gekleurde pixels worden zichtbaar als subtiele tinten */
+[data-theme="light"] .pixel-bg img {
+  filter: invert(1);
+}
+
 @theme inline {
   --color-background: #1a1d2e;
   --color-foreground: #e8e8f8;

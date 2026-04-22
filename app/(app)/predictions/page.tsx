@@ -89,17 +89,6 @@ export default async function PredictionsPage({
       {/* Pool navigatie tabs — altijd zichtbaar */}
       {navPoolId && <PoolSubNav poolId={navPoolId} />}
 
-      {/* Banner */}
-      <div className="pixel-card mb-4 px-4 py-2.5" style={{ background: "#071810", borderLeft: "4px solid #4af56a" }}>
-        <p style={{ fontSize: "11px", color: "#4af56a" }}>
-          ⚽ Voorspellingen gelden voor{" "}
-          <strong style={{ color: "#FFD700" }}>alle poules tegelijk</strong> — één keer invullen.
-          {myPredCount > 0 && (
-            <span className="ml-2" style={{ color: "#2d5a2d" }}>({myPredCount} ingevuld in deze ronde)</span>
-          )}
-        </p>
-      </div>
-
       {/* Poule-kiezer voor anderen bekijken */}
       {myPools.length > 0 && (
         <div className="mb-3">
