@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { logout } from "@/lib/actions"
 import { prisma } from "@/lib/prisma"
 import { PixelBackground } from "@/components/PixelBackground"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -76,6 +77,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span className="hidden md:inline font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>
               {session.user.name?.toUpperCase()}
             </span>
+            <Link
+              href="/faq"
+              className="shrink-0 px-2 py-1 font-pixel"
+              style={{ fontSize: "7px", color: "#8888aa", border: "1px solid #2d2d50" }}
+              title="Spelregels & FAQ"
+            >
+              ?
+            </Link>
+            <ThemeToggle />
             {session.user.isAdmin && (
               <Link
                 href="/admin"

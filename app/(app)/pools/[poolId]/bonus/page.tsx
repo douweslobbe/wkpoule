@@ -99,7 +99,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
       <PoolSubNav poolId={poolId} />
 
       <div className="pixel-card p-4 mb-6" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
-        <p style={{ color: "#9999cc", fontSize: "8px", fontFamily: "var(--font-pixel), monospace", lineHeight: "2" }}>
+        <p style={{ color: "var(--c-text-2)", fontSize: "8px", fontFamily: "var(--font-pixel), monospace", lineHeight: "2" }}>
           <span style={{ color: "#FFD700", fontWeight: "bold" }}>7 punten</span> per goed beantwoorde bonusvraag ·{" "}
           <span style={{ color: "#FFD700", fontWeight: "bold" }}>15 punten</span> voor de juiste kampioen<br />
           Deadline:{" "}
@@ -124,9 +124,9 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                 <div className="flex items-center gap-3 mb-4 p-3" style={{ background: "#1e1200", border: "2px solid #FF6200", boxShadow: "2px 2px 0 #000" }}>
                   <span className="text-2xl">🔒</span>
                   <PixelFlag code={myPick.team.code} size="md" />
-                  <span className="font-bold" style={{ color: "#e0e0f0" }}>{myPick.team.nameNl ?? myPick.team.name}</span>
+                  <span className="font-bold" style={{ color: "var(--c-text)" }}>{myPick.team.nameNl ?? myPick.team.name}</span>
                   {myPick.pointsAwarded !== null && (
-                    <span className="ml-auto font-pixel" style={{ fontSize: "9px", color: myPick.pointsAwarded > 0 ? "#4af56a" : "#444466" }}>
+                    <span className="ml-auto font-pixel" style={{ fontSize: "9px", color: myPick.pointsAwarded > 0 ? "#4af56a" : "var(--c-text-4)" }}>
                       {myPick.pointsAwarded > 0 ? `+${myPick.pointsAwarded}pt` : "0pt"}
                     </span>
                   )}
@@ -134,14 +134,14 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
               )}
               {poolChampionPicks.length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="mb-2 font-pixel uppercase" style={{ fontSize: "7px", color: "#555577" }}>Alle picks:</p>
+                  <p className="mb-2 font-pixel uppercase" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>Alle picks:</p>
                   {poolChampionPicks.map((pick) => (
-                    <div key={pick.id} className="flex items-center gap-2 py-1.5" style={{ borderBottom: "1px solid #1a1d30", fontSize: "8px", fontFamily: "var(--font-pixel), monospace" }}>
+                    <div key={pick.id} className="flex items-center gap-2 py-1.5" style={{ borderBottom: "1px solid var(--c-border)", fontSize: "8px", fontFamily: "var(--font-pixel), monospace" }}>
                       <PixelFlag code={pick.team.code} size="sm" />
-                      <span className="flex-1" style={{ color: "#8888aa" }}>{pick.user.name}</span>
-                      <span className="font-semibold" style={{ color: "#e0e0f0" }}>{pick.team.nameNl ?? pick.team.name}</span>
+                      <span className="flex-1" style={{ color: "var(--c-text-nav)" }}>{pick.user.name}</span>
+                      <span className="font-semibold" style={{ color: "var(--c-text)" }}>{pick.team.nameNl ?? pick.team.name}</span>
                       {pick.pointsAwarded !== null && (
-                        <span className="font-pixel ml-2" style={{ fontSize: "7px", color: pick.pointsAwarded > 0 ? "#4af56a" : "#444466" }}>
+                        <span className="font-pixel ml-2" style={{ fontSize: "7px", color: pick.pointsAwarded > 0 ? "#4af56a" : "var(--c-text-4)" }}>
                           {pick.pointsAwarded > 0 ? `+${pick.pointsAwarded}` : "0"}
                         </span>
                       )}
@@ -160,8 +160,8 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
 
           {/* Poule-verdeling (altijd zichtbaar, ook voor deadline) */}
           {sortedChampPicks.length > 0 && (
-            <div className="mt-5 pt-4" style={{ borderTop: "2px solid #1a1d30" }}>
-              <p className="mb-3 font-pixel uppercase" style={{ fontSize: "7px", color: "#555577" }}>
+            <div className="mt-5 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
+              <p className="mb-3 font-pixel uppercase" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
                 Kampioenskeuze in de pool ({poolChampionPicks.length}/{memberCount} gekozen):
               </p>
               <div className="space-y-2">
@@ -176,11 +176,11 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                           className="h-full transition-all"
                           style={{ width: `${pct}%`, background: isMyPick ? "#FF6200" : "#0a3d1f" }}
                         />
-                        <span className="absolute inset-0 flex items-center px-2 text-xs font-bold" style={{ color: "#e0e0f0" }}>
+                        <span className="absolute inset-0 flex items-center px-2 text-xs font-bold" style={{ color: "var(--c-text)" }}>
                           {info.teamName}
                         </span>
                       </div>
-                      <span className="text-xs font-bold w-8 text-right" style={{ color: "#9999cc" }}>{info.count}×</span>
+                      <span className="text-xs font-bold w-8 text-right" style={{ color: "var(--c-text-2)" }}>{info.count}×</span>
                       {isMyPick && (
                         <span className="font-pixel" style={{ color: "#FF6200", fontSize: "7px" }}>◄ JIJ</span>
                       )}
@@ -189,7 +189,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                 })}
               </div>
               {!locked && myPick && (
-                <p className="text-xs mt-2 italic" style={{ color: "#444466" }}>
+                <p className="text-xs mt-2 italic" style={{ color: "var(--c-text-4)" }}>
                   Tip: anderen zien jouw keuze pas na de deadline.
                 </p>
               )}
@@ -220,7 +220,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
                   const deadline = q.deadline ?? TOURNAMENT_START
                   const qLocked = now > deadline
                   return (
-                    <div key={q.id} className="px-5 py-4" style={{ borderBottom: "2px solid #1a1d30" }}>
+                    <div key={q.id} className="px-5 py-4" style={{ borderBottom: "2px solid var(--c-border)" }}>
                       <BonusQuestionBlock
                         question={q}
                         currentAnswer={ans?.answer}

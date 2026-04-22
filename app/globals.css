@@ -1,5 +1,55 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════
+   THEME TOKENS — dark (default) & light
+═══════════════════════════════════════ */
+:root {
+  --c-bg:            #1a1d2e;
+  --c-surface:       #22264a;
+  --c-surface-alt:   #161928;
+  --c-surface-deep:  #0d0f1a;
+  --c-border:        #1a1d30;
+  --c-border-mid:    #2d2d50;
+  --c-border-bright: #3a3a60;
+  --c-input-bg:      #12152a;
+  --c-text:          #e0e0f0;
+  --c-text-2:        #9999cc;
+  --c-text-3:        #555577;
+  --c-text-4:        #444466;
+  --c-text-5:        #333355;
+  --c-text-nav:      #8888aa;
+}
+
+[data-theme="light"] {
+  --c-bg:            #f5f3eb;
+  --c-surface:       #ffffff;
+  --c-surface-alt:   #f0ede2;
+  --c-surface-deep:  #e4e0d0;
+  --c-border:        #ccc8b8;
+  --c-border-mid:    #b0ac9c;
+  --c-border-bright: #989480;
+  --c-input-bg:      #faf8f0;
+  --c-text:          #1a1d2e;
+  --c-text-2:        #4a4a7a;
+  --c-text-3:        #666688;
+  --c-text-4:        #7a7a99;
+  --c-text-5:        #9090aa;
+  --c-text-nav:      #6a6a88;
+}
+
+[data-theme="light"] body {
+  background-color: var(--c-bg);
+}
+[data-theme="light"] .pitch-bg {
+  background-color: var(--c-bg);
+  background-image:
+    linear-gradient(rgba(80, 120, 40, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 120, 40, 0.12) 1px, transparent 1px);
+}
+[data-theme="light"] .scanlines::after {
+  display: none;
+}
+
 @theme inline {
   --color-background: #1a1d2e;
   --color-foreground: #e8e8f8;
@@ -38,8 +88,8 @@ body {
 .pixel-card {
   border: 3px solid #000;
   box-shadow: 4px 4px 0 #000;
-  background: #22264a;
-  color: #e8e8f8;
+  background: var(--c-surface);
+  color: var(--c-text);
 }
 
 .pixel-card-orange {
@@ -100,24 +150,24 @@ body {
 }
 
 .pixel-tab-inactive {
-  background: #22264a;
-  color: #7070a0;
-  border: 2px solid #3a3a60;
+  background: var(--c-surface);
+  color: var(--c-text-nav);
+  border: 2px solid var(--c-border-bright);
   box-shadow: 1px 1px 0 #000;
 }
 .pixel-tab-inactive:hover {
-  background: #2d3160;
-  color: #a0a0cc;
-  border-color: #5555aa;
+  background: var(--c-surface-alt);
+  color: var(--c-text-2);
+  border-color: var(--c-border-bright);
 }
 
 /* ═══════════════════════════════════════
    PIXEL INPUT — full pixel art style
 ═══════════════════════════════════════ */
 .pixel-input {
-  background: #12152a;
-  border: 2px solid #3a3a60;
-  color: #e8e8f8;
+  background: var(--c-input-bg);
+  border: 2px solid var(--c-border-bright);
+  color: var(--c-text);
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
   line-height: 1.8;
@@ -128,7 +178,7 @@ body {
   box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.25);
 }
 .pixel-input::placeholder {
-  color: #3a3a60;
+  color: var(--c-border-bright);
   font-family: var(--font-pixel), monospace;
 }
 
@@ -136,8 +186,8 @@ body {
    PIXEL LIST — team picker, etc.
 ═══════════════════════════════════════ */
 .pixel-list {
-  background: #12152a;
-  border: 2px solid #3a3a60;
+  background: var(--c-input-bg);
+  border: 2px solid var(--c-border-bright);
   overflow-y: auto;
   max-height: 16rem;
 }
@@ -147,9 +197,9 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 0.625rem 1rem;
-  border-bottom: 1px solid #22264a;
+  border-bottom: 1px solid var(--c-surface);
   cursor: pointer;
-  color: #c0c0e0;
+  color: var(--c-text-2);
   text-align: left;
   background: transparent;
   transition: background 0.05s;
@@ -157,7 +207,7 @@ body {
   font-size: 9px;
 }
 .pixel-list-item:hover {
-  background: #2a2e55;
+  background: var(--c-surface-alt);
 }
 .pixel-list-item.selected {
   background: #2a1500;
@@ -204,7 +254,7 @@ body {
    POOL ROW HOVER — CSS-based
 ═══════════════════════════════════════ */
 .pool-row:hover {
-  background: #2a2e55 !important;
+  background: var(--c-surface-alt) !important;
 }
 
 /* ═══════════════════════════════════════

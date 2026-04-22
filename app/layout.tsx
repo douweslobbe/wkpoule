@@ -14,6 +14,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="nl" className={`${geist.variable} ${pressStart.variable} h-full`}>
+      {/* Anti-FOUC: apply saved theme before first paint */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('wk-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();` }} />
+      </head>
       <body className="min-h-full flex flex-col bg-pitch font-sans" style={{ WebkitFontSmoothing: "none", MozOsxFontSmoothing: "unset" }}>
         {children}
       </body>

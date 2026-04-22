@@ -63,7 +63,7 @@ export default async function DashboardPage() {
         <h1 className="font-pixel text-white mb-1" style={{ fontSize: "10px" }}>
           WELKOM, <span style={{ color: "#FFD700" }}>{session.user.name?.toUpperCase()}!</span>
         </h1>
-        <p className="font-pixel mt-1" style={{ fontSize: "7px", color: completedMatches > 0 ? "#4af56a" : "#555577" }}>
+        <p className="font-pixel mt-1" style={{ fontSize: "7px", color: completedMatches > 0 ? "#4af56a" : "var(--c-text-3)" }}>
           {completedMatches > 0
             ? `${completedMatches}/${TOTAL_MATCHES} WEDSTRIJDEN GESPEELD`
             : "WK 2026 START 11 JUNI · ZET ALVAST JE VOORSPELLINGEN KLAAR!"}
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
         <div className="pixel-card p-10 text-center">
           <div className="text-5xl mb-4">⚽</div>
           <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#FFD700" }}>GEEN POULES</h2>
-          <p className="text-sm mb-6" style={{ color: "#666688" }}>
+          <p className="text-sm mb-6" style={{ color: "var(--c-text-3)" }}>
             Maak een nieuwe poule aan of doe mee via een uitnodigingscode.
           </p>
           <div className="flex gap-3 justify-center">
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
               Poule aanmaken
             </Link>
             <Link href="/pools/join" className="pixel-btn px-5 py-2.5 text-sm font-bold"
-              style={{ background: "#1a1d30", color: "#e0e0f0", border: "2px solid #333360" }}>
+              style={{ background: "var(--c-border)", color: "var(--c-text)", border: "2px solid #333360" }}>
               Meedoen met code
             </Link>
           </div>
@@ -104,8 +104,8 @@ export default async function DashboardPage() {
               style={{
                 gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem",
                 fontSize: "8px",
-                color: "#555577",
-                borderBottom: "2px solid #1a1d30",
+                color: "var(--c-text-3)",
+                borderBottom: "2px solid var(--c-border)",
                 fontFamily: "var(--font-pixel), monospace",
               }}>
               <span>Poule</span>
@@ -122,13 +122,13 @@ export default async function DashboardPage() {
                   key={pool.id}
                   href={`/pools/${pool.id}`}
                   className="block pool-row"
-                  style={{ borderBottom: "2px solid #1a1d30" }}
+                  style={{ borderBottom: "2px solid var(--c-border)" }}
                 >
                   {/* Desktop */}
                   <div className="hidden sm:grid px-5 py-3 items-center gap-2"
                     style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
                     <div>
-                      <span className="font-bold text-sm" style={{ color: "#e0e0f0" }}>{pool.name}</span>
+                      <span className="font-bold text-sm" style={{ color: "var(--c-text)" }}>{pool.name}</span>
                       {role === "ADMIN" && (
                         <span className="ml-2 px-1.5 py-0.5 font-pixel"
                           style={{ background: "#FFD700", color: "#000", fontSize: "6px" }}>
@@ -139,18 +139,18 @@ export default async function DashboardPage() {
                     <div className="text-center">
                       {rank ? (
                         <span className="font-pixel" style={{
-                          color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "#9999cc",
+                          color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "var(--c-text-2)",
                           fontSize: "11px",
                         }}>
                           {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
-                          <span style={{ fontSize: "9px", color: "#444466" }}>/{total}</span>
+                          <span style={{ fontSize: "9px", color: "var(--c-text-4)" }}>/{total}</span>
                         </span>
                       ) : (
-                        <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
+                        <span style={{ color: "var(--c-text-5)", fontSize: "11px" }}>—</span>
                       )}
                     </div>
-                    <span className="text-center text-sm" style={{ color: "#9999cc" }}>{myEntry?.matchPoints ?? 0}</span>
-                    <span className="text-center text-sm" style={{ color: "#9999cc" }}>{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
+                    <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{myEntry?.matchPoints ?? 0}</span>
+                    <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
                     <span className="text-center font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
                       {myEntry?.totalPoints ?? 0}
                     </span>
@@ -159,11 +159,11 @@ export default async function DashboardPage() {
                         <span title={`Max mogelijk: ${maxPossible}`}>
                           ~{projectedTotal}
                           {completedMatches < TOTAL_MATCHES && (
-                            <span className="text-xs ml-0.5" style={{ color: "#333366" }}>/{maxPossible}</span>
+                            <span className="text-xs ml-0.5" style={{ color: "var(--c-text-5)" }}>/{maxPossible}</span>
                           )}
                         </span>
                       ) : (
-                        <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
+                        <span style={{ color: "var(--c-text-5)", fontSize: "11px" }}>—</span>
                       )}
                     </span>
                   </div>
@@ -171,14 +171,14 @@ export default async function DashboardPage() {
                   {/* Mobile */}
                   <div className="sm:hidden px-4 py-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm truncate" style={{ color: "#e0e0f0" }}>{pool.name}</div>
-                      <div className="text-xs mt-0.5" style={{ color: "#444466" }}>
+                      <div className="font-bold text-sm truncate" style={{ color: "var(--c-text)" }}>{pool.name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "var(--c-text-4)" }}>
                         ⚽{myEntry?.matchPoints ?? 0} + 🏆{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}
                       </div>
                     </div>
                     <div className="text-right">
                       {rank && (
-                        <div style={{ fontSize: "10px", color: "#555577" }}>#{rank}/{total}</div>
+                        <div style={{ fontSize: "10px", color: "var(--c-text-3)" }}>#{rank}/{total}</div>
                       )}
                       <div className="font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
                         {myEntry?.totalPoints ?? 0}pt
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="px-5 py-3 flex flex-wrap gap-4"
-              style={{ borderTop: "2px solid #1a1d30", background: "#0d0f1a", fontSize: "10px", color: "#444466" }}>
+              style={{ borderTop: "2px solid var(--c-border)", background: "var(--c-surface-deep)", fontSize: "10px", color: "var(--c-text-4)" }}>
               <span>⚽ wedstrijdpunten · 🏆 bonus + kampioen</span>
               {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn</span>}
             </div>
@@ -206,8 +206,7 @@ export default async function DashboardPage() {
               <span className="text-2xl">⚽</span>
               <div>
                 <div className="font-pixel" style={{ fontSize: "8px", color: "#FF6200" }}>DE WEDSTRIJDEN</div>
-                <div className="text-xs mt-0.5" style={{ color: "#666688" }}>Voorspellingen invullen</div>
-                <div className="text-xs font-semibold mt-0.5" style={{ color: "#4af56a" }}>Geldt voor alle poules</div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>Voorspellingen invullen</div>
               </div>
             </Link>
 
@@ -217,17 +216,17 @@ export default async function DashboardPage() {
                 <span className="text-2xl">🏆</span>
                 <div>
                   <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>HET GROTE PLAATJE</div>
-                  <div className="text-xs mt-0.5" style={{ color: "#666688" }}>Bonus & kampioen kiezen</div>
+                  <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>Bonus & kampioen kiezen</div>
                 </div>
               </Link>
             ))}
 
             <Link href="/pools/new" className="pixel-card p-4 flex items-center gap-3 transition-colors"
-              style={{ borderStyle: "dashed", borderLeft: "4px dashed #2d2d50" }}>
+              style={{ borderStyle: "dashed", borderLeft: "4px dashed var(--c-border-mid)" }}>
               <span className="text-2xl" style={{ color: "#4af56a" }}>+</span>
               <div>
                 <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>NIEUWE POULE</div>
-                <div className="text-xs mt-0.5" style={{ color: "#444466" }}>Aanmaken of meedoen</div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--c-text-4)" }}>Aanmaken of meedoen</div>
               </div>
             </Link>
           </div>

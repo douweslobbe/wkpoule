@@ -71,15 +71,15 @@ export function CompactMatchRow({
 
   return (
     <div style={{
-      background: live ? "#1a0d00" : "#161928",
-      borderBottom: "2px solid #1a1d30",
+      background: live ? "#1a0d00" : "var(--c-surface-alt)",
+      borderBottom: "2px solid var(--c-border)",
       borderLeft: live ? "3px solid #ff4444" : "3px solid transparent",
     }}>
       {/* Top meta bar */}
-      <div className="flex items-center justify-between px-3 pt-2 pb-1" style={{ borderBottom: "1px solid #1a1d30", fontSize: "10px" }}>
-        <span style={{ color: "#444466" }}>
+      <div className="flex items-center justify-between px-3 pt-2 pb-1" style={{ borderBottom: "1px solid var(--c-border)", fontSize: "10px" }}>
+        <span style={{ color: "var(--c-text-4)" }}>
           {match.groupName && (
-            <span className="font-semibold mr-1" style={{ color: "#555577" }}>{formatGroup(match.groupName)} ·</span>
+            <span className="font-semibold mr-1" style={{ color: "var(--c-text-3)" }}>{formatGroup(match.groupName)} ·</span>
           )}
           {dateStr}
         </span>
@@ -99,7 +99,7 @@ export function CompactMatchRow({
         {/* Thuisploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="sm" />}
-          <span className="font-bold truncate" style={{ color: "#e0e0f0", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{homeName}</span>
+          <span className="font-bold truncate" style={{ color: "var(--c-text)", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{homeName}</span>
         </div>
 
         {/* Midden: score of invoer */}
@@ -115,7 +115,7 @@ export function CompactMatchRow({
                 className="pixel-input w-10 text-center font-bold text-sm py-1"
                 placeholder="–"
               />
-              <span className="font-bold text-sm" style={{ color: "#444466" }}>–</span>
+              <span className="font-bold text-sm" style={{ color: "var(--c-text-4)" }}>–</span>
               <input
                 type="number" min={0} max={20}
                 value={away}
@@ -151,7 +151,7 @@ export function CompactMatchRow({
               }}>
                 {match.homeScore ?? "?"}
               </span>
-              <span style={{ color: live ? "#ff4444" : "#444466" }}>–</span>
+              <span style={{ color: live ? "#ff4444" : "var(--c-text-4)" }}>–</span>
               <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{
                 background: "#000",
                 color: live ? "#ff4444" : "#FFD700",
@@ -161,29 +161,29 @@ export function CompactMatchRow({
               </span>
             </div>
           ) : (
-            <span className="font-pixel px-2" style={{ fontSize: "9px", color: "#333355" }}>VS</span>
+            <span className="font-pixel px-2" style={{ fontSize: "9px", color: "var(--c-text-5)" }}>VS</span>
           )}
         </div>
 
         {/* Uitploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-          <span className="font-bold truncate text-right" style={{ color: "#e0e0f0", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{awayName}</span>
+          <span className="font-bold truncate text-right" style={{ color: "var(--c-text)", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>{awayName}</span>
           {match.awayTeam?.code && <PixelFlag code={match.awayTeam.code} size="sm" />}
         </div>
       </div>
 
       {/* Voorspelling tonen (vergrendeld of anderen bekijken) */}
       {(!isOwnView || (isOwnView && locked)) && (
-        <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid #1a1d30", fontSize: "11px" }}>
+        <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid var(--c-border)", fontSize: "11px" }}>
           {viewPred ? (
             <>
-              <span style={{ color: "#444466" }}>{isOwnView ? "Jouw pick:" : "Pick:"}</span>
+              <span style={{ color: "var(--c-text-4)" }}>{isOwnView ? "Jouw pick:" : "Pick:"}</span>
               <span className="font-pixel" style={{ color: "#FF6200", fontSize: "10px" }}>
                 {viewPred.homeScore} – {viewPred.awayScore}
               </span>
               {viewPred.pointsAwarded !== null && (
                 <span className="font-pixel px-1.5 py-0.5 text-white" style={{
-                  background: viewPred.pointsAwarded > 0 ? "#16a34a" : "#333355",
+                  background: viewPred.pointsAwarded > 0 ? "#16a34a" : "var(--c-text-5)",
                   fontSize: "7px",
                   border: "1px solid #000",
                 }}>
@@ -192,7 +192,7 @@ export function CompactMatchRow({
               )}
             </>
           ) : (
-            <span className="italic" style={{ color: "#333355", fontSize: "10px" }}>Geen voorspelling</span>
+            <span className="italic" style={{ color: "var(--c-text-5)", fontSize: "10px" }}>Geen voorspelling</span>
           )}
         </div>
       )}

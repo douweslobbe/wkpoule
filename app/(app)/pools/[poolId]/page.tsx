@@ -100,7 +100,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
         </div>
 
         {ranked.length === 0 ? (
-          <p className="text-center py-10 text-sm" style={{ color: "#444466" }}>Nog geen scores</p>
+          <p className="text-center py-10 text-sm" style={{ color: "var(--c-text-4)" }}>Nog geen scores</p>
         ) : (
           <div>
             {/* Header row */}
@@ -108,8 +108,8 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
               style={{
                 gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem",
                 fontSize: "9px",
-                color: "#555577",
-                borderBottom: "2px solid #1a1d30",
+                color: "var(--c-text-3)",
+                borderBottom: "2px solid var(--c-border)",
                 fontFamily: "var(--font-pixel), monospace",
               }}>
               <span>#</span>
@@ -142,8 +142,8 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                   <div
                     key={entry.userId}
                     style={{
-                      background: isMe ? "#1e1200" : "#161928",
-                      borderBottom: "2px solid #1a1d30",
+                      background: isMe ? "#1e1200" : "var(--c-surface-alt)",
+                      borderBottom: "2px solid var(--c-border)",
                       borderLeft: isMe ? "3px solid #FF6200" : "3px solid transparent",
                     }}
                   >
@@ -151,12 +151,12 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="hidden sm:grid items-center gap-2 px-5 py-3"
                       style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
                       <span className="text-lg">{medal}</span>
-                      <span className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "#e0e0f0" }}>
+                      <span className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                         {memberMap.get(entry.userId) ?? "?"}
                         {isMe && <span className="ml-1 text-xs font-normal" style={{ color: "#FF6200", opacity: 0.7 }}>◄ jij</span>}
                       </span>
-                      <span className="text-center text-sm" style={{ color: "#9999cc" }}>{entry.matchPoints}</span>
-                      <span className="text-center text-sm" style={{ color: "#9999cc" }}>{entry.bonusPoints + entry.championPoints}</span>
+                      <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.matchPoints}</span>
+                      <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.bonusPoints + entry.championPoints}</span>
                       <span className="text-center font-pixel"
                         style={{ color: isMe ? "#FF6200" : "#FFD700", fontSize: "11px" }}>
                         {entry.totalPoints}
@@ -166,11 +166,11 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                           <span title={`Max mogelijk: ${maxPossible}`}>
                             ~{projectedTotal}
                             {completedMatches < totalMatches && (
-                              <span className="text-xs ml-0.5" style={{ color: "#333366" }}>/{maxPossible}</span>
+                              <span className="text-xs ml-0.5" style={{ color: "var(--c-text-5)" }}>/{maxPossible}</span>
                             )}
                           </span>
                         ) : (
-                          <span style={{ color: "#333355", fontSize: "11px" }}>—</span>
+                          <span style={{ color: "var(--c-text-5)", fontSize: "11px" }}>—</span>
                         )}
                       </span>
                     </div>
@@ -179,11 +179,11 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="sm:hidden flex items-center gap-3 px-4 py-3">
                       <span className="text-lg w-7">{medal}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "#e0e0f0" }}>
+                        <div className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                           {memberMap.get(entry.userId) ?? "?"}
                           {isMe && <span className="ml-1 text-xs font-normal" style={{ opacity: 0.6, color: "#FF6200" }}>◄</span>}
                         </div>
-                        <div className="text-xs mt-0.5" style={{ color: "#555577" }}>
+                        <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>
                           ⚽{entry.matchPoints} + 🏆{entry.bonusPoints + entry.championPoints}
                         </div>
                       </div>
@@ -203,7 +203,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
 
             {/* Legend */}
             <div className="px-5 py-3 flex gap-4 flex-wrap"
-              style={{ borderTop: "2px solid #1a1d30", background: "#0d0f1a", fontSize: "10px", color: "#444466" }}>
+              style={{ borderTop: "2px solid var(--c-border)", background: "var(--c-surface-deep)", fontSize: "10px", color: "var(--c-text-4)" }}>
               <span>⚽ wedstrijdpunten</span>
               <span>🏆 bonus + kampioen</span>
               {completedMatches > 0 && <span style={{ color: "#4499ff" }}>📈 prognose = huidig tempo × 104 wedstrijden</span>}
