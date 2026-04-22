@@ -38,7 +38,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "var(--c-text-nav)" }}>
             E-mailadres
           </label>
           <input
@@ -50,7 +50,7 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
+          <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "var(--c-text-nav)" }}>
             Wachtwoord
           </label>
           <input
@@ -87,10 +87,15 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center mt-5 font-pixel" style={{ fontSize: "7px", color: "#555577" }}>
+      <p className="text-center mt-4 font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
         Nog geen account?{" "}
         <Link href="/register" className="font-bold hover:underline" style={{ color: "#FF6200" }}>
           REGISTREREN
+        </Link>
+      </p>
+      <p className="text-center mt-2 font-pixel" style={{ fontSize: "7px", color: "var(--c-text-5)" }}>
+        <Link href="/forgot-password" className="hover:underline" style={{ color: "var(--c-text-4)" }}>
+          Wachtwoord vergeten?
         </Link>
       </p>
     </div>

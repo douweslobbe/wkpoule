@@ -49,9 +49,9 @@ export function BonusQuestionBlock({
     <div>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="font-bold" style={{ color: "#e0e0f0", fontSize: "9px", lineHeight: "1.9", fontFamily: "var(--font-pixel), monospace" }}>{question.question}</p>
+          <p className="font-bold" style={{ color: "var(--c-text)", fontSize: "9px", lineHeight: "1.9", fontFamily: "var(--font-pixel), monospace" }}>{question.question}</p>
           {question.description && (
-            <p className="mt-1" style={{ color: "#6666aa", fontSize: "7px", lineHeight: "1.8", fontFamily: "var(--font-pixel), monospace" }}>{question.description}</p>
+            <p className="mt-1" style={{ color: "var(--c-text-2)", fontSize: "7px", lineHeight: "1.8", fontFamily: "var(--font-pixel), monospace" }}>{question.description}</p>
           )}
         </div>
         {pointsAwarded !== null && pointsAwarded !== undefined && (
@@ -62,9 +62,9 @@ export function BonusQuestionBlock({
       </div>
 
       {correctAnswer && (
-        <p className="mt-1" style={{ color: "#555577", fontSize: "7px", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
+        <p className="mt-1" style={{ color: "var(--c-text-3)", fontSize: "7px", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
           ANTWOORD:{" "}
-          <span className="font-semibold" style={{ color: isCorrect ? "#4af56a" : "#9999cc" }}>
+          <span className="font-semibold" style={{ color: isCorrect ? "#4af56a" : "var(--c-text-2)" }}>
             {correctAnswer}
           </span>
         </p>
@@ -73,11 +73,11 @@ export function BonusQuestionBlock({
       {locked ? (
         <div className="mt-2">
           {answer ? (
-            <span className="px-3 py-1 inline-block" style={{ background: "#12152a", color: "#9999cc", border: "2px solid #3a3a60", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>
+            <span className="px-3 py-1 inline-block" style={{ background: "var(--c-input-bg)", color: "var(--c-text-2)", border: "2px solid var(--c-border-bright)", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>
               {answer}
             </span>
           ) : (
-            <span className="italic" style={{ color: "#333355", fontSize: "8px", fontFamily: "var(--font-pixel), monospace" }}>Geen antwoord opgegeven</span>
+            <span className="italic" style={{ color: "var(--c-text-5)", fontSize: "8px", fontFamily: "var(--font-pixel), monospace" }}>Geen antwoord opgegeven</span>
           )}
         </div>
       ) : (
@@ -91,9 +91,9 @@ export function BonusQuestionBlock({
                   onClick={() => { setAnswer(opt); setSaved(false) }}
                   className="px-4 py-2 font-bold transition-all"
                   style={{
-                    background: answer === opt ? "#FF6200" : "#1a1d30",
-                    color: answer === opt ? "white" : "#7070a0",
-                    border: answer === opt ? "2px solid #000" : "2px solid #3a3a60",
+                    background: answer === opt ? "#FF6200" : "var(--c-border)",
+                    color: answer === opt ? "white" : "var(--c-text-nav)",
+                    border: answer === opt ? "2px solid #000" : "2px solid var(--c-border-bright)",
                     boxShadow: answer === opt ? "2px 2px 0 #000" : "none",
                     fontFamily: "var(--font-pixel), monospace",
                     fontSize: "8px",

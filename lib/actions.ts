@@ -509,3 +509,24 @@ async function rebuildLeaderboards() {
     }
   }
 }
+
+// ─── Admin: wachtwoord reset ──────────────────────────────────────────────────
+
+export async function adminResetPassword(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  const userId = formData.get("userId") as string
+  const newPassword = formData.get("newPassword") as string
+
+  if (!userId) return { error: "Gebruiker niet gevonden" }
+  if (!newPassword || newPassword.length < 6) return { error: "Min. 6 tekens" }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) return { error: "Gebruiker niet gevonden" }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } })
+
+  return { success: true }
+}
