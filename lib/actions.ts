@@ -530,3 +530,43 @@ export async function adminResetPassword(formData: FormData) {
 
   return { success: true }
 }
+
+// ─── Prikbord ────────────────────────────────────────────────────────────────
+
+export async function postPoolMessage(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const poolId = formData.get("poolId") as string
+  const content = (formData.get("content") as string)?.trim()
+
+  if (!content || content.length < 1) return { error: "Bericht is leeg" }
+  if (content.length > 500) return { error: "Max 500 tekens" }
+
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership) return { error: "Geen toegang tot deze poule" }
+
+  await prisma.poolMessage.create({
+    data: { poolId, userId: session.user.id, content },
+  })
+
+  revalidatePath(`/pools/${poolId}/prikbord`)
+  return { success: true }
+}
+
+export async function deletePoolMessage(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const messageId = formData.get("messageId") as string
+  const message = await prisma.poolMessage.findUnique({ where: { id: messageId } })
+
+  if (!message) return { error: "Bericht niet gevonden" }
+  if (message.userId !== session.user.id && !session.user.isAdmin) return { error: "Geen toegang" }
+
+  await prisma.poolMessage.delete({ where: { id: messageId } })
+  revalidatePath(`/pools/${message.poolId}/prikbord`)
+  return { success: true }
+}

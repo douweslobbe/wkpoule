@@ -21,7 +21,12 @@ export function PoolSubNav({ poolId }: { poolId: string }) {
       href: `/pools/${poolId}`,
       label: "📊 De Megalomane Ranglijst",
       isActive: (p: string) =>
-        p === `/pools/${poolId}` && !p.includes("/bonus") && !p.includes("/predictions"),
+        p === `/pools/${poolId}` && !p.includes("/bonus") && !p.includes("/predictions") && !p.includes("/prikbord"),
+    },
+    {
+      href: `/pools/${poolId}/prikbord`,
+      label: "📌 Het Prikbord",
+      isActive: (p: string) => p.includes("/prikbord"),
     },
   ]
 

@@ -19,6 +19,7 @@ model User {
   predictions   Prediction[]
   bonusAnswers  BonusAnswer[]
   championPicks ChampionPick[]
+  poolMessages  PoolMessage[]
 
   @@index([email])
 }
@@ -34,6 +35,7 @@ model Pool {
   bonusQuestions BonusQuestion[]
   championPicks  ChampionPick[]
   leaderboard    LeaderboardEntry[]
+  messages       PoolMessage[]
 }
 
 model PoolMembership {
@@ -177,6 +179,19 @@ model BonusAnswer {
 
   @@unique([userId, questionId])
   @@index([questionId])
+}
+
+model PoolMessage {
+  id        String   @id @default(cuid())
+  poolId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([poolId, createdAt])
 }
 
 model LeaderboardEntry {
