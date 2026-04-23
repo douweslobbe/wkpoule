@@ -67,7 +67,7 @@ export default async function AdminPage() {
         <StatCard label="Wedstrijden" value={matchCount} />
         <StatCard label="Teams"       value={teamCount} />
         <StatCard label="Gebruikers"  value={userCount} />
-        <StatCard label="Poules"      value={poolCount} />
+        <StatCard label="Pools"      value={poolCount} />
       </div>
 
       {/* Acties */}
@@ -115,10 +115,10 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Poules */}
+      {/* Pools */}
       <div className="pixel-card overflow-hidden mb-5">
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>🏆 POULES</h2>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>🏆 POOLS</h2>
         </div>
         <div>
           {pools.map((pool) => (

@@ -36,12 +36,12 @@ export default function FaqPage() {
       <Section title="⚽ HET SPEL">
         <p>
           Voorspel de uitslag van elke WK 2026-wedstrijd, beantwoord bonusvragen en kies de kampioen.
-          Wie de meeste punten scoort in jouw poule wint.
+          Wie de meeste punten scoort in jouw pool wint.
         </p>
         <p>
-          Je kunt in meerdere poules deelnemen. <span style={{ color: "#FFD700" }}>Wedstrijd&shy;voorspellingen
-          gelden voor al je poules tegelijk</span> — je hoeft ze maar één keer in te vullen.
-          Bonusvragen en de kampioen&shy;keuze zijn wél per poule apart.
+          Je kunt in meerdere pools deelnemen. <span style={{ color: "#FFD700" }}>Wedstrijd&shy;voorspellingen
+          gelden voor al je pools tegelijk</span> — je hoeft ze maar één keer in te vullen.
+          Bonusvragen en de kampioen&shy;keuze zijn wél per pool apart.
         </p>
       </Section>
 
@@ -79,7 +79,7 @@ export default function FaqPage() {
       {/* === BONUSVRAGEN === */}
       <Section title="🏆 BONUSVRAGEN">
         <p>
-          Elke poule heeft eigen bonusvragen. De <span style={{ color: "#FF6200" }}>deadline
+          Elke pool heeft eigen bonusvragen. De <span style={{ color: "#FF6200" }}>deadline
           is de start van het toernooi</span> (11 juni 2026, 22:00). Daarna zijn antwoorden vergrendeld.
         </p>
         <p className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>SOORTEN VRAGEN</p>
@@ -100,20 +100,20 @@ export default function FaqPage() {
         </p>
         <p>
           De deadline is gelijk aan die van de bonusvragen: <span style={{ color: "#FF6200" }}>11 juni 2026, 22:00</span>.
-          De kampioensvraag is per poule apart — je kunt in elke poule een andere keuze maken.
+          De kampioensvraag is per pool apart — je kunt in elke pool een andere keuze maken.
         </p>
       </Section>
 
-      {/* === POULE === */}
-      <Section title="👥 DE POULE">
+      {/* === POOL === */}
+      <Section title="👥 DE POOL">
         <p>
-          Maak een eigen poule aan of doe mee via een <span style={{ color: "#FFD700" }}>uitnodigings&shy;code</span>.
+          Maak een eigen pool aan of doe mee via een <span style={{ color: "#FFD700" }}>uitnodigings&shy;code</span>.
           Deel de code met vrienden en familie zodat zij kunnen meedoen.
         </p>
         <Row label="Beheerder (admin)" value="Kan bonusvragen toevoegen en antwoorden invoeren" />
         <Row label="Lid (member)"      value="Kan alles bekijken en voorspellingen invullen" />
         <p>
-          De eerste persoon die een poule aanmaakt wordt automatisch beheerder.
+          De eerste persoon die een pool aanmaakt wordt automatisch beheerder.
           Er kan meer dan één beheerder zijn.
         </p>
       </Section>

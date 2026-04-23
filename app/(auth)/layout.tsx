@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               DOUWE&apos;S<br/>
               <span className="text-yellow-300">SUPER</span><br/>
               MEGALOMANE<br/>
-              WK POULE<br/>
+              WK POOL<br/>
               <span className="text-yellow-300">2026</span>
             </h1>
           </div>

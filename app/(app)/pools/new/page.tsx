@@ -43,19 +43,19 @@ export default function NewPoolPage() {
       <div className="pixel-card overflow-hidden">
         {/* Header */}
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-          <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>➕ NIEUWE POULE</h1>
+          <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>➕ NIEUWE POOL</h1>
         </div>
 
         <div className="p-5">
           <p className="mb-5" style={{ color: "#7070a0", fontSize: "8px", lineHeight: "2", fontFamily: "var(--font-pixel), monospace" }}>
-            Geef je poule een naam. Je krijgt een uitnodigingscode waarmee vrienden kunnen meedoen.
+            Geef je pool een naam. Je krijgt een uitnodigingscode waarmee vrienden kunnen meedoen.
             Bonusvragen worden automatisch aangemaakt.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block font-pixel mb-2 uppercase" style={{ fontSize: "7px", color: "#7070a0" }}>
-                Naam van de poule
+                Naam van de pool
               </label>
               <input
                 name="name"
@@ -87,7 +87,7 @@ export default function NewPoolPage() {
                 fontSize: "9px",
               }}
             >
-              {loading ? "AANMAKEN..." : "POULE AANMAKEN ▶"}
+              {loading ? "AANMAKEN..." : "POOL AANMAKEN ▶"}
             </button>
           </form>
         </div>

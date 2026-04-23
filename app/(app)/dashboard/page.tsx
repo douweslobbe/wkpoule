@@ -73,14 +73,14 @@ export default async function DashboardPage() {
       {memberships.length === 0 ? (
         <div className="pixel-card p-10 text-center">
           <div className="text-5xl mb-4">⚽</div>
-          <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#FFD700" }}>GEEN POULES</h2>
+          <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#FFD700" }}>GEEN POOLS</h2>
           <p className="text-sm mb-6" style={{ color: "var(--c-text-3)" }}>
-            Maak een nieuwe poule aan of doe mee via een uitnodigingscode.
+            Maak een nieuwe pool aan of doe mee via een uitnodigingscode.
           </p>
           <div className="flex gap-3 justify-center">
             <Link href="/pools/new" className="pixel-btn px-5 py-2.5 text-sm font-bold"
               style={{ background: "#FF6200", color: "white" }}>
-              Poule aanmaken
+              Pool aanmaken
             </Link>
             <Link href="/pools/join" className="pixel-btn px-5 py-2.5 text-sm font-bold"
               style={{ background: "var(--c-border)", color: "var(--c-text)", border: "2px solid #333360" }}>
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <>
-          {/* Mijn standings per poule */}
+          {/* Mijn standings per pool */}
           <div className="pixel-card overflow-hidden mb-6">
             <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
               <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 MIJN TUSSENSTANDEN</h2>
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
                 borderBottom: "2px solid var(--c-border)",
                 fontFamily: "var(--font-pixel), monospace",
               }}>
-              <span>Poule</span>
+              <span>Pool</span>
               <span className="text-center">Positie</span>
               <span className="text-center">⚽ Wedstr.</span>
               <span className="text-center">🏆 Plaatje</span>
@@ -225,7 +225,7 @@ export default async function DashboardPage() {
               style={{ borderStyle: "dashed", borderLeft: "4px dashed var(--c-border-mid)" }}>
               <span className="text-2xl" style={{ color: "#4af56a" }}>+</span>
               <div>
-                <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>NIEUWE POULE</div>
+                <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>NIEUWE POOL</div>
                 <div className="text-xs mt-0.5" style={{ color: "var(--c-text-4)" }}>Aanmaken of meedoen</div>
               </div>
             </Link>
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
           {/* Code meedoen link */}
           <div className="text-center">
             <Link href="/pools/join" className="font-bold text-sm hover:underline" style={{ color: "#FFD700" }}>
-              Meedoen met een bestaande poule via uitnodigingscode →
+              Meedoen met een bestaande pool via uitnodigingscode →
             </Link>
           </div>
         </>

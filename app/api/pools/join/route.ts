@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.poolMembership.findUnique({
     where: { userId_poolId: { userId: session.user.id, poolId: pool.id } },
   })
-  if (existing) return NextResponse.json({ error: "Je bent al lid van deze poule" }, { status: 409 })
+  if (existing) return NextResponse.json({ error: "Je bent al lid van deze pool" }, { status: 409 })
 
   await prisma.poolMembership.create({
     data: { userId: session.user.id, poolId: pool.id, role: "MEMBER" },

@@ -31,14 +31,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </span>
               <span className="font-pixel" style={{ fontSize: "7px", lineHeight: "1.5", display: "block" }}>
                 <span style={{ color: "#FF6200" }}>WK</span>{" "}
-                <span style={{ color: "#FFD700" }}>POULE</span>{" "}
+                <span style={{ color: "#FFD700" }}>POOL</span>{" "}
                 <span style={{ color: "#4af56a" }}>2026</span>
               </span>
             </div>
             <div className="hidden sm:block lg:hidden">
               <span className="font-pixel" style={{ fontSize: "7px", lineHeight: "1.5", display: "block" }}>
                 <span style={{ color: "#FF6200" }}>WK</span>{" "}
-                <span style={{ color: "#FFD700" }}>POULE</span>{" "}
+                <span style={{ color: "#FFD700" }}>POOL</span>{" "}
                 <span style={{ color: "#4af56a" }}>&apos;26</span>
               </span>
             </div>
@@ -66,7 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               href="/pools/new"
               className="shrink-0 px-2 py-1 font-bold text-sm transition-colors"
               style={{ color: "#4af56a", fontFamily: "var(--font-pixel)", fontSize: "10px" }}
-              title="Nieuwe poule"
+              title="Nieuwe pool"
             >
               +
             </Link>

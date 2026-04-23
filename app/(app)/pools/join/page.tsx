@@ -43,7 +43,7 @@ export default function JoinPoolPage() {
       <div className="pixel-card overflow-hidden">
         {/* Header */}
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-          <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>🎟 MEEDOEN MET POULE</h1>
+          <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>🎟 MEEDOEN MET POOL</h1>
         </div>
 
         <div className="p-5">

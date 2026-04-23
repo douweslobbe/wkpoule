@@ -15,10 +15,10 @@ export default function ForgotPasswordPage() {
         lineHeight: "2",
       }}>
         <p className="mb-3">
-          Wachtwoorden kunnen alleen worden gereset door de <span style={{ color: "#FFD700" }}>beheerder van jouw poule</span>.
+          Wachtwoorden kunnen alleen worden gereset door de <span style={{ color: "#FFD700" }}>beheerder van jouw pool</span>.
         </p>
         <p>
-          Neem contact op met de persoon die de poule heeft aangemaakt en vraag hem of haar om
+          Neem contact op met de persoon die de pool heeft aangemaakt en vraag hem of haar om
           jouw wachtwoord te resetten via het beheerderspaneel.
         </p>
       </div>

@@ -34,7 +34,7 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📌 PRIKBORD — {membership.pool.name.toUpperCase()}</h2>
           <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>
-            Praat met je poulegenoten over het WK
+            Praat met je poolgenoten over het WK
           </p>
         </div>
 

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
 
   const { name } = await req.json()
-  if (!name?.trim()) return NextResponse.json({ error: "Geef de poule een naam" }, { status: 400 })
+  if (!name?.trim()) return NextResponse.json({ error: "Geef de pool een naam" }, { status: 400 })
 
   const inviteCode = nanoid(8).toUpperCase()
 

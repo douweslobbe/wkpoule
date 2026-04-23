@@ -7,8 +7,8 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const pressStart = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--font-pixel" })
 
 export const metadata: Metadata = {
-  title: "Douwe's Super Megalomane WK Poule 2026",
-  description: "Voorspel de WK 2026 wedstrijden en win de poule!",
+  title: "Douwe's Super Megalomane WK Pool 2026",
+  description: "Voorspel de WK 2026 wedstrijden en win de pool!",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
