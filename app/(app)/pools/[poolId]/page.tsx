@@ -46,15 +46,37 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
       matchPoints: 0,
       bonusPoints: 0,
       championPoints: 0,
+      previousTotalPoints: null as number | null,
+      snapshotAt: null as Date | null,
       lastCalculatedAt: new Date(),
     })),
   ]
 
+  // Calculate previous ranking for movement indicators
+  const prevRanked = ranked
+    .filter((e) => e.previousTotalPoints !== null && e.previousTotalPoints !== undefined)
+    .map((e) => ({ userId: e.userId, pts: e.previousTotalPoints as number }))
+    .sort((a, b) => b.pts - a.pts)
+  const prevRankMap = new Map(prevRanked.map((e, i) => [e.userId, i + 1]))
+
   const completedMatches = await prisma.match.count({ where: { status: "FINISHED" } })
+
+  // Admin checklist data
+  const memberCount = members.length
+  const bonusQuestionCount = await prisma.bonusQuestion.count({ where: { poolId } })
+  const myChampionPick = isAdmin ? await prisma.championPick.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  }) : null
   const totalMatches = 104
 
   const bonusQuestionsTotal = await prisma.bonusQuestion.count({ where: { poolId } })
   const bonusQuestionsScored = await prisma.bonusQuestion.count({ where: { poolId, correctAnswer: { not: null } } })
+
+  const latestMessage = await prisma.poolMessage.findFirst({
+    where: { poolId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  })
 
   const championPicks = await prisma.championPick.findMany({
     where: { poolId },
@@ -64,7 +86,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
 
   return (
     <div>
-      <PoolSubNav poolId={poolId} />
+      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
@@ -87,6 +109,68 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
           </Link>
         )}
       </div>
+
+      {/* Admin onboarding checklist */}
+      {isAdmin && (() => {
+        const checks = [
+          {
+            done: memberCount > 1,
+            label: "Poolgenoten uitgenodigd",
+            detail: memberCount > 1 ? `${memberCount} leden` : "Deel de uitnodigingscode",
+            link: null,
+          },
+          {
+            done: bonusQuestionCount > 0,
+            label: "Bonusvragen toegevoegd",
+            detail: bonusQuestionCount > 0 ? `${bonusQuestionCount} vragen` : "Voeg vragen toe via Beheer",
+            link: `/admin/pools/${poolId}/bonus`,
+          },
+          {
+            done: !!myChampionPick,
+            label: "Kampioen gekozen",
+            detail: myChampionPick ? "Keuze gemaakt" : "Kies in Het Grote Plaatje",
+            link: `/pools/${poolId}/bonus`,
+          },
+        ]
+        const allDone = checks.every((c) => c.done)
+        if (allDone) return null
+        return (
+          <div className="pixel-card overflow-hidden mb-6">
+            <div className="px-5 py-3" style={{ background: "#0d1a10", borderBottom: "3px solid #000" }}>
+              <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚙ ADMIN CHECKLIST</h2>
+              <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>Zet je pool klaar voor het WK</p>
+            </div>
+            <div>
+              {checks.map((c, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 px-5 py-3"
+                  style={{ borderBottom: "1px solid var(--c-border)", opacity: c.done ? 0.5 : 1 }}
+                >
+                  <span className="font-pixel shrink-0" style={{ fontSize: "10px", color: c.done ? "#4af56a" : "#FF6200" }}>
+                    {c.done ? "✓" : "○"}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-pixel" style={{ fontSize: "8px", color: c.done ? "var(--c-text-3)" : "var(--c-text)", textDecoration: c.done ? "line-through" : "none" }}>
+                      {c.label}
+                    </div>
+                    <div className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>{c.detail}</div>
+                  </div>
+                  {!c.done && c.link && (
+                    <Link
+                      href={c.link}
+                      className="pixel-btn shrink-0 px-2 py-1 font-pixel"
+                      style={{ background: "#FF6200", color: "white", fontSize: "6px" }}
+                    >
+                      →
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Leaderboard */}
       <div className="pixel-card overflow-hidden">
@@ -125,6 +209,8 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                 const isMe = entry.userId === session.user.id
                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
                 const hasPick = hasChampionPickSet.has(entry.userId)
+                const prevRank = prevRankMap.get(entry.userId)
+                const rankChange = prevRank !== undefined ? prevRank - (i + 1) : null
 
                 const projectedMatchPts = completedMatches > 0
                   ? Math.round((entry.matchPoints / completedMatches) * totalMatches)
@@ -151,9 +237,17 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="hidden sm:grid items-center gap-2 px-5 py-3"
                       style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
                       <span className="text-lg">{medal}</span>
-                      <span className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                      <span className="font-bold text-sm truncate flex items-center gap-1.5" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                         {memberMap.get(entry.userId) ?? "?"}
-                        {isMe && <span className="ml-1 text-xs font-normal" style={{ color: "#FF6200", opacity: 0.7 }}>◄ jij</span>}
+                        {isMe && <span className="text-xs font-normal" style={{ color: "#FF6200", opacity: 0.7 }}>◄ jij</span>}
+                        {rankChange !== null && rankChange !== 0 && (
+                          <span className="font-pixel" style={{
+                            fontSize: "7px",
+                            color: rankChange > 0 ? "#4af56a" : "#ff4444",
+                          }}>
+                            {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
+                          </span>
+                        )}
                       </span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.matchPoints}</span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.bonusPoints + entry.championPoints}</span>
@@ -179,9 +273,17 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="sm:hidden flex items-center gap-3 px-4 py-3">
                       <span className="text-lg w-7">{medal}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                        <div className="font-bold text-sm truncate flex items-center gap-1.5" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                           {memberMap.get(entry.userId) ?? "?"}
-                          {isMe && <span className="ml-1 text-xs font-normal" style={{ opacity: 0.6, color: "#FF6200" }}>◄</span>}
+                          {isMe && <span className="text-xs font-normal" style={{ opacity: 0.6, color: "#FF6200" }}>◄</span>}
+                          {rankChange !== null && rankChange !== 0 && (
+                            <span className="font-pixel" style={{
+                              fontSize: "7px",
+                              color: rankChange > 0 ? "#4af56a" : "#ff4444",
+                            }}>
+                              {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>
                           ⚽{entry.matchPoints} + 🏆{entry.bonusPoints + entry.championPoints}

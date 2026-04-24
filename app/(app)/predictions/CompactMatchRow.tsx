@@ -39,6 +39,7 @@ export function CompactMatchRow({
   const finished = match.status === "FINISHED"
   const live = match.status === "LIVE"
   const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
+  const isUnfilled = isOwnView && !locked && myPred === undefined
 
   const [home, setHome] = useState(myPred?.homeScore?.toString() ?? "")
   const [away, setAway] = useState(myPred?.awayScore?.toString() ?? "")
@@ -110,12 +111,20 @@ export function CompactMatchRow({
     : saveStatus === "error" ? "#ff4444"
     : "var(--c-text-4)"
 
+  function adj(val: string, delta: number) {
+    const n = Math.min(20, Math.max(0, parseInt(val || "0") + delta))
+    return n.toString()
+  }
+
   return (
-    <div style={{
-      background: live ? "#1a0d00" : "var(--c-surface-alt)",
-      borderBottom: "2px solid var(--c-border)",
-      borderLeft: live ? "3px solid #ff4444" : "3px solid transparent",
-    }}>
+    <div
+      className={isUnfilled ? "match-unfilled" : ""}
+      style={{
+        background: live ? "#1a0d00" : undefined,
+        borderBottom: "2px solid var(--c-border)",
+        borderLeft: live ? "3px solid #ff4444" : isUnfilled ? "3px solid #FF6200" : "3px solid transparent",
+      }}
+    >
       {/* Top meta bar */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1" style={{ borderBottom: "1px solid var(--c-border)", fontSize: "10px" }}>
         <span style={{ color: "var(--c-text-4)" }}>
@@ -148,30 +157,32 @@ export function CompactMatchRow({
           {isOwnView && !locked ? (
             /* Eigen invoer */
             <>
-              <input
-                type="number" min={0} max={20}
-                value={home}
-                onChange={(e) => setHome(e.target.value)}
-                className="pixel-input w-10 text-center font-bold text-sm py-1"
-                placeholder="–"
-              />
+              {/* Thuis +/- */}
+              <div className="flex items-center gap-0.5">
+                <button type="button" onClick={() => setHome(adj(home, -1))} className="pixel-pm">–</button>
+                <input
+                  type="number" min={0} max={20}
+                  value={home}
+                  onChange={(e) => setHome(e.target.value)}
+                  className="pixel-input w-8 text-center font-bold text-sm py-1"
+                  placeholder="–"
+                />
+                <button type="button" onClick={() => setHome(adj(home, +1))} className="pixel-pm">+</button>
+              </div>
               <span className="font-bold text-sm" style={{ color: "var(--c-text-4)" }}>–</span>
-              <input
-                type="number" min={0} max={20}
-                value={away}
-                onChange={(e) => setAway(e.target.value)}
-                className="pixel-input w-10 text-center font-bold text-sm py-1"
-                placeholder="–"
-              />
-              <span
-                className="font-pixel"
-                style={{
-                  fontSize: "7px",
-                  minWidth: "3rem",
-                  textAlign: "center",
-                  color: statusColor,
-                }}
-              >
+              {/* Uit +/- */}
+              <div className="flex items-center gap-0.5">
+                <button type="button" onClick={() => setAway(adj(away, -1))} className="pixel-pm">–</button>
+                <input
+                  type="number" min={0} max={20}
+                  value={away}
+                  onChange={(e) => setAway(e.target.value)}
+                  className="pixel-input w-8 text-center font-bold text-sm py-1"
+                  placeholder="–"
+                />
+                <button type="button" onClick={() => setAway(adj(away, +1))} className="pixel-pm">+</button>
+              </div>
+              <span className="font-pixel" style={{ fontSize: "7px", minWidth: "2rem", textAlign: "center", color: statusColor }}>
                 {statusLabel}
               </span>
             </>

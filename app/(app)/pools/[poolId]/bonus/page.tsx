@@ -97,9 +97,15 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
   const sortedChampPicks = Object.entries(champPicksByTeam)
     .sort((a, b) => b[1].count - a[1].count)
 
+  const latestMessage = await prisma.poolMessage.findFirst({
+    where: { poolId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  })
+
   return (
     <div>
-      <PoolSubNav poolId={poolId} />
+      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       <div className="pixel-card p-4 mb-6" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
         <p style={{ color: "var(--c-text-2)", fontSize: "8px", fontFamily: "var(--font-pixel), monospace", lineHeight: "2" }}>

@@ -2,9 +2,27 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 
-export function PoolSubNav({ poolId }: { poolId: string }) {
+export function PoolSubNav({
+  poolId,
+  latestMessageAt,
+}: {
+  poolId: string
+  latestMessageAt?: number
+}) {
   const pathname = usePathname()
+  const [hasUnread, setHasUnread] = useState(false)
+
+  useEffect(() => {
+    if (!latestMessageAt) return
+    try {
+      const seen = parseInt(localStorage.getItem(`prikbord_seen_${poolId}`) ?? "0", 10)
+      setHasUnread(latestMessageAt > seen)
+    } catch {
+      // localStorage not available
+    }
+  }, [poolId, latestMessageAt])
 
   const tabs = [
     {
@@ -27,6 +45,7 @@ export function PoolSubNav({ poolId }: { poolId: string }) {
       href: `/pools/${poolId}/prikbord`,
       label: "📌 Het Prikbord",
       isActive: (p: string) => p.includes("/prikbord"),
+      badge: hasUnread,
     },
   ]
 
@@ -38,12 +57,26 @@ export function PoolSubNav({ poolId }: { poolId: string }) {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`px-3 py-2 text-xs font-bold transition-all ${
+            className={`relative px-3 py-2 text-xs font-bold transition-all ${
               active ? "pixel-tab-active" : "pixel-tab-inactive"
             }`}
             style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
           >
             {tab.label}
+            {tab.badge && !active && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "-4px",
+                  right: "-4px",
+                  width: "8px",
+                  height: "8px",
+                  background: "#ff4444",
+                  border: "1px solid #000",
+                  borderRadius: "0",
+                }}
+              />
+            )}
           </Link>
         )
       })}

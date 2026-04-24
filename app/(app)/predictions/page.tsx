@@ -92,10 +92,16 @@ export default async function PredictionsPage({
   // Gebruik eerste pool als geen pool geselecteerd
   const navPoolId = activePoolId ?? myPools[0]?.pool.id ?? ""
 
+  const latestMessage = navPoolId ? await prisma.poolMessage.findFirst({
+    where: { poolId: navPoolId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  }) : null
+
   return (
     <div>
       {/* Pool navigatie tabs — altijd zichtbaar */}
-      {navPoolId && <PoolSubNav poolId={navPoolId} />}
+      {navPoolId && <PoolSubNav poolId={navPoolId} latestMessageAt={latestMessage?.createdAt.getTime()} />}
 
       {/* Poule-kiezer voor anderen bekijken */}
       {myPools.length > 0 && (

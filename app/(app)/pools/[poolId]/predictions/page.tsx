@@ -73,6 +73,12 @@ export default async function PredictionsPage({
     orderBy: { user: { name: "asc" } },
   })
 
+  const latestMessage = await prisma.poolMessage.findFirst({
+    where: { poolId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  })
+
   const now = new Date()
 
   // Voortgang voor deze fase
@@ -86,7 +92,7 @@ export default async function PredictionsPage({
 
   return (
     <div>
-      <PoolSubNav poolId={poolId} />
+      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       {/* Wie bekijken we? */}
       <div className="flex gap-2 flex-wrap mb-4">

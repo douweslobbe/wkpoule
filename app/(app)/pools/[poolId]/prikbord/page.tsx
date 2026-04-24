@@ -5,6 +5,7 @@ import { PoolSubNav } from "../PoolSubNav"
 import { MessageForm } from "./MessageForm"
 import { DeleteButton } from "./DeleteButton"
 import { AutoRefresh } from "./AutoRefresh"
+import { PrikbordSeenMarker } from "./PrikbordSeenMarker"
 import { formatDistanceToNow } from "date-fns"
 import { nl } from "date-fns/locale"
 
@@ -25,10 +26,13 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
     orderBy: { createdAt: "asc" },
   })
 
+  const latestMessage = messages[messages.length - 1]
+
   return (
     <div>
       <AutoRefresh />
-      <PoolSubNav poolId={poolId} />
+      <PrikbordSeenMarker poolId={poolId} />
+      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       <div className="pixel-card overflow-hidden mb-5">
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>

@@ -541,6 +541,18 @@ async function rebuildLeaderboards() {
       })
       const champPts = championPick?.pointsAwarded ?? 0
 
+      const newTotal = matchPts + bonusPts + champPts
+      const today = new Date().toISOString().slice(0, 10)
+
+      // Check existing entry for daily snapshot
+      const existing = await prisma.leaderboardEntry.findUnique({
+        where: { userId_poolId: { userId: uid, poolId: pool.id } },
+      })
+
+      // Snapshot previous points once per day (when the date changes)
+      const lastSnapshotDate = existing?.snapshotAt?.toISOString().slice(0, 10) ?? null
+      const shouldSnapshot = existing && lastSnapshotDate !== today
+
       await prisma.leaderboardEntry.upsert({
         where: { userId_poolId: { userId: uid, poolId: pool.id } },
         create: {
@@ -549,14 +561,22 @@ async function rebuildLeaderboards() {
           matchPoints: matchPts,
           bonusPoints: bonusPts,
           championPoints: champPts,
-          totalPoints: matchPts + bonusPts + champPts,
+          totalPoints: newTotal,
+          previousTotalPoints: null,
+          snapshotAt: null,
           lastCalculatedAt: new Date(),
         },
         update: {
           matchPoints: matchPts,
           bonusPoints: bonusPts,
           championPoints: champPts,
-          totalPoints: matchPts + bonusPts + champPts,
+          totalPoints: newTotal,
+          ...(shouldSnapshot
+            ? {
+                previousTotalPoints: existing.totalPoints,
+                snapshotAt: new Date(),
+              }
+            : {}),
           lastCalculatedAt: new Date(),
         },
       })

@@ -247,6 +247,46 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   PIXEL +/- BUTTON — score stepper
+═══════════════════════════════════════ */
+.pixel-pm {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface-alt);
+  border: 2px solid var(--c-border-bright);
+  color: var(--c-text-2);
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 1px 1px 0 #000;
+  transition: all 0.05s;
+}
+.pixel-pm:hover {
+  background: var(--c-surface);
+  color: #FF6200;
+  border-color: #FF6200;
+}
+.pixel-pm:active {
+  box-shadow: none;
+  transform: translate(1px, 1px);
+}
+
+/* ═══════════════════════════════════════
+   UNFILLED ROW — nog niet voorspeld
+═══════════════════════════════════════ */
+.match-unfilled {
+  background: #160f00 !important;
+}
+[data-theme="light"] .match-unfilled {
+  background: #fff6ee !important;
+}
+
+/* ═══════════════════════════════════════
    PIXEL LIVE — blinking LIVE badge
 ═══════════════════════════════════════ */
 @keyframes pixel-blink {

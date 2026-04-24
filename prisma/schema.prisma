@@ -200,11 +200,13 @@ model LeaderboardEntry {
   id               String   @id @default(cuid())
   userId           String
   poolId           String
-  totalPoints      Int      @default(0)
-  matchPoints      Int      @default(0)
-  bonusPoints      Int      @default(0)
-  championPoints   Int      @default(0)
-  lastCalculatedAt DateTime @default(now())
+  totalPoints         Int      @default(0)
+  matchPoints         Int      @default(0)
+  bonusPoints         Int      @default(0)
+  championPoints      Int      @default(0)
+  previousTotalPoints Int?
+  snapshotAt          DateTime?
+  lastCalculatedAt    DateTime @default(now())
 
   pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
 

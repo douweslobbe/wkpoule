@@ -72,29 +72,42 @@ export function PredictionForm({
     : saveStatus === "error" ? "#ff4444"
     : "#999"
 
+  function adj(val: string, delta: number) {
+    const n = Math.min(20, Math.max(0, parseInt(val || "0") + delta))
+    return n.toString()
+  }
+
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--c-border)" }}>
-      <div className="flex items-center gap-3 justify-center">
+      <div className="flex items-center gap-2 justify-center flex-wrap">
         <span className="text-xs" style={{ color: "var(--c-text-4)" }}>Jouw voorspelling:</span>
-        <input
-          type="number"
-          min={0}
-          max={20}
-          value={home}
-          onChange={(e) => setHome(e.target.value)}
-          className="pixel-input w-12 text-center font-bold text-lg py-1.5"
-          placeholder="–"
-        />
+        <div className="flex items-center gap-0.5">
+          <button type="button" onClick={() => setHome(adj(home, -1))} className="pixel-pm">–</button>
+          <input
+            type="number"
+            min={0}
+            max={20}
+            value={home}
+            onChange={(e) => setHome(e.target.value)}
+            className="pixel-input w-10 text-center font-bold text-lg py-1.5"
+            placeholder="–"
+          />
+          <button type="button" onClick={() => setHome(adj(home, +1))} className="pixel-pm">+</button>
+        </div>
         <span className="font-bold" style={{ color: "var(--c-text-4)" }}>–</span>
-        <input
-          type="number"
-          min={0}
-          max={20}
-          value={away}
-          onChange={(e) => setAway(e.target.value)}
-          className="pixel-input w-12 text-center font-bold text-lg py-1.5"
-          placeholder="–"
-        />
+        <div className="flex items-center gap-0.5">
+          <button type="button" onClick={() => setAway(adj(away, -1))} className="pixel-pm">–</button>
+          <input
+            type="number"
+            min={0}
+            max={20}
+            value={away}
+            onChange={(e) => setAway(e.target.value)}
+            className="pixel-input w-10 text-center font-bold text-lg py-1.5"
+            placeholder="–"
+          />
+          <button type="button" onClick={() => setAway(adj(away, +1))} className="pixel-pm">+</button>
+        </div>
         <span className="font-pixel text-xs" style={{ color: statusColor, minWidth: "80px" }}>
           {statusLabel}
         </span>
