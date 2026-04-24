@@ -3,16 +3,9 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BonusQuestionBlock } from "./BonusQuestionBlock"
 import { QuestionStats } from "./QuestionStats"
-import { BonusQuestionType } from "@prisma/client"
 import { PoolSubNav } from "../PoolSubNav"
 import { ChampionForm } from "../champion/ChampionForm"
 import { PixelFlag } from "@/components/PixelFlag"
-
-const TYPE_LABELS: Record<BonusQuestionType, string> = {
-  OPEN: "Openvragen",
-  ESTIMATION: "Benaderingsvragen",
-  STATEMENT: "Stellingen",
-}
 
 const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z")
 
@@ -66,10 +59,20 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
 
   const now = new Date()
 
+  // Groepeer per categorie (val terug op type als er geen categorie is)
+  const TYPE_FALLBACK: Record<string, string> = {
+    OPEN: "Openvragen",
+    ESTIMATION: "Schattingsvragen",
+    STATEMENT: "Stellingen",
+  }
+  const categoryOrder: string[] = []
   const groups: Record<string, typeof questions> = {}
   for (const q of questions) {
-    const key = q.type
-    if (!groups[key]) groups[key] = []
+    const key = q.category ?? TYPE_FALLBACK[q.type] ?? q.type
+    if (!groups[key]) {
+      groups[key] = []
+      categoryOrder.push(key)
+    }
     groups[key].push(q)
   }
 
@@ -196,48 +199,62 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
         </div>
       </div>
 
-      {/* Bonus questions */}
-      <div className="space-y-6">
-        {(["OPEN", "ESTIMATION", "STATEMENT"] as BonusQuestionType[]).map((type) => {
-          const qs = groups[type]
-          if (!qs?.length) return null
-          return (
-            <div key={type} className="pixel-card overflow-hidden">
-              <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-                <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>{TYPE_LABELS[type].toUpperCase()}</h2>
-                <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4a7a4a" }}>
-                  7 punten per vraag
-                  {type === "ESTIMATION" && " · 3 dichtstbijzijnde voorspellingen worden beloond"}
-                  {type === "STATEMENT" && " · kies Eens of Oneens"}
-                </p>
+      {/* Bonus questions – gegroepeerd per categorie */}
+      {categoryOrder.length === 0 ? (
+        <div className="pixel-card p-8 text-center">
+          <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-4)" }}>
+            De pool-admin heeft nog geen bonusvragen toegevoegd.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {categoryOrder.map((cat) => {
+            const qs = groups[cat]
+            if (!qs?.length) return null
+            // Detecteer type voor de subtitle
+            const firstType = qs[0].type
+            const subtitle =
+              firstType === "ESTIMATION"
+                ? "7 punten · 3 dichtstbijzijnde voorspellingen worden beloond"
+                : firstType === "STATEMENT"
+                ? "7 punten · kies Eens of Oneens"
+                : "7 punten · admin bepaalt het correcte antwoord"
+            return (
+              <div key={cat} className="pixel-card overflow-hidden">
+                <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
+                  <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>{cat.toUpperCase()}</h2>
+                  <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4a7a4a" }}>
+                    {subtitle}
+                  </p>
+                </div>
+                <div>
+                  {qs.map((q) => {
+                    const ans = answerMap.get(q.id)
+                    const deadline = q.deadline ?? TOURNAMENT_START
+                    const qLocked = now > deadline
+                    return (
+                      <div key={q.id} className="px-5 py-4" style={{ borderBottom: "2px solid var(--c-border)" }}>
+                        <BonusQuestionBlock
+                          question={q}
+                          currentAnswer={ans?.answer}
+                          pointsAwarded={ans?.pointsAwarded}
+                          locked={qLocked}
+                          correctAnswer={q.correctAnswer}
+                        />
+                        <QuestionStats
+                          type={q.type}
+                          answers={allAnswersByQuestion.get(q.id) ?? []}
+                          myAnswer={ans?.answer}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <div>
-                {qs.map((q) => {
-                  const ans = answerMap.get(q.id)
-                  const deadline = q.deadline ?? TOURNAMENT_START
-                  const qLocked = now > deadline
-                  return (
-                    <div key={q.id} className="px-5 py-4" style={{ borderBottom: "2px solid var(--c-border)" }}>
-                      <BonusQuestionBlock
-                        question={q}
-                        currentAnswer={ans?.answer}
-                        pointsAwarded={ans?.pointsAwarded}
-                        locked={qLocked}
-                        correctAnswer={q.correctAnswer}
-                      />
-                      <QuestionStats
-                        type={q.type}
-                        answers={allAnswersByQuestion.get(q.id) ?? []}
-                        myAnswer={ans?.answer}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

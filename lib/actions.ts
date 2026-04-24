@@ -241,6 +241,8 @@ export async function addBonusQuestion(formData: FormData) {
     orderBy: { orderIndex: "desc" },
   })
 
+  const category = (formData.get("category") as string)?.trim() || "Eigen vragen"
+
   await prisma.bonusQuestion.create({
     data: {
       poolId,
@@ -248,9 +250,55 @@ export async function addBonusQuestion(formData: FormData) {
       question,
       description,
       options,
+      category,
       orderIndex: (last?.orderIndex ?? 0) + 1,
       deadline: TOURNAMENT_START,
     },
+  })
+
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  return { success: true }
+}
+
+// ─── Admin: vragen uit bibliotheek toevoegen ─────────────────────────────────
+
+export async function addQuestionsFromLibrary(
+  poolId: string,
+  questions: Array<{
+    type: BonusQuestionType
+    category: string
+    question: string
+    description?: string
+    options?: string
+    orderIndex: number
+  }>
+) {
+  "use server"
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
+
+  const last = await prisma.bonusQuestion.findFirst({
+    where: { poolId },
+    orderBy: { orderIndex: "desc" },
+  })
+  let nextIndex = (last?.orderIndex ?? 0) + 1
+
+  await prisma.bonusQuestion.createMany({
+    data: questions.map((q, i) => ({
+      poolId,
+      type: q.type,
+      category: q.category,
+      question: q.question,
+      description: q.description,
+      options: q.options,
+      orderIndex: nextIndex + i,
+      deadline: TOURNAMENT_START,
+    })),
   })
 
   revalidatePath(`/admin/pools/${poolId}/bonus`)
