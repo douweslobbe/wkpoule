@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
-import { logout } from "@/lib/actions"
 import { prisma } from "@/lib/prisma"
 import { PixelBackground } from "@/components/PixelBackground"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { LogoutButton } from "@/components/LogoutButton"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -95,14 +95,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 ADMIN
               </Link>
             )}
-            <form action={logout}>
-              <button
-                className="px-2 py-1 font-bold transition-colors"
-                style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#666688", border: "1px solid #2d2d50" }}
-              >
-                UIT
-              </button>
-            </form>
+            <LogoutButton />
           </div>
         </div>
       </header>

@@ -17,7 +17,6 @@ export function ChampionForm({
 }) {
   const [selected, setSelected] = useState(currentTeamId ?? "")
   const [saved, setSaved] = useState(!!currentTeamId)
-  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState("")
   const [query, setQuery] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -26,14 +25,9 @@ export function ChampionForm({
     t.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  function handleSaveClick() {
+  function handleSave() {
     if (!selected) return
-    setConfirming(true)
-  }
-
-  function handleConfirm() {
     setError("")
-    setConfirming(false)
     const fd = new FormData()
     fd.set("poolId", poolId)
     fd.set("teamId", selected)
@@ -77,7 +71,7 @@ export function ChampionForm({
           <button
             key={t.id}
             type="button"
-            onClick={() => { setSelected(t.id); setSaved(false); setConfirming(false) }}
+            onClick={() => { setSelected(t.id); setSaved(false); setQuery("") }}
             className={`pixel-list-item ${selected === t.id ? "selected" : ""}`}
           >
             <PixelFlag code={t.code} size="sm" />
@@ -94,74 +88,22 @@ export function ChampionForm({
 
       {error && <p className="text-xs mt-2" style={{ color: "#ff4444" }}>{error}</p>}
 
-      {/* Confirmation panel */}
-      {confirming && selectedTeam ? (
-        <div className="mt-4 p-4" style={{
-          background: "#1a1200",
-          border: "2px solid #FFD700",
-          boxShadow: "2px 2px 0 #000",
-        }}>
-          <p className="font-pixel mb-4 text-center" style={{ fontSize: "8px", color: "#FFD700" }}>
-            WEET JE HET ZEKER?
-          </p>
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <PixelFlag code={selectedTeam.code} size="md" />
-            <span className="font-pixel" style={{ fontSize: "10px", color: "#FF6200" }}>
-              {selectedTeam.name}
-            </span>
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={isPending}
-              className="flex-1 py-2.5 font-bold transition-colors"
-              style={{
-                background: "#16a34a",
-                color: "white",
-                border: "3px solid #000",
-                boxShadow: "3px 3px 0 #000",
-                fontFamily: "var(--font-pixel), monospace",
-                fontSize: "8px",
-              }}
-            >
-              {isPending ? "OPSLAAN..." : "✓ BEVESTIGEN"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="flex-1 py-2.5 font-bold"
-              style={{
-                background: "var(--c-surface-alt)",
-                color: "var(--c-text-2)",
-                border: "3px solid #000",
-                boxShadow: "3px 3px 0 #000",
-                fontFamily: "var(--font-pixel), monospace",
-                fontSize: "8px",
-              }}
-            >
-              ✕ ANNULEREN
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleSaveClick}
-          disabled={!selected || isPending}
-          className="mt-4 w-full py-2.5 font-bold transition-colors disabled:opacity-50"
-          style={{
-            background: saved && !error ? "#16a34a" : "#FF6200",
-            color: "white",
-            border: "3px solid #000",
-            boxShadow: "3px 3px 0 #000",
-            fontFamily: "var(--font-pixel), monospace",
-            fontSize: "8px",
-          }}
-        >
-          {isPending ? "OPSLAAN..." : saved && !error ? "✓ OPGESLAGEN" : "KAMPIOEN OPSLAAN"}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={!selected || isPending}
+        className="mt-4 w-full py-2.5 font-bold transition-colors disabled:opacity-50"
+        style={{
+          background: saved && !error ? "#16a34a" : "#FF6200",
+          color: "white",
+          border: "3px solid #000",
+          boxShadow: "3px 3px 0 #000",
+          fontFamily: "var(--font-pixel), monospace",
+          fontSize: "8px",
+        }}
+      >
+        {isPending ? "OPSLAAN..." : saved && !error ? "✓ OPGESLAGEN" : "KAMPIOEN OPSLAAN"}
+      </button>
     </div>
   )
 }
