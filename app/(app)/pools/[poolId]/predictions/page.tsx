@@ -6,6 +6,7 @@ import { PredictionForm } from "./PredictionForm"
 import { MatchStage } from "@prisma/client"
 import { PoolSubNav } from "../PoolSubNav"
 import { PixelFlag } from "@/components/PixelFlag"
+import { DeadlineDisplay } from "@/components/DeadlineDisplay"
 
 const STAGE_LABELS: Record<MatchStage, string> = {
   GROUP: "Groepsfase",
@@ -74,6 +75,15 @@ export default async function PredictionsPage({
 
   const now = new Date()
 
+  // Voortgang voor deze fase
+  const totalMatches = matches.length
+  const filledIn = myPredictions.length
+  const openMatches = matches.filter((m) => now <= new Date(m.kickoff.getTime() - 30 * 60 * 1000))
+  const closingSoonNotFilled = openMatches.filter((m) => {
+    const dl = new Date(m.kickoff.getTime() - 30 * 60 * 1000)
+    return dl.getTime() - now.getTime() < 24 * 3_600_000 && !myPredMap.get(m.id)
+  }).length
+
   return (
     <div>
       <PoolSubNav poolId={poolId} />
@@ -120,6 +130,41 @@ export default async function PredictionsPage({
         ))}
       </div>
 
+      {/* Voortgangsbalk — eigen view + er zijn wedstrijden */}
+      {viewUserId === session.user.id && totalMatches > 0 && (
+        <div className="pixel-card overflow-hidden mb-4">
+          <div className="px-4 py-3 flex items-center gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+                  {STAGE_LABELS[stage].toUpperCase()} VOORSPELLINGEN
+                </span>
+                <span className="font-pixel" style={{ fontSize: "7px", color: filledIn === totalMatches ? "#4af56a" : "var(--c-text-2)" }}>
+                  {filledIn}/{totalMatches}
+                </span>
+              </div>
+              <div className="relative h-3 w-full" style={{ background: "var(--c-surface-deep)", border: "2px solid #000" }}>
+                <div
+                  className="h-full transition-all"
+                  style={{
+                    width: totalMatches > 0 ? `${Math.round((filledIn / totalMatches) * 100)}%` : "0%",
+                    background: filledIn === totalMatches ? "#16a34a" : "#FF6200",
+                  }}
+                />
+              </div>
+            </div>
+            {closingSoonNotFilled > 0 && (
+              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#FFD700" }}>
+                ⏱ {closingSoonNotFilled} sluiten snel
+              </span>
+            )}
+            {filledIn === totalMatches && (
+              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#4af56a" }}>✓ ALLES INGEVULD</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {matches.length === 0 ? (
         <div className="pixel-card p-10 text-center text-gray-500">
           Nog geen wedstrijden gepland voor deze ronde.
@@ -148,8 +193,12 @@ export default async function PredictionsPage({
                       hour: "2-digit", minute: "2-digit",
                     })}
                   </span>
-                  <span className={`text-xs font-bold ${locked ? "text-red-400" : "text-green-400"}`}>
-                    {locked ? "🔒 VERGRENDELD" : `Sluit: ${deadline.toLocaleString("nl-NL", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}
+                  <span className="text-xs font-bold">
+                    {locked ? (
+                      <span className="font-pixel" style={{ fontSize: "9px", color: "#cc2222" }}>🔒 VERGRENDELD</span>
+                    ) : (
+                      <DeadlineDisplay deadline={deadline} />
+                    )}
                   </span>
                 </div>
 

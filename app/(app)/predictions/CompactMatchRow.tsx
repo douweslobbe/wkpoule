@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from "react"
 import { savePrediction } from "@/lib/actions"
 import { PixelFlag } from "@/components/PixelFlag"
+import { DeadlineDisplay } from "@/components/DeadlineDisplay"
 
 function formatGroup(g: string | null): string {
   if (!g) return ""
@@ -127,9 +128,9 @@ export function CompactMatchRow({
           {live ? (
             <span className="pixel-live">● LIVE</span>
           ) : locked ? (
-            <span style={{ color: "#cc2222" }}>🔒 GESLOTEN</span>
+            <span className="font-pixel" style={{ fontSize: "9px", color: "#cc2222" }}>🔒 GESLOTEN</span>
           ) : (
-            <span style={{ color: "#4af56a" }}>Deadline: {deadlineStr}</span>
+            <DeadlineDisplay deadline={deadline} />
           )}
         </span>
       </div>

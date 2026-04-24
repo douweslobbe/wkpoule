@@ -79,7 +79,15 @@ export default async function PredictionsPage({
     : null
 
   const now = new Date()
-  const myPredCount = myPredictions.length
+
+  // Voortgang voor deze fase
+  const totalMatches = matches.length
+  const filledIn = myPredictions.length
+  const openMatches = matches.filter((m) => now <= new Date(m.kickoff.getTime() - 30 * 60 * 1000))
+  const closingSoon = openMatches.filter(
+    (m) => new Date(m.kickoff.getTime() - 30 * 60 * 1000).getTime() - now.getTime() < 24 * 3_600_000
+  )
+  const missedOpen = openMatches.filter((m) => !myPredMap.get(m.id)).length
 
   // Gebruik eerste pool als geen pool geselecteerd
   const navPoolId = activePoolId ?? myPools[0]?.pool.id ?? ""
@@ -158,6 +166,46 @@ export default async function PredictionsPage({
           </Link>
         ))}
       </div>
+
+      {/* Voortgangsbalk — alleen bij eigen view en als er wedstrijden zijn */}
+      {viewUserId === session.user.id && totalMatches > 0 && (
+        <div className="pixel-card overflow-hidden mb-4">
+          <div className="px-4 py-3 flex items-center gap-4 flex-wrap">
+            {/* Progress bar */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+                  {STAGE_LABELS[stage].toUpperCase()} VOORSPELLINGEN
+                </span>
+                <span className="font-pixel" style={{ fontSize: "7px", color: filledIn === totalMatches ? "#4af56a" : "var(--c-text-2)" }}>
+                  {filledIn}/{totalMatches}
+                </span>
+              </div>
+              <div className="relative h-3 w-full" style={{ background: "var(--c-surface-deep)", border: "2px solid #000" }}>
+                <div
+                  className="h-full transition-all"
+                  style={{
+                    width: totalMatches > 0 ? `${Math.round((filledIn / totalMatches) * 100)}%` : "0%",
+                    background: filledIn === totalMatches ? "#16a34a" : "#FF6200",
+                    imageRendering: "pixelated",
+                  }}
+                />
+              </div>
+            </div>
+            {/* Waarschuwing: wedstrijden die binnenkort sluiten maar nog niet ingevuld */}
+            {closingSoon.length > 0 && missedOpen > 0 && (
+              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#FFD700" }}>
+                ⏱ {missedOpen} nog in te vullen{closingSoon.filter((m) => !myPredMap.get(m.id)).length > 0 ? ` · ${closingSoon.filter((m) => !myPredMap.get(m.id)).length} sluiten snel` : ""}
+              </span>
+            )}
+            {filledIn === totalMatches && totalMatches > 0 && (
+              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#4af56a" }}>
+                ✓ ALLES INGEVULD
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Wedstrijdlijst */}
       {matches.length === 0 ? (
