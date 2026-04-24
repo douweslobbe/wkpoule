@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { PixelBackground } from "@/components/PixelBackground"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { LogoutButton } from "@/components/LogoutButton"
+import { PoolTabs } from "@/components/PoolTabs"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -45,32 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
 
           {/* Pool tabs */}
-          <nav className="flex items-center gap-1 overflow-x-auto flex-1 justify-center px-2">
-            {pools.map((m) => (
-              <Link
-                key={m.pool.id}
-                href={`/pools/${m.pool.id}`}
-                className="shrink-0 px-2.5 py-1 font-bold whitespace-nowrap transition-colors"
-                style={{
-                  fontFamily: "var(--font-pixel), monospace",
-                  fontSize: "6px",
-                  color: "#8888aa",
-                  border: "1px solid #2d2d50",
-                  background: "#0d0f1a",
-                }}
-              >
-                {m.pool.name.toUpperCase()}
-              </Link>
-            ))}
-            <Link
-              href="/pools/new"
-              className="shrink-0 px-2 py-1 font-bold text-sm transition-colors"
-              style={{ color: "#4af56a", fontFamily: "var(--font-pixel)", fontSize: "10px" }}
-              title="Nieuwe pool"
-            >
-              +
-            </Link>
-          </nav>
+          <PoolTabs pools={pools.map((m) => ({ id: m.pool.id, name: m.pool.name }))} />
 
           {/* User / admin */}
           <div className="flex items-center gap-2 shrink-0">
