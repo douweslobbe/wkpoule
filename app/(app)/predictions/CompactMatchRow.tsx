@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useRef, useTransition } from "react"
 import { savePrediction } from "@/lib/actions"
 import { PixelFlag } from "@/components/PixelFlag"
 
@@ -41,23 +41,49 @@ export function CompactMatchRow({
 
   const [home, setHome] = useState(myPred?.homeScore?.toString() ?? "")
   const [away, setAway] = useState(myPred?.awayScore?.toString() ?? "")
-  const [saved, setSaved] = useState(home !== "" && away !== "")
-  const [isPending, startTransition] = useTransition()
+  const [saveStatus, setSaveStatus] = useState<"idle" | "debouncing" | "saving" | "saved" | "error">(
+    myPred?.homeScore !== undefined && myPred?.awayScore !== undefined ? "saved" : "idle"
+  )
   const [error, setError] = useState("")
+  const [isPending, startTransition] = useTransition()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isInitial = useRef(true)
 
-  function handleSave() {
-    if (home === "" || away === "") return
-    setError("")
-    const fd = new FormData()
-    fd.set("matchId", match.id)
-    fd.set("homeScore", home)
-    fd.set("awayScore", away)
-    startTransition(async () => {
-      const result = await savePrediction(fd)
-      if (result?.error) setError(result.error)
-      else setSaved(true)
-    })
-  }
+  useEffect(() => {
+    if (isInitial.current) {
+      isInitial.current = false
+      return
+    }
+    if (home === "" || away === "") {
+      setSaveStatus("idle")
+      return
+    }
+
+    setSaveStatus("debouncing")
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(() => {
+      setSaveStatus("saving")
+      const fd = new FormData()
+      fd.set("matchId", match.id)
+      fd.set("homeScore", home)
+      fd.set("awayScore", away)
+      startTransition(async () => {
+        const result = await savePrediction(fd)
+        if (result?.error) {
+          setError(result.error)
+          setSaveStatus("error")
+        } else {
+          setError("")
+          setSaveStatus("saved")
+        }
+      })
+    }, 700)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [home, away, match.id])
 
   const homeName = match.homeTeam?.nameNl ?? match.homeTeam?.name ?? "?"
   const awayName = match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "?"
@@ -68,6 +94,20 @@ export function CompactMatchRow({
   const deadlineStr = deadline.toLocaleString("nl-NL", {
     day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
   })
+
+  const statusLabel =
+    saveStatus === "debouncing" || saveStatus === "saving" || isPending
+      ? "OPSL..."
+      : saveStatus === "saved"
+      ? "✓"
+      : saveStatus === "error"
+      ? "✕"
+      : ""
+
+  const statusColor =
+    saveStatus === "saved" ? "#4af56a"
+    : saveStatus === "error" ? "#ff4444"
+    : "var(--c-text-4)"
 
   return (
     <div style={{
@@ -110,8 +150,7 @@ export function CompactMatchRow({
               <input
                 type="number" min={0} max={20}
                 value={home}
-                onChange={(e) => { setHome(e.target.value); setSaved(false) }}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                onChange={(e) => setHome(e.target.value)}
                 className="pixel-input w-10 text-center font-bold text-sm py-1"
                 placeholder="–"
               />
@@ -119,27 +158,21 @@ export function CompactMatchRow({
               <input
                 type="number" min={0} max={20}
                 value={away}
-                onChange={(e) => { setAway(e.target.value); setSaved(false) }}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                onChange={(e) => setAway(e.target.value)}
                 className="pixel-input w-10 text-center font-bold text-sm py-1"
                 placeholder="–"
               />
-              <button
-                onClick={handleSave}
-                disabled={isPending || home === "" || away === ""}
-                className="px-2 py-1 font-bold disabled:opacity-40 transition-all"
+              <span
+                className="font-pixel"
                 style={{
-                  background: saved && !error ? "#16a34a" : "#FF6200",
-                  color: "white",
-                  border: "2px solid #000",
-                  boxShadow: "2px 2px 0 #000",
-                  fontFamily: "var(--font-pixel), monospace",
                   fontSize: "7px",
-                  minWidth: "4rem",
+                  minWidth: "3rem",
+                  textAlign: "center",
+                  color: statusColor,
                 }}
               >
-                {isPending ? "..." : saved && !error ? "✓ OK" : "OPSLAAN"}
-              </button>
+                {statusLabel}
+              </span>
             </>
           ) : finished || live ? (
             /* Eindstand / Live score */

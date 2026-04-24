@@ -16,7 +16,9 @@ export function ChampionForm({
   currentTeamId?: string
 }) {
   const [selected, setSelected] = useState(currentTeamId ?? "")
-  const [saved, setSaved] = useState(!!currentTeamId)
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    currentTeamId ? "saved" : "idle"
+  )
   const [error, setError] = useState("")
   const [query, setQuery] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -25,20 +27,41 @@ export function ChampionForm({
     t.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  function handleSave() {
-    if (!selected) return
+  function handleSelect(teamId: string) {
+    setSelected(teamId)
+    setQuery("")
     setError("")
+    setSaveStatus("saving")
+
     const fd = new FormData()
     fd.set("poolId", poolId)
-    fd.set("teamId", selected)
+    fd.set("teamId", teamId)
     startTransition(async () => {
       const result = await saveChampionPick(fd)
-      if (result?.error) setError(result.error)
-      else setSaved(true)
+      if (result?.error) {
+        setError(result.error)
+        setSaveStatus("error")
+      } else {
+        setSaveStatus("saved")
+      }
     })
   }
 
   const selectedTeam = teams.find((t) => t.id === selected)
+
+  const bannerLabel =
+    isPending || saveStatus === "saving"
+      ? "OPSLAAN..."
+      : saveStatus === "saved"
+      ? "✓ OPGESLAGEN"
+      : saveStatus === "error"
+      ? "✕ FOUT"
+      : "GESELECTEERD ◄"
+
+  const bannerColor =
+    saveStatus === "saved" ? "#4af56a"
+    : saveStatus === "error" ? "#ff4444"
+    : "#FF6200"
 
   return (
     <div>
@@ -48,13 +71,15 @@ export function ChampionForm({
 
       {selectedTeam && (
         <div className="flex items-center gap-2 mb-4 p-3" style={{
-          background: "#1e1200",
-          border: "2px solid #FF6200",
+          background: "var(--c-surface-deep)",
+          border: `2px solid ${bannerColor}`,
           boxShadow: "2px 2px 0 #000",
         }}>
           <PixelFlag code={selectedTeam.code} size="sm" />
-          <span className="font-bold text-sm" style={{ color: "#FF6200" }}>{selectedTeam.name}</span>
-          <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>GESELECTEERD ◄</span>
+          <span className="font-bold text-sm" style={{ color: bannerColor }}>{selectedTeam.name}</span>
+          <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: bannerColor }}>
+            {bannerLabel}
+          </span>
         </div>
       )}
 
@@ -71,13 +96,16 @@ export function ChampionForm({
           <button
             key={t.id}
             type="button"
-            onClick={() => { setSelected(t.id); setSaved(false); setQuery("") }}
+            onClick={() => handleSelect(t.id)}
+            disabled={isPending}
             className={`pixel-list-item ${selected === t.id ? "selected" : ""}`}
           >
             <PixelFlag code={t.code} size="sm" />
             <span className="text-sm font-medium">{t.name}</span>
             {selected === t.id && (
-              <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>✓</span>
+              <span className="ml-auto font-pixel" style={{ fontSize: "7px", color: bannerColor }}>
+                {saveStatus === "saved" ? "✓" : saveStatus === "saving" || isPending ? "..." : "✓"}
+              </span>
             )}
           </button>
         ))}
@@ -87,23 +115,6 @@ export function ChampionForm({
       </div>
 
       {error && <p className="text-xs mt-2" style={{ color: "#ff4444" }}>{error}</p>}
-
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={!selected || isPending}
-        className="mt-4 w-full py-2.5 font-bold transition-colors disabled:opacity-50"
-        style={{
-          background: saved && !error ? "#16a34a" : "#FF6200",
-          color: "white",
-          border: "3px solid #000",
-          boxShadow: "3px 3px 0 #000",
-          fontFamily: "var(--font-pixel), monospace",
-          fontSize: "8px",
-        }}
-      >
-        {isPending ? "OPSLAAN..." : saved && !error ? "✓ OPGESLAGEN" : "KAMPIOEN OPSLAAN"}
-      </button>
     </div>
   )
 }

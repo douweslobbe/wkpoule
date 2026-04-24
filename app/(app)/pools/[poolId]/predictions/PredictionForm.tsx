@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useRef, useTransition } from "react"
 import { savePrediction } from "@/lib/actions"
 
 export function PredictionForm({
@@ -14,61 +14,92 @@ export function PredictionForm({
 }) {
   const [home, setHome] = useState(initialHome?.toString() ?? "")
   const [away, setAway] = useState(initialAway?.toString() ?? "")
-  const [saved, setSaved] = useState(!!initialHome !== undefined && initialHome !== undefined)
+  const [saveStatus, setSaveStatus] = useState<"idle" | "debouncing" | "saving" | "saved" | "error">(
+    initialHome !== undefined && initialAway !== undefined ? "saved" : "idle"
+  )
   const [error, setError] = useState("")
   const [isPending, startTransition] = useTransition()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isInitial = useRef(true)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
+  useEffect(() => {
+    if (isInitial.current) {
+      isInitial.current = false
+      return
+    }
+    if (home === "" || away === "") {
+      setSaveStatus("idle")
+      return
+    }
 
-    const fd = new FormData()
-    fd.set("matchId", matchId)
-    fd.set("homeScore", home)
-    fd.set("awayScore", away)
+    setSaveStatus("debouncing")
+    if (debounceRef.current) clearTimeout(debounceRef.current)
 
-    startTransition(async () => {
-      const result = await savePrediction(fd)
-      if (result?.error) {
-        setError(result.error)
-      } else {
-        setSaved(true)
-      }
-    })
-  }
+    debounceRef.current = setTimeout(() => {
+      setSaveStatus("saving")
+      const fd = new FormData()
+      fd.set("matchId", matchId)
+      fd.set("homeScore", home)
+      fd.set("awayScore", away)
+      startTransition(async () => {
+        const result = await savePrediction(fd)
+        if (result?.error) {
+          setError(result.error)
+          setSaveStatus("error")
+        } else {
+          setError("")
+          setSaveStatus("saved")
+        }
+      })
+    }, 700)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [home, away, matchId])
+
+  const statusLabel =
+    saveStatus === "debouncing" || saveStatus === "saving" || isPending
+      ? "Opslaan..."
+      : saveStatus === "saved"
+      ? "✓ Opgeslagen"
+      : saveStatus === "error"
+      ? "✕ Fout"
+      : ""
+
+  const statusColor =
+    saveStatus === "saved" ? "#16a34a"
+    : saveStatus === "error" ? "#ff4444"
+    : "#999"
 
   return (
-    <form onSubmit={handleSubmit} className="mt-3 pt-3 border-t border-gray-100">
+    <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--c-border)" }}>
       <div className="flex items-center gap-3 justify-center">
-        <span className="text-xs text-gray-400">Jouw voorspelling:</span>
+        <span className="text-xs" style={{ color: "var(--c-text-4)" }}>Jouw voorspelling:</span>
         <input
           type="number"
           min={0}
           max={20}
           value={home}
-          onChange={(e) => { setHome(e.target.value); setSaved(false) }}
-          className="w-12 text-center border border-gray-300 rounded-lg py-1.5 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+          onChange={(e) => setHome(e.target.value)}
+          className="pixel-input w-12 text-center font-bold text-lg py-1.5"
           placeholder="–"
         />
-        <span className="text-gray-400 font-bold">–</span>
+        <span className="font-bold" style={{ color: "var(--c-text-4)" }}>–</span>
         <input
           type="number"
           min={0}
           max={20}
           value={away}
-          onChange={(e) => { setAway(e.target.value); setSaved(false) }}
-          className="w-12 text-center border border-gray-300 rounded-lg py-1.5 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+          onChange={(e) => setAway(e.target.value)}
+          className="pixel-input w-12 text-center font-bold text-lg py-1.5"
           placeholder="–"
         />
-        <button
-          type="submit"
-          disabled={isPending || home === "" || away === ""}
-          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
-        >
-          {isPending ? "..." : saved ? "Opgeslagen ✓" : "Opslaan"}
-        </button>
+        <span className="font-pixel text-xs" style={{ color: statusColor, minWidth: "80px" }}>
+          {statusLabel}
+        </span>
       </div>
-      {error && <p className="text-center text-xs text-red-600 mt-1">{error}</p>}
-    </form>
+      {error && <p className="text-center text-xs mt-1" style={{ color: "#ff4444" }}>{error}</p>}
+    </div>
   )
 }
