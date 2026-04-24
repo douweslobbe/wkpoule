@@ -228,6 +228,11 @@ export async function addBonusQuestion(formData: FormData) {
   const type = formData.get("type") as BonusQuestionType
   const question = (formData.get("question") as string)?.trim()
   const description = (formData.get("description") as string)?.trim() || undefined
+  const optionsRaw = (formData.get("options") as string)?.trim() || undefined
+  // Normalize: split on newlines or commas, trim each entry, filter blanks
+  const options = optionsRaw
+    ? optionsRaw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean).join("\n") || undefined
+    : undefined
 
   if (!question) return { error: "Vul een vraag in" }
 
@@ -242,6 +247,7 @@ export async function addBonusQuestion(formData: FormData) {
       type,
       question,
       description,
+      options,
       orderIndex: (last?.orderIndex ?? 0) + 1,
       deadline: TOURNAMENT_START,
     },

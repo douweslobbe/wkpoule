@@ -17,14 +17,14 @@ const TLA_TO_ISO2: Record<string, string> = {
   ARG: "ar", BOL: "bo", BRA: "br", CHI: "cl", COL: "co", ECU: "ec",
   PAR: "py", PER: "pe", URU: "uy", VEN: "ve",
   // Afrika
-  ALG: "dz", ANG: "ao", BEN: "bj", BFA: "bf", CMR: "cm", CGO: "cg",
-  CIV: "ci", CPV: "cv", DRC: "cd", EGY: "eg", ETH: "et", GAM: "gm",
+  ALG: "dz", ANG: "ao", BEN: "bj", BFA: "bf", CMR: "cm", CGO: "cg", COG: "cg",
+  CIV: "ci", CPV: "cv", DRC: "cd", COD: "cd", EGY: "eg", ETH: "et", GAM: "gm",
   GHA: "gh", GUI: "gn", KEN: "ke", LBA: "ly", MAR: "ma", MLI: "ml",
   MOZ: "mz", MTN: "mr", NAM: "na", NGA: "ng", RWA: "rw", SEN: "sn",
   SLE: "sl", TAN: "tz", TGO: "tg", TUN: "tn", UGA: "ug", RSA: "za",
   ZAM: "zm", ZIM: "zw",
   // Azië
-  AUS: "au", BHR: "bh", CHN: "cn", IDN: "id", IND: "in", IRI: "ir",
+  AUS: "au", BHR: "bh", CHN: "cn", IDN: "id", IND: "in", IRI: "ir", IRN: "ir",
   IRQ: "iq", JOR: "jo", JPN: "jp", KOR: "kr", KWT: "kw", LBN: "lb",
   MYA: "mm", OMA: "om", PHI: "ph", QAT: "qa", SAU: "sa", SYR: "sy",
   THA: "th", UAE: "ae", UZB: "uz", VIE: "vn", YEM: "ye",

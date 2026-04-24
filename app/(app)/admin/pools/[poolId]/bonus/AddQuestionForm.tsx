@@ -7,6 +7,7 @@ import { BonusQuestionType } from "@prisma/client"
 
 export function AddQuestionForm({ poolId }: { poolId: string }) {
   const router = useRouter()
+  const [type, setType] = useState<BonusQuestionType>("OPEN")
   const [error, setError] = useState("")
   const [isPending, startTransition] = useTransition()
 
@@ -20,6 +21,7 @@ export function AddQuestionForm({ poolId }: { poolId: string }) {
       if (result?.error) setError(result.error)
       else {
         ;(e.target as HTMLFormElement).reset()
+        setType("OPEN")
         router.refresh()
       }
     })
@@ -30,7 +32,8 @@ export function AddQuestionForm({ poolId }: { poolId: string }) {
       <div className="flex gap-3 flex-wrap">
         <select
           name="type"
-          required
+          value={type}
+          onChange={(e) => setType(e.target.value as BonusQuestionType)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
           <option value="OPEN">Openvraag</option>
@@ -51,6 +54,19 @@ export function AddQuestionForm({ poolId }: { poolId: string }) {
         placeholder="Toelichting (optioneel)..."
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
       />
+      {type === "OPEN" && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">
+            Autocomplete-opties (optioneel) — één per regel, bijv. spelernamen voor een topscorevraag
+          </label>
+          <textarea
+            name="options"
+            rows={5}
+            placeholder={"Kylian Mbappé\nErling Haaland\nVinicius Jr\nLautaro Martínez"}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
+          />
+        </div>
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
       <button
         type="submit"

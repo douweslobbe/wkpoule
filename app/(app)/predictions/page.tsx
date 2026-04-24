@@ -161,8 +161,32 @@ export default async function PredictionsPage({
 
       {/* Wedstrijdlijst */}
       {matches.length === 0 ? (
-        <div className="pixel-card p-8 text-center text-sm" style={{ color: "#444466" }}>
-          Nog geen wedstrijden gepland voor deze ronde.
+        <div className="pixel-card overflow-hidden">
+          <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
+            <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
+              {stage === "GROUP" ? "📅 GEEN WEDSTRIJDEN" : "⏳ NOG NIET BEGONNEN"}
+            </h2>
+          </div>
+          <div className="p-6 text-center space-y-3">
+            {stage === "GROUP" ? (
+              <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-3)" }}>
+                Nog geen groepswedstrijden bekend.
+              </p>
+            ) : (
+              <>
+                <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-2)", lineHeight: "2" }}>
+                  De <span style={{ color: "#FFD700" }}>{STAGE_LABELS[stage].toLowerCase()}</span> is nog niet begonnen.
+                </p>
+                <p style={{ fontSize: "9px", color: "var(--c-text-3)", lineHeight: "1.8" }}>
+                  Voorspellingen voor de knock-outronden kun je invullen zodra de teams
+                  bekend zijn — dus nadat de vorige ronde gespeeld is. Kom dan terug!
+                </p>
+                <p className="font-pixel mt-2" style={{ fontSize: "7px", color: "#4af56a" }}>
+                  ⟳ KOMENDE TERUG GEDURENDE HET TOERNOOI
+                </p>
+              </>
+            )}
+          </div>
         </div>
       ) : (
         <div className="pixel-card overflow-hidden">

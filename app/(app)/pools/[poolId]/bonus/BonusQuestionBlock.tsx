@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useRef, useTransition } from "react"
 import { saveBonusAnswer } from "@/lib/actions"
 import { BonusQuestionType } from "@prisma/client"
 
@@ -9,7 +9,73 @@ type Question = {
   type: BonusQuestionType
   question: string
   description?: string | null
+  options?: string | null
   correctAnswer?: string | null
+}
+
+function AutocompleteInput({
+  options,
+  value,
+  onChange,
+  locked,
+}: {
+  options: string[]
+  value: string
+  onChange: (v: string) => void
+  locked: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const filtered = options.filter((o) =>
+    o.toLowerCase().includes(value.toLowerCase())
+  )
+  const showDropdown = open && !locked && filtered.length > 0
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-0">
+      <input
+        type="text"
+        value={value}
+        disabled={locked}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Typ om te zoeken..."
+        className="pixel-input px-3 py-1.5 w-full"
+      />
+      {showDropdown && (
+        <div
+          className="absolute z-20 w-full mt-0.5 overflow-auto"
+          style={{
+            background: "var(--c-surface-alt)",
+            border: "2px solid var(--c-border-bright)",
+            boxShadow: "3px 3px 0 #000",
+            maxHeight: "200px",
+          }}
+        >
+          {filtered.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onMouseDown={() => { onChange(opt); setOpen(false) }}
+              className="w-full text-left px-3 py-1.5 transition-colors"
+              style={{
+                fontSize: "9px",
+                color: "var(--c-text)",
+                borderBottom: "1px solid var(--c-border)",
+                fontFamily: "var(--font-pixel), monospace",
+                background: opt === value ? "var(--c-surface-deep)" : "transparent",
+              }}
+            >
+              {opt === value && <span style={{ color: "#FF6200", marginRight: "4px" }}>✓</span>}
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function BonusQuestionBlock({
@@ -44,6 +110,12 @@ export function BonusQuestionBlock({
   }
 
   const isCorrect = correctAnswer && answer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()
+
+  // Parse options from newline-separated string
+  const optionList = question.options
+    ? question.options.split("\n").map((s) => s.trim()).filter(Boolean)
+    : []
+  const hasOptions = optionList.length > 0
 
   return (
     <div>
@@ -111,6 +183,13 @@ export function BonusQuestionBlock({
               onChange={(e) => { setAnswer(e.target.value); setSaved(false) }}
               placeholder="Schatting..."
               className="pixel-input px-3 py-1.5 w-32"
+            />
+          ) : hasOptions ? (
+            <AutocompleteInput
+              options={optionList}
+              value={answer}
+              onChange={(v) => { setAnswer(v); setSaved(false) }}
+              locked={locked}
             />
           ) : (
             <input
