@@ -3,6 +3,9 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { MatchStage } from "@prisma/client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Voorspellingen — WK Pool 2026" }
 import { PoolSubNav } from "../pools/[poolId]/PoolSubNav"
 import { CompactMatchRow } from "./CompactMatchRow"
 
@@ -103,54 +106,31 @@ export default async function PredictionsPage({
       {/* Pool navigatie tabs — altijd zichtbaar */}
       {navPoolId && <PoolSubNav poolId={navPoolId} latestMessageAt={latestMessage?.createdAt.getTime()} />}
 
-      {/* Poule-kiezer voor anderen bekijken */}
-      {myPools.length > 0 && (
+      {/* Picks van andere poolgenoten bekijken */}
+      {activePoolId && poolMembers.length > 1 && (
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold shrink-0" style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#555577" }}>
-              BEKIJK:
-            </span>
+            <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>BEKIJK:</span>
             <Link
-              href={`/predictions?stage=${stage}${activePoolId ? `&pool=${activePoolId}` : ""}&view=${session.user.id}`}
-              className={`px-2.5 py-1 text-xs font-bold transition-all ${
-                viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"
-              }`}
+              href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${session.user.id}`}
+              className={`px-2.5 py-1 text-xs font-bold transition-all ${viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"}`}
               style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
             >
               🙋 Mijn picks
             </Link>
-
-            {myPools.map(({ pool }) => (
-              <span key={pool.id} className="flex items-center gap-1">
+            {poolMembers
+              .filter((m) => m.userId !== session.user.id)
+              .map((m) => (
                 <Link
-                  href={`/predictions?stage=${stage}&pool=${pool.id}&view=${session.user.id}`}
-                  className={`px-2 py-1 text-xs font-bold transition-all ${
-                    activePoolId === pool.id ? "pixel-tab-active" : "pixel-tab-inactive"
-                  }`}
+                  key={m.userId}
+                  href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${m.userId}`}
+                  className={`px-2 py-1 text-xs font-bold transition-all ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
                   style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
                 >
-                  {pool.name}
+                  {m.user.name}
                 </Link>
-                {/* Leden van deze poule */}
-                {activePoolId === pool.id &&
-                  poolMembers
-                    .filter((m) => m.userId !== session.user.id)
-                    .map((m) => (
-                      <Link
-                        key={m.userId}
-                        href={`/predictions?stage=${stage}&pool=${pool.id}&view=${m.userId}`}
-                        className={`px-2 py-1 text-xs font-bold transition-all ${
-                          viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"
-                        }`}
-                        style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
-                      >
-                        {m.user.name}
-                      </Link>
-                    ))}
-              </span>
-            ))}
+              ))}
           </div>
-
           {viewUser && (
             <div className="mt-2 px-2 py-1 font-bold inline-block" style={{ background: "#1a1200", border: "2px solid #FFD700", color: "#FFD700", fontSize: "11px", boxShadow: "2px 2px 0 #000" }}>
               👁 Picks van {viewUser.name}

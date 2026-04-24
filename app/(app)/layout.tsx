@@ -80,10 +80,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      <footer className="text-center py-4" style={{ borderTop: "3px solid #0a3d1f", position: "relative", zIndex: 1 }}>
+      <footer className="text-center py-4" style={{ borderTop: "3px solid #0a3d1f", position: "relative", zIndex: 1, overflow: "hidden" }}>
         <span className="font-pixel" style={{ fontSize: "7px", color: "#2d6b3d" }}>
           HUP HOLLAND HUP 🇳🇱 · WK 2026
         </span>
+        {/* Decoratieve hoek-icoontjes */}
+        <span style={{ position: "absolute", left: "12px", bottom: "2px", fontSize: "18px", opacity: 0.12, pointerEvents: "none" }}>🏆</span>
+        <span style={{ position: "absolute", right: "12px", bottom: "2px", fontSize: "18px", opacity: 0.12, pointerEvents: "none" }}>⚽</span>
       </footer>
     </div>
   )

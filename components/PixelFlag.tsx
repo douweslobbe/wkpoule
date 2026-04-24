@@ -11,7 +11,7 @@ const TLA_TO_ISO2: Record<string, string> = {
   SCO: "gb-sct", SRB: "rs", SVK: "sk", SVN: "si", SUI: "ch", SWE: "se",
   TUR: "tr", UKR: "ua", WAL: "gb-wls",
   // Noord- en Midden-Amerika + Caraïben
-  CAN: "ca", CRC: "cr", CUB: "cu", GUA: "gt", HAI: "ht", HON: "hn",
+  CAN: "ca", CRC: "cr", CUB: "cu", CUW: "cw", GUA: "gt", HAI: "ht", HON: "hn",
   JAM: "jm", MEX: "mx", PAN: "pa", TRI: "tt", USA: "us",
   // Zuid-Amerika
   ARG: "ar", BOL: "bo", BRA: "br", CHI: "cl", COL: "co", ECU: "ec",

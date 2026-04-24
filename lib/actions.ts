@@ -305,6 +305,26 @@ export async function addQuestionsFromLibrary(
   return { success: true }
 }
 
+// ─── Admin: pool-instellingen ────────────────────────────────────────────────
+
+export async function updatePoolDescription(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const poolId = formData.get("poolId") as string
+  const description = (formData.get("description") as string)?.trim() || null
+
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
+
+  await prisma.pool.update({ where: { id: poolId }, data: { description } })
+  revalidatePath(`/pools/${poolId}`)
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  return { success: true }
+}
+
 // ─── Admin: sync wedstrijden ──────────────────────────────────────────────────
 
 export async function syncMatches() {

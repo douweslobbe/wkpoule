@@ -301,10 +301,47 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   PIXEL LOADER — bouncing football
+═══════════════════════════════════════ */
+@keyframes pixel-football-bounce {
+  0%   { transform: translateY(0px);  }
+  25%  { transform: translateY(-8px); }
+  50%  { transform: translateY(0px);  }
+  75%  { transform: translateY(-4px); }
+  100% { transform: translateY(0px);  }
+}
+.pixel-loader-ball {
+  font-size: 24px;
+  display: inline-block;
+  animation: pixel-football-bounce 0.8s steps(4) infinite;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.4));
+}
+
+/* ═══════════════════════════════════════
    POOL ROW HOVER — CSS-based
 ═══════════════════════════════════════ */
 .pool-row:hover {
   background: var(--c-surface-alt) !important;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL CORNER DECO — subtle 8-bit sprites
+═══════════════════════════════════════ */
+.pixel-corner-deco {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  opacity: 0.07;
+  font-size: 48px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  image-rendering: pixelated;
+  filter: grayscale(0.3);
+}
+[data-theme="light"] .pixel-corner-deco {
+  opacity: 0.06;
 }
 
 /* ═══════════════════════════════════════

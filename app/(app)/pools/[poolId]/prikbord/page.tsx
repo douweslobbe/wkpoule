@@ -8,6 +8,13 @@ import { AutoRefresh } from "./AutoRefresh"
 import { PrikbordSeenMarker } from "./PrikbordSeenMarker"
 import { formatDistanceToNow } from "date-fns"
 import { nl } from "date-fns/locale"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
+  const { poolId } = await params
+  const pool = await prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } })
+  return { title: pool ? `Prikbord · ${pool.name} — WK Pool 2026` : "Prikbord — WK Pool 2026" }
+}
 
 export default async function PrikbordPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params

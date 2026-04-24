@@ -4,6 +4,13 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PoolSubNav } from "./PoolSubNav"
 import { CopyButton } from "./CopyButton"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
+  const { poolId } = await params
+  const pool = await prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } })
+  return { title: pool ? `${pool.name} — WK Pool 2026` : "WK Pool 2026" }
+}
 
 export default async function PoolPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -60,17 +67,40 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
   const prevRankMap = new Map(prevRanked.map((e, i) => [e.userId, i + 1]))
 
   const completedMatches = await prisma.match.count({ where: { status: "FINISHED" } })
+  const totalMatches = 104
 
   // Admin checklist data
   const memberCount = members.length
   const bonusQuestionCount = await prisma.bonusQuestion.count({ where: { poolId } })
-  const myChampionPick = isAdmin ? await prisma.championPick.findUnique({
-    where: { userId_poolId: { userId: session.user.id, poolId } },
-  }) : null
-  const totalMatches = 104
-
-  const bonusQuestionsTotal = await prisma.bonusQuestion.count({ where: { poolId } })
   const bonusQuestionsScored = await prisma.bonusQuestion.count({ where: { poolId, correctAnswer: { not: null } } })
+
+  // Pre-tournament readiness (only relevant before matches start)
+  const championPicks = await prisma.championPick.findMany({ where: { poolId }, select: { userId: true } })
+  const hasChampionPickSet = new Set(championPicks.map((p) => p.userId))
+
+  // Bonus answers per user (for readiness view)
+  const bonusQuestionIds = bonusQuestionCount > 0
+    ? await prisma.bonusQuestion.findMany({ where: { poolId }, select: { id: true } }).then((qs) => qs.map((q) => q.id))
+    : []
+  const bonusAnswerCounts = bonusQuestionIds.length > 0
+    ? await prisma.bonusAnswer.groupBy({
+        by: ["userId"],
+        where: { questionId: { in: bonusQuestionIds } },
+        _count: { id: true },
+      })
+    : []
+  const bonusAnswerMap = new Map(bonusAnswerCounts.map((b) => [b.userId, b._count.id]))
+
+  // Predictions per user for progress (only group stage)
+  const groupMatchCount = await prisma.match.count({ where: { stage: "GROUP" } })
+  const predictionCounts = groupMatchCount > 0
+    ? await prisma.prediction.groupBy({
+        by: ["userId"],
+        where: { userId: { in: allMemberIds }, match: { stage: "GROUP" } },
+        _count: { id: true },
+      })
+    : []
+  const predCountMap = new Map(predictionCounts.map((p) => [p.userId, p._count.id]))
 
   const latestMessage = await prisma.poolMessage.findFirst({
     where: { poolId },
@@ -110,26 +140,36 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
         )}
       </div>
 
-      {/* Admin onboarding checklist */}
+      {/* Pool bericht (description) */}
+      {pool.description && (
+        <div className="pixel-card p-4 mb-5 flex items-start gap-3" style={{ background: "#0d1a10", borderLeft: "4px solid #FFD700" }}>
+          <span style={{ fontSize: "16px", flexShrink: 0 }}>📋</span>
+          <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-2)", lineHeight: "2.1" }}>
+            {pool.description}
+          </p>
+        </div>
+      )}
+
+      {/* Admin checklist (alleen voor admins, verdwijnt als alles gedaan is) */}
       {isAdmin && (() => {
         const checks = [
           {
+            done: !!pool.description,
+            label: "Poolbericht ingesteld",
+            detail: pool.description ? "Afspraken zichtbaar voor leden" : "Stel de inzet of afspraken in via Beheer",
+            link: `/admin/pools/${poolId}/bonus`,
+          },
+          {
             done: memberCount > 1,
             label: "Poolgenoten uitgenodigd",
-            detail: memberCount > 1 ? `${memberCount} leden` : "Deel de uitnodigingscode",
+            detail: memberCount > 1 ? `${memberCount} leden` : "Deel de uitnodigingscode hieronder",
             link: null,
           },
           {
             done: bonusQuestionCount > 0,
             label: "Bonusvragen toegevoegd",
-            detail: bonusQuestionCount > 0 ? `${bonusQuestionCount} vragen` : "Voeg vragen toe via Beheer",
+            detail: bonusQuestionCount > 0 ? `${bonusQuestionCount} vragen klaarstaan` : "Kies uit de vragenbibliotheek",
             link: `/admin/pools/${poolId}/bonus`,
-          },
-          {
-            done: !!myChampionPick,
-            label: "Kampioen gekozen",
-            detail: myChampionPick ? "Keuze gemaakt" : "Kies in Het Grote Plaatje",
-            link: `/pools/${poolId}/bonus`,
           },
         ]
         const allDone = checks.every((c) => c.done)
@@ -175,17 +215,93 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
       {/* Leaderboard */}
       <div className="pixel-card overflow-hidden">
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 DE MEGALOMANE RANGLIJST</h2>
-          {completedMatches > 0 && (
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
+            {completedMatches > 0 ? "📊 DE MEGALOMANE RANGLIJST" : "👥 WIE DOET ER MEE?"}
+          </h2>
+          {completedMatches > 0 ? (
             <p className="mt-1" style={{ color: "#4af56a", fontSize: "11px" }}>
               {completedMatches}/{totalMatches} wedstrijden gespeeld · prognose op basis van huidige score/wedstrijd
+            </p>
+          ) : (
+            <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              Ranglijst start op 11 juni · zie wie er al klaar is
             </p>
           )}
         </div>
 
-        {ranked.length === 0 ? (
+        {/* Pre-tournament readiness view */}
+        {completedMatches === 0 && ranked.length > 0 && (
+          <div>
+            <div className="hidden sm:grid px-5 py-2 font-bold uppercase"
+              style={{
+                gridTemplateColumns: "1fr 6rem 6rem 6rem",
+                fontSize: "7px",
+                color: "var(--c-text-3)",
+                borderBottom: "2px solid var(--c-border)",
+                fontFamily: "var(--font-pixel), monospace",
+              }}>
+              <span>Speler</span>
+              <span className="text-center">⚽ Poulefase</span>
+              <span className="text-center">🏆 Plaatje</span>
+              <span className="text-center">✓ Klaar</span>
+            </div>
+            {members.map((m) => {
+              const predsDone = predCountMap.get(m.userId) ?? 0
+              const bonusDone = bonusAnswerMap.get(m.userId) ?? 0
+              const champDone = hasChampionPickSet.has(m.userId)
+              const isMe = m.userId === session.user.id
+              const predPct = groupMatchCount > 0 ? Math.round((predsDone / groupMatchCount) * 100) : 0
+              const bonusPct = bonusQuestionCount > 0 ? Math.round((bonusDone / bonusQuestionCount) * 100) : null
+              const allReady = predPct === 100 && champDone && (bonusPct === null || bonusPct === 100)
+              return (
+                <div
+                  key={m.userId}
+                  className="flex sm:grid items-center gap-3 sm:gap-2 px-5 py-3"
+                  style={{
+                    gridTemplateColumns: "1fr 6rem 6rem 6rem",
+                    borderBottom: "1px solid var(--c-border)",
+                    borderLeft: isMe ? "3px solid #FF6200" : "3px solid transparent",
+                    background: isMe ? "#1e0800" : "var(--c-surface-alt)",
+                  }}
+                >
+                  <span className="font-pixel text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                    {m.user.name}{isMe && <span style={{ color: "#FF6200", opacity: 0.6 }}> ◄</span>}
+                  </span>
+                  <div className="text-center shrink-0">
+                    <div className="relative h-2 w-16 mx-auto mb-0.5" style={{ background: "var(--c-surface-deep)", border: "1px solid #333" }}>
+                      <div style={{ width: `${predPct}%`, height: "100%", background: predPct === 100 ? "#16a34a" : "#FF6200" }} />
+                    </div>
+                    <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>{predsDone}/{groupMatchCount}</span>
+                  </div>
+                  <div className="text-center shrink-0">
+                    {bonusPct !== null ? (
+                      <>
+                        <div className="relative h-2 w-16 mx-auto mb-0.5" style={{ background: "var(--c-surface-deep)", border: "1px solid #333" }}>
+                          <div style={{ width: `${bonusPct}%`, height: "100%", background: bonusPct === 100 ? "#16a34a" : "#FFD700" }} />
+                        </div>
+                        <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>{bonusDone}/{bonusQuestionCount}</span>
+                      </>
+                    ) : (
+                      <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>—</span>
+                    )}
+                  </div>
+                  <div className="text-center shrink-0">
+                    <span className="font-pixel" style={{ fontSize: "9px", color: allReady ? "#4af56a" : "var(--c-text-5)" }}>
+                      {allReady ? "✓ KLAAR" : "○"}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+            <div className="px-5 py-2 font-pixel" style={{ borderTop: "2px solid var(--c-border)", background: "var(--c-surface-deep)", fontSize: "7px", color: "var(--c-text-4)" }}>
+              ⚽ = poulefase-voorspellingen · 🏆 = bonusvragen ingevuld · ✓ = alles klaar
+            </div>
+          </div>
+        )}
+
+        {(completedMatches > 0 || ranked.length === 0) && ranked.length === 0 ? (
           <p className="text-center py-10 text-sm" style={{ color: "var(--c-text-4)" }}>Nog geen scores</p>
-        ) : (
+        ) : completedMatches > 0 ? (
           <div>
             {/* Header row */}
             <div className="hidden sm:grid px-5 py-2 font-bold uppercase tracking-wide"
@@ -220,7 +336,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                   ? projectedMatchPts + entry.bonusPoints + entry.championPoints
                   : null
 
-                const maxBonus = entry.bonusPoints + (bonusQuestionsTotal - bonusQuestionsScored) * 7
+                const maxBonus = entry.bonusPoints + (bonusQuestionCount - bonusQuestionsScored) * 7
                 const maxChampion = entry.championPoints > 0 ? entry.championPoints : (hasPick ? 15 : 0)
                 const maxPossible = (projectedMatchPts ?? 0) + maxBonus + maxChampion
 
@@ -309,10 +425,9 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
               <span>⚽ wedstrijdpunten</span>
               <span>🏆 bonus + kampioen</span>
               {completedMatches > 0 && <span style={{ color: "#4499ff" }}>📈 prognose = huidig tempo × 104 wedstrijden</span>}
-              {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn (start 11 juni)</span>}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

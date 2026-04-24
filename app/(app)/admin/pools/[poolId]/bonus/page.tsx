@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { SetAnswerForm } from "./SetAnswerForm"
 import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
+import { PoolSettingsForm } from "./PoolSettingsForm"
 import { BonusQuestionType } from "@prisma/client"
 
 const TYPE_LABELS: Record<BonusQuestionType, string> = {
@@ -54,6 +55,19 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
         <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>
           BONUSVRAGEN — {pool.name.toUpperCase()}
         </h1>
+      </div>
+
+      {/* Pool instellingen */}
+      <div className="pixel-card overflow-hidden mb-6">
+        <div className="px-5 py-3" style={{ background: "#1a0d00", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚙ POOL INSTELLINGEN</h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
+            Poolbericht — zichtbaar voor alle leden (inzet, afspraken, regels)
+          </p>
+        </div>
+        <div className="p-5">
+          <PoolSettingsForm poolId={poolId} currentDescription={pool.description ?? ""} />
+        </div>
       </div>
 
       {/* Huidige vragen */}
