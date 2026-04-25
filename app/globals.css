@@ -301,6 +301,26 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   CONSTRUCTION TAPE — retro hazard stripes
+═══════════════════════════════════════ */
+@keyframes construction-marquee {
+  0%   { background-position: 0 0; }
+  100% { background-position: 32px 0; }
+}
+.construction-tape {
+  background: repeating-linear-gradient(
+    -45deg,
+    #FFD700,
+    #FFD700 8px,
+    #000 8px,
+    #000 16px
+  );
+  animation: construction-marquee 1.6s linear infinite;
+  height: 6px;
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════
    PIXEL LOADER — bouncing football
 ═══════════════════════════════════════ */
 @keyframes pixel-football-bounce {

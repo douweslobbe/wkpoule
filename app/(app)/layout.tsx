@@ -50,9 +50,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
           {/* User / admin */}
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden md:inline font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>
+            <Link
+              href="/profile"
+              className="hidden md:inline font-pixel transition-colors hover:opacity-80"
+              style={{ fontSize: "6px", color: "#4af56a", textDecoration: "none" }}
+              title="Mijn profiel"
+            >
               {session.user.name?.toUpperCase()}
-            </span>
+            </Link>
             <Link
               href="/faq"
               className="shrink-0 px-2 py-1 font-pixel"
