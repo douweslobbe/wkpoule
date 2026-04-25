@@ -214,7 +214,14 @@ export default function FaqPage() {
           ↑ ↑ ↓ ↓ ← → ← → B A
         </p>
         <p style={{ color: "var(--c-text-3)", fontSize: "8px" }}>
-          Probeer het op een leeg invoerveld. Niemand zegt of het werkt.
+          Maar er zijn ook andere geheime woorden die je gewoon kunt typen op een
+          willekeurige plek (niet in een invoerveld)... <span style={{ color: "#FFD700" }}>HUP</span> is
+          patriottisch. <span style={{ color: "#FFD700" }}>GOAL</span> doet iets dramatisch.
+          De rest? Ontdek zelf maar.
+        </p>
+        <p style={{ color: "var(--c-text-4)", fontSize: "7px" }}>
+          Geluid aanzetten? Gebruik de ♫ knop in de header. Zonder geluid
+          mis je de helft van de fun.
         </p>
       </Section>
 

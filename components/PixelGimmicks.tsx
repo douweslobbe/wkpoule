@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { playPowerUp, playLevelUp } from "@/lib/pixel-sound"
 
 const KONAMI = [
   "ArrowUp", "ArrowUp",
@@ -11,11 +12,14 @@ const KONAMI = [
 ]
 
 const SPRITES = ["⚽", "🏆", "🥅", "🦁", "🐻", "🦅", "🐯", "🦓"]
+const CONFETTI_COLORS = ["#FF6200", "#FFD700", "#4af56a", "#4499ff", "#ff4444", "#aa44ff"]
 
 export function PixelGimmicks() {
   const [showBoot, setShowBoot] = useState(false)
   const [konamiToast, setKonamiToast] = useState(false)
   const [sprite, setSprite] = useState<string | null>(null)
+  const [showGoal, setShowGoal] = useState(false)
+  const [orangeDrops, setOrangeDrops] = useState<number[]>([])
 
   // CRT boot screen — alleen 1× per sessie
   useEffect(() => {
@@ -31,17 +35,52 @@ export function PixelGimmicks() {
     }
   }, [])
 
-  // Konami code easter egg
+  // Cheat codes: Konami + HUP + GOAL
   useEffect(() => {
     let buffer: string[] = []
+    let typed = ""
+
+    function activateKonami() {
+      document.body.classList.toggle("konami-active")
+      setKonamiToast(true)
+      playLevelUp()
+      setTimeout(() => setKonamiToast(false), 4000)
+    }
+
+    function activateHup() {
+      // Spawn 60 oranje druppels die verschillende snelheden hebben
+      const drops = Array.from({ length: 60 }, () => Math.random())
+      setOrangeDrops(drops)
+      playPowerUp()
+      setTimeout(() => setOrangeDrops([]), 4500)
+    }
+
+    function activateGoal() {
+      setShowGoal(true)
+      playLevelUp()
+      setTimeout(() => setShowGoal(false), 2000)
+    }
+
     function handle(e: KeyboardEvent) {
+      // Negeer als gebruiker in input/textarea typt
+      const target = e.target as HTMLElement
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return
+      }
+
+      // Konami via key-codes
       buffer.push(e.key.length === 1 ? e.key.toLowerCase() : e.key)
       if (buffer.length > KONAMI.length) buffer = buffer.slice(-KONAMI.length)
       if (buffer.length === KONAMI.length && buffer.every((k, i) => k === KONAMI[i])) {
-        document.body.classList.toggle("konami-active")
-        setKonamiToast(true)
-        setTimeout(() => setKonamiToast(false), 4000)
+        activateKonami()
         buffer = []
+      }
+
+      // Word-based cheats: HUP, GOAL
+      if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+        typed = (typed + e.key.toLowerCase()).slice(-6)
+        if (typed.endsWith("hup")) activateHup()
+        else if (typed.endsWith("goal")) activateGoal()
       }
     }
     window.addEventListener("keydown", handle)
@@ -54,7 +93,7 @@ export function PixelGimmicks() {
       setSprite(SPRITES[Math.floor(Math.random() * SPRITES.length)])
       setTimeout(() => setSprite(null), 60_000)
     }
-    const initial = setTimeout(spawn, 8000) // eerste sprite na 8s
+    const initial = setTimeout(spawn, 8000)
     const interval = setInterval(() => {
       if (Math.random() > 0.4) spawn()
     }, 90_000)
@@ -108,6 +147,26 @@ export function PixelGimmicks() {
             (nogmaals = uit)
           </div>
         </div>
+      )}
+
+      {showGoal && (
+        <div className="goal-banner">GOAL!!!</div>
+      )}
+
+      {orangeDrops.length > 0 && (
+        <>
+          {orangeDrops.map((seed, i) => (
+            <span
+              key={i}
+              className="orange-drop"
+              style={{
+                left: `${seed * 100}%`,
+                animationDuration: `${2 + seed * 2}s`,
+                animationDelay: `${seed * 1.5}s`,
+              }}
+            />
+          ))}
+        </>
       )}
     </>
   )

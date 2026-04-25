@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useTransition } from "react"
 import { savePrediction, toggleJoker } from "@/lib/actions"
 import { PixelFlag } from "@/components/PixelFlag"
 import { DeadlineDisplay } from "@/components/DeadlineDisplay"
+import { PixelConfetti } from "@/components/PixelConfetti"
+import { playSave, playPowerUp, playError } from "@/lib/pixel-sound"
 
 function formatGroup(g: string | null): string {
   if (!g) return ""
@@ -67,8 +69,11 @@ export function CompactMatchRow({
       const result = await toggleJoker(fd)
       if (result?.error) {
         setJokerError(result.error)
+        playError()
       } else {
         setIsJoker(!!result?.isJoker)
+        if (result?.isJoker) playPowerUp()
+        else playSave()
       }
     })
   }
@@ -99,11 +104,13 @@ export function CompactMatchRow({
         if (result?.error) {
           setError(result.error)
           setSaveStatus("error")
+          playError()
         } else {
           setError("")
           setSaveStatus("saved")
           setPopupKey((k) => k + 1)
           setShowPopup(true)
+          playSave()
           setTimeout(() => setShowPopup(false), 1400)
         }
       })
@@ -193,7 +200,10 @@ export function CompactMatchRow({
         {/* Midden: score of invoer */}
         <div className="shrink-0 flex items-center gap-1.5" style={{ position: "relative" }}>
           {showPopup && (
-            <span key={popupKey} className="score-popup">✓ SAVED!</span>
+            <>
+              <span key={popupKey} className="score-popup">✓ SAVED!</span>
+              <PixelConfetti count={10} />
+            </>
           )}
           {isOwnView && !locked ? (
             /* Eigen invoer */
