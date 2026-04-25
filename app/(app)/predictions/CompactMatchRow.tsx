@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useTransition } from "react"
-import { savePrediction } from "@/lib/actions"
+import { savePrediction, toggleJoker } from "@/lib/actions"
 import { PixelFlag } from "@/components/PixelFlag"
 import { DeadlineDisplay } from "@/components/DeadlineDisplay"
 
@@ -21,7 +21,7 @@ type Match = {
   awayTeam: { code: string; nameNl: string | null; name: string } | null
 }
 
-type Prediction = { homeScore: number; awayScore: number; pointsAwarded: number | null } | undefined
+type Prediction = { homeScore: number; awayScore: number; pointsAwarded: number | null; isJoker?: boolean } | undefined
 
 export function CompactMatchRow({
   match,
@@ -29,12 +29,16 @@ export function CompactMatchRow({
   viewPred,
   isOwnView,
   locked,
+  jokerAllowed = false,
+  jokersRemaining = 0,
 }: {
   match: Match
   myPred: Prediction
   viewPred: Prediction
   isOwnView: boolean
   locked: boolean
+  jokerAllowed?: boolean
+  jokersRemaining?: number
 }) {
   const finished = match.status === "FINISHED"
   const live = match.status === "LIVE"
@@ -43,11 +47,29 @@ export function CompactMatchRow({
 
   const [home, setHome] = useState(myPred?.homeScore?.toString() ?? "")
   const [away, setAway] = useState(myPred?.awayScore?.toString() ?? "")
+  const [isJoker, setIsJoker] = useState(myPred?.isJoker ?? false)
+  const [jokerError, setJokerError] = useState("")
+  const [jokerPending, startJokerTransition] = useTransition()
   const [saveStatus, setSaveStatus] = useState<"idle" | "debouncing" | "saving" | "saved" | "error">(
     myPred?.homeScore !== undefined && myPred?.awayScore !== undefined ? "saved" : "idle"
   )
   const [error, setError] = useState("")
   const [isPending, startTransition] = useTransition()
+
+  function handleToggleJoker() {
+    if (jokerPending) return
+    setJokerError("")
+    const fd = new FormData()
+    fd.set("matchId", match.id)
+    startJokerTransition(async () => {
+      const result = await toggleJoker(fd)
+      if (result?.error) {
+        setJokerError(result.error)
+      } else {
+        setIsJoker(!!result?.isJoker)
+      }
+    })
+  }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isInitial = useRef(true)
 
@@ -120,9 +142,15 @@ export function CompactMatchRow({
     <div
       className={isUnfilled ? "match-unfilled" : ""}
       style={{
-        background: live ? "#1a0d00" : undefined,
+        background: live ? "#1a0d00" : isJoker ? "#1a1200" : undefined,
         borderBottom: "2px solid var(--c-border)",
-        borderLeft: live ? "3px solid #ff4444" : isUnfilled ? "3px solid #FF6200" : "3px solid transparent",
+        borderLeft: live
+          ? "3px solid #ff4444"
+          : isJoker
+          ? "3px solid #FFD700"
+          : isUnfilled
+          ? "3px solid #FF6200"
+          : "3px solid transparent",
       }}
     >
       {/* Top meta bar */}
@@ -133,7 +161,12 @@ export function CompactMatchRow({
           )}
           {dateStr}
         </span>
-        <span className="font-bold" style={{ fontSize: "9px" }}>
+        <span className="font-bold flex items-center gap-2" style={{ fontSize: "9px" }}>
+          {isJoker && (
+            <span className="font-pixel" style={{ fontSize: "8px", color: "#FFD700", background: "#2a1500", padding: "2px 4px", border: "1px solid #FFD700" }}>
+              ★ JOKER ×2
+            </span>
+          )}
           {live ? (
             <span className="pixel-live">● LIVE</span>
           ) : locked ? (
@@ -217,6 +250,31 @@ export function CompactMatchRow({
         </div>
       </div>
 
+      {/* Joker toggle (eigen view, niet vergrendeld, joker toegestaan in deze fase, voorspelling al ingevuld) */}
+      {isOwnView && !locked && jokerAllowed && myPred !== undefined && (
+        <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid var(--c-border)" }}>
+          <button
+            type="button"
+            onClick={handleToggleJoker}
+            disabled={jokerPending || (!isJoker && jokersRemaining === 0)}
+            className="font-pixel px-2 py-1 transition-all"
+            style={{
+              fontSize: "7px",
+              background: isJoker ? "#FFD700" : (jokersRemaining === 0 ? "var(--c-surface-deep)" : "transparent"),
+              color: isJoker ? "#000" : (jokersRemaining === 0 ? "var(--c-text-5)" : "#FFD700"),
+              border: `2px solid ${isJoker ? "#000" : "#FFD700"}`,
+              boxShadow: isJoker ? "2px 2px 0 #000" : "none",
+              cursor: (jokerPending || (!isJoker && jokersRemaining === 0)) ? "not-allowed" : "pointer",
+              opacity: (!isJoker && jokersRemaining === 0) ? 0.5 : 1,
+            }}
+            title={isJoker ? "Joker uitzetten" : jokersRemaining === 0 ? "Geen jokers meer in deze ronde" : "Lucky Shot — punten verdubbelen"}
+          >
+            {jokerPending ? "..." : isJoker ? "★ JOKER ACTIEF — KLIK OM UIT TE ZETTEN" : "★ ZET JOKER IN (×2 PUNTEN)"}
+          </button>
+          {jokerError && <span className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>{jokerError}</span>}
+        </div>
+      )}
+
       {/* Voorspelling tonen (vergrendeld of anderen bekijken) */}
       {(!isOwnView || (isOwnView && locked)) && (
         <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid var(--c-border)", fontSize: "11px" }}>
@@ -226,6 +284,11 @@ export function CompactMatchRow({
               <span className="font-pixel" style={{ color: "#FF6200", fontSize: "10px" }}>
                 {viewPred.homeScore} – {viewPred.awayScore}
               </span>
+              {viewPred.isJoker && (
+                <span className="font-pixel px-1 py-0.5" style={{ background: "#FFD700", color: "#000", fontSize: "7px", border: "1px solid #000" }}>
+                  ★ JOKER
+                </span>
+              )}
               {viewPred.pointsAwarded !== null && (
                 <span className="font-pixel px-1.5 py-0.5 text-white" style={{
                   background: viewPred.pointsAwarded > 0 ? "#16a34a" : "var(--c-text-5)",

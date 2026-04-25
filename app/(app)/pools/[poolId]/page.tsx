@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PoolSubNav } from "./PoolSubNav"
 import { CopyButton } from "./CopyButton"
+import { ACHIEVEMENT_DEFS } from "@/lib/actions"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
@@ -68,6 +69,27 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
 
   const completedMatches = await prisma.match.count({ where: { status: "FINISHED" } })
   const totalMatches = 104
+
+  // Achievements per user
+  const achievements = await prisma.achievement.findMany({
+    where: { poolId },
+    orderBy: { earnedAt: "desc" },
+  })
+  const achievementsByUser = new Map<string, typeof achievements>()
+  for (const a of achievements) {
+    const list = achievementsByUser.get(a.userId) ?? []
+    list.push(a)
+    achievementsByUser.set(a.userId, list)
+  }
+
+  // Joker-gebruik per gebruiker (toont op leaderboard hoeveel jokers actief zijn)
+  const jokerUsage = await prisma.prediction.groupBy({
+    by: ["userId"],
+    where: { userId: { in: members.map((m) => m.userId) }, isJoker: true },
+    _count: { id: true },
+  })
+  const jokerUsageMap = new Map(jokerUsage.map((j) => [j.userId, j._count.id]))
+  const jokersTotal = 3 + 1 + 1 + 1 // poule + R32 + R16 + QF
 
   // Admin checklist data
   const memberCount = members.length
@@ -353,7 +375,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="hidden sm:grid items-center gap-2 px-5 py-3"
                       style={{ gridTemplateColumns: "2rem 1fr 7rem 7rem 5rem 5.5rem" }}>
                       <span className="text-lg">{medal}</span>
-                      <span className="font-bold text-sm truncate flex items-center gap-1.5" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                      <span className="font-bold text-sm truncate flex items-center gap-1.5 flex-wrap" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                         {memberMap.get(entry.userId) ?? "?"}
                         {isMe && <span className="text-xs font-normal" style={{ color: "#FF6200", opacity: 0.7 }}>◄ jij</span>}
                         {rankChange !== null && rankChange !== 0 && (
@@ -364,6 +386,34 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                             {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
                           </span>
                         )}
+                        {(jokerUsageMap.get(entry.userId) ?? 0) > 0 && (
+                          <span
+                            title={`${jokerUsageMap.get(entry.userId)}/${jokersTotal} jokers ingezet`}
+                            className="font-pixel"
+                            style={{
+                              fontSize: "7px",
+                              background: "#FFD700",
+                              color: "#000",
+                              padding: "1px 3px",
+                              border: "1px solid #000",
+                            }}
+                          >
+                            ★{jokerUsageMap.get(entry.userId)}
+                          </span>
+                        )}
+                        {(achievementsByUser.get(entry.userId) ?? []).slice(0, 5).map((a) => {
+                          const def = ACHIEVEMENT_DEFS[a.type]
+                          if (!def) return null
+                          return (
+                            <span
+                              key={a.id}
+                              title={`${def.label} — ${def.description}${a.detail ? ` (${a.detail})` : ""}`}
+                              style={{ fontSize: "11px", lineHeight: 1, cursor: "help" }}
+                            >
+                              {def.emoji}
+                            </span>
+                          )
+                        })}
                       </span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.matchPoints}</span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.bonusPoints + entry.championPoints}</span>

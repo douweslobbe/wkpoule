@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { MatchStage } from "@prisma/client"
+import { JOKER_QUOTA, jokersAllowedInStage } from "@/lib/jokers"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Voorspellingen — WK Pool 2026" }
@@ -68,6 +69,13 @@ export default async function PredictionsPage({
     where: { userId: session.user.id, matchId: { in: matches.map((m) => m.id) } },
   })
   const myPredMap = new Map(myPredictions.map((p) => [p.matchId, p]))
+
+  // Joker-quota voor deze fase
+  const jokersUsedInStage = await prisma.prediction.count({
+    where: { userId: session.user.id, isJoker: true, match: { stage } },
+  })
+  const jokerAllowedHere = jokersAllowedInStage(stage)
+  const jokersRemaining = Math.max(0, JOKER_QUOTA[stage] - jokersUsedInStage)
 
   const viewPredictions =
     viewUserId !== session.user.id
@@ -153,6 +161,49 @@ export default async function PredictionsPage({
         ))}
       </div>
 
+      {/* Joker-quota banner */}
+      {viewUserId === session.user.id && jokerAllowedHere && totalMatches > 0 && (
+        <div className="pixel-card overflow-hidden mb-4 flex items-center gap-3 px-4 py-3" style={{ background: "#1a1200", borderLeft: "4px solid #FFD700" }}>
+          <span style={{ fontSize: "16px" }}>★</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700", lineHeight: "1.8" }}>
+              LUCKY SHOT — JOKERS DEZE RONDE
+            </div>
+            <div className="font-pixel mt-1" style={{ fontSize: "7px", color: "var(--c-text-3)", lineHeight: "1.9" }}>
+              Zet een joker in op een wedstrijd → punten tellen dubbel
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {Array.from({ length: JOKER_QUOTA[stage] }).map((_, i) => {
+              const used = i < jokersUsedInStage
+              return (
+                <span
+                  key={i}
+                  className="font-pixel"
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "10px",
+                    background: used ? "#FFD700" : "var(--c-surface-deep)",
+                    color: used ? "#000" : "var(--c-text-5)",
+                    border: `2px solid ${used ? "#000" : "var(--c-border-bright)"}`,
+                    boxShadow: used ? "1px 1px 0 #000" : "none",
+                  }}
+                >
+                  {used ? "★" : "○"}
+                </span>
+              )
+            })}
+            <span className="font-pixel ml-2" style={{ fontSize: "8px", color: jokersRemaining > 0 ? "#4af56a" : "var(--c-text-4)" }}>
+              {jokersRemaining}/{JOKER_QUOTA[stage]}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Voortgangsbalk — alleen bij eigen view en als er wedstrijden zijn */}
       {viewUserId === session.user.id && totalMatches > 0 && (
         <div className="pixel-card overflow-hidden mb-4">
@@ -236,6 +287,7 @@ export default async function PredictionsPage({
                 <CompactMatchRow
                   match={{
                     id: match.id,
+                    stage: match.stage,
                     groupName: match.groupName,
                     kickoff: match.kickoff,
                     status: match.status,
@@ -256,14 +308,18 @@ export default async function PredictionsPage({
                     homeScore: myPred.homeScore,
                     awayScore: myPred.awayScore,
                     pointsAwarded: myPred.pointsAwarded,
+                    isJoker: myPred.isJoker,
                   } : undefined}
                   viewPred={viewPred ? {
                     homeScore: viewPred.homeScore,
                     awayScore: viewPred.awayScore,
                     pointsAwarded: viewPred.pointsAwarded,
+                    isJoker: viewPred.isJoker,
                   } : undefined}
                   isOwnView={isOwnView}
                   locked={locked}
+                  jokerAllowed={jokerAllowedHere}
+                  jokersRemaining={jokersRemaining}
                 />
               </div>
             )

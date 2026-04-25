@@ -59,8 +59,9 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
             </div>
           ) : (
             messages.map((msg) => {
-              const isMe = msg.userId === session.user.id
-              const canDelete = isMe || session.user.isAdmin
+              const isSystem = msg.isSystem
+              const isMe = !isSystem && msg.userId === session.user.id
+              const canDelete = !isSystem && (isMe || session.user.isAdmin)
               const timeAgo = formatDistanceToNow(new Date(msg.createdAt), {
                 addSuffix: true,
                 locale: nl,
@@ -72,16 +73,16 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
                   className="px-5 py-4"
                   style={{
                     borderBottom: "2px solid var(--c-border)",
-                    background: isMe ? "var(--c-surface-deep)" : "var(--c-surface-alt)",
-                    borderLeft: isMe ? "3px solid #FF6200" : "3px solid transparent",
+                    background: isSystem ? "#0d1a10" : isMe ? "var(--c-surface-deep)" : "var(--c-surface-alt)",
+                    borderLeft: isSystem ? "3px solid #FFD700" : isMe ? "3px solid #FF6200" : "3px solid transparent",
                   }}
                 >
                   <div className="flex items-baseline gap-2 mb-1.5">
                     <span
                       className="font-pixel"
-                      style={{ fontSize: "7px", color: isMe ? "#FF6200" : "var(--c-text-2)" }}
+                      style={{ fontSize: "7px", color: isSystem ? "#FFD700" : isMe ? "#FF6200" : "var(--c-text-2)" }}
                     >
-                      {msg.user.name}
+                      {isSystem ? "🤖 POOL-BOT" : msg.user?.name ?? "Onbekend"}
                       {isMe && <span style={{ color: "#FF6200", opacity: 0.6 }}> ◄ jij</span>}
                     </span>
                     <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>

@@ -8,6 +8,7 @@ import { auth, signIn, signOut } from "./auth"
 import { prisma } from "./prisma"
 import { DEFAULT_BONUS_QUESTIONS } from "./default-bonus-questions"
 import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_POINTS, BONUS_POINTS } from "./scoring"
+import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { MatchStage, MatchStatus, BonusQuestionType } from "@prisma/client"
 
 // Toernooi start — deadline voor bonus vragen en kampioen pick
@@ -120,6 +121,52 @@ export async function savePrediction(formData: FormData) {
 
   revalidatePath("/pools")
   return { success: true }
+}
+
+// ─── Lucky Shot (joker) ──────────────────────────────────────────────────────
+
+export async function toggleJoker(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const matchId = formData.get("matchId") as string
+  const match = await prisma.match.findUnique({ where: { id: matchId } })
+  if (!match) return { error: "Wedstrijd niet gevonden" }
+
+  const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
+  if (new Date() > deadline) return { error: "Termijn verstreken" }
+
+  if (!jokersAllowedInStage(match.stage)) {
+    return { error: `Joker niet toegestaan in ${STAGE_LABELS_NL[match.stage]}` }
+  }
+
+  const existing = await prisma.prediction.findUnique({
+    where: { userId_matchId: { userId: session.user.id, matchId } },
+  })
+  if (!existing) return { error: "Eerst een voorspelling invullen" }
+
+  // Toggle: als aanzetten, check quota
+  if (!existing.isJoker) {
+    const usedInStage = await prisma.prediction.count({
+      where: {
+        userId: session.user.id,
+        isJoker: true,
+        match: { stage: match.stage },
+      },
+    })
+    if (usedInStage >= JOKER_QUOTA[match.stage]) {
+      return { error: `Geen jokers meer in ${STAGE_LABELS_NL[match.stage]} (max ${JOKER_QUOTA[match.stage]})` }
+    }
+  }
+
+  await prisma.prediction.update({
+    where: { id: existing.id },
+    data: { isJoker: !existing.isJoker, pointsAwarded: null },
+  })
+
+  revalidatePath("/predictions")
+  revalidatePath("/pools")
+  return { success: true, isJoker: !existing.isJoker }
 }
 
 // ─── Bonusvragen ─────────────────────────────────────────────────────────────
@@ -403,6 +450,31 @@ export async function syncMatches() {
   }
 
   await rebuildLeaderboards()
+
+  // Matchday recap: voor elke dag waarop wedstrijden zijn afgerond
+  if (updated > 0) {
+    const finishedToday = await prisma.match.findMany({
+      where: { status: "FINISHED" },
+      select: { kickoff: true },
+    })
+    const uniqueDays = new Set(finishedToday.map((m) => m.kickoff.toISOString().slice(0, 10)))
+    for (const day of uniqueDays) {
+      // Alleen recap posten als er voor deze dag nog geen recap is
+      const dayDate = new Date(day)
+      const dayStart = new Date(dayDate)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
+      const existingRecap = await prisma.poolMessage.findFirst({
+        where: {
+          kind: "MATCHDAY_RECAP",
+          createdAt: { gte: dayStart, lt: dayEnd },
+        },
+      })
+      if (!existingRecap) {
+        await postMatchdayRecap(dayDate)
+      }
+    }
+  }
   revalidatePath("/admin")
 
   return { success: true, synced, updated }
@@ -425,8 +497,6 @@ async function recalcMatch(externalId: number) {
         { homeScore: match.homeScore, awayScore: match.awayScore }
       )
     } else {
-      // For knockout we treat both teams as "correct position" since we don't
-      // track bracket positions separately — position points awarded by presence
       pts = scoreKnockoutMatch(
         { homeScore: pred.homeScore, awayScore: pred.awayScore },
         { homeScore: match.homeScore, awayScore: match.awayScore },
@@ -435,6 +505,9 @@ async function recalcMatch(externalId: number) {
         true
       )
     }
+
+    // Joker: punten verdubbelen
+    if (pred.isJoker) pts *= 2
 
     await prisma.prediction.update({
       where: { id: pred.id },
@@ -532,10 +605,177 @@ export async function recalcAllScores() {
   return { success: true }
 }
 
+// ─── Achievements & auto prikbord-meldingen ──────────────────────────────────
+
+export const ACHIEVEMENT_DEFS: Record<string, { label: string; emoji: string; description: string }> = {
+  ORAKEL: { label: "Orakel", emoji: "🔮", description: "5× exact correct voorspeld" },
+  SNIPER: { label: "Sniper", emoji: "🎯", description: "3 exacte voorspellingen op rij" },
+  COUNTERPICK: { label: "Counterpick", emoji: "🔁", description: "Enige met deze kampioen" },
+  GOKKER: { label: "Gokker", emoji: "🎲", description: "Een 0-0 exact voorspeld" },
+  VERRASSING: { label: "Verrassing", emoji: "💥", description: "Onverwachte uitslag exact correct" },
+  JOKER_HIT: { label: "Lucky Shot Hit", emoji: "★", description: "Joker-wedstrijd met punten" },
+  PERFECT_DAY: { label: "Perfecte Dag", emoji: "🌟", description: "Alle wedstrijden van een dag exact goed" },
+}
+
+async function postSystemMessage(poolId: string, content: string, kind: string) {
+  await prisma.poolMessage.create({
+    data: { poolId, userId: null, content, isSystem: true, kind },
+  })
+  revalidatePath(`/pools/${poolId}/prikbord`)
+}
+
+async function awardAchievement(userId: string, poolId: string, type: string, detail?: string, matchId?: string) {
+  const def = ACHIEVEMENT_DEFS[type]
+  if (!def) return
+  try {
+    await prisma.achievement.create({
+      data: { userId, poolId, type, detail, matchId },
+    })
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+    await postSystemMessage(
+      poolId,
+      `${def.emoji} ${user?.name ?? "Iemand"} verdiende een achievement: ${def.label} — ${def.description}${detail ? ` (${detail})` : ""}`,
+      "ACHIEVEMENT"
+    )
+  } catch {
+    // Already awarded — unique constraint
+  }
+}
+
+async function detectAchievementsForPool(poolId: string) {
+  const memberships = await prisma.poolMembership.findMany({ where: { poolId }, select: { userId: true } })
+  const userIds = memberships.map((m) => m.userId)
+
+  for (const userId of userIds) {
+    const preds = await prisma.prediction.findMany({
+      where: { userId, pointsAwarded: { not: null }, match: { status: "FINISHED" } },
+      include: { match: { select: { homeScore: true, awayScore: true, kickoff: true } } },
+      orderBy: { match: { kickoff: "asc" } },
+    })
+
+    // ORAKEL: 5+ exacte voorspellingen
+    const exactCount = preds.filter(
+      (p) => p.match.homeScore === p.homeScore && p.match.awayScore === p.awayScore
+    ).length
+    if (exactCount >= 5) await awardAchievement(userId, poolId, "ORAKEL", `${exactCount} exact correct`)
+
+    // SNIPER: 3 exact op rij
+    let streak = 0
+    let bestStreak = 0
+    for (const p of preds) {
+      if (p.match.homeScore === p.homeScore && p.match.awayScore === p.awayScore) {
+        streak++
+        if (streak > bestStreak) bestStreak = streak
+      } else {
+        streak = 0
+      }
+    }
+    if (bestStreak >= 3) await awardAchievement(userId, poolId, "SNIPER", `${bestStreak} op rij`)
+
+    // GOKKER: een 0-0 exact voorspeld
+    const zeroZero = preds.find(
+      (p) => p.homeScore === 0 && p.awayScore === 0 && p.match.homeScore === 0 && p.match.awayScore === 0
+    )
+    if (zeroZero) await awardAchievement(userId, poolId, "GOKKER")
+
+    // JOKER_HIT: een joker met punten
+    const jokerHit = await prisma.prediction.findFirst({
+      where: { userId, isJoker: true, pointsAwarded: { gt: 0 } },
+    })
+    if (jokerHit) await awardAchievement(userId, poolId, "JOKER_HIT")
+  }
+
+  // COUNTERPICK: enige met deze kampioen
+  const picks = await prisma.championPick.findMany({ where: { poolId } })
+  const picksByTeam = new Map<string, string[]>()
+  for (const pick of picks) {
+    const list = picksByTeam.get(pick.teamId) ?? []
+    list.push(pick.userId)
+    picksByTeam.set(pick.teamId, list)
+  }
+  for (const [, userList] of picksByTeam) {
+    if (userList.length === 1 && picks.length > 1) {
+      await awardAchievement(userList[0], poolId, "COUNTERPICK")
+    }
+  }
+}
+
+async function detectLeaderTakeover(poolId: string, prevLeaderId: string | null, newLeaderId: string | null) {
+  if (!newLeaderId || prevLeaderId === newLeaderId) return
+  const newLeader = await prisma.user.findUnique({ where: { id: newLeaderId }, select: { name: true } })
+  if (!newLeader) return
+
+  if (prevLeaderId) {
+    const prevLeader = await prisma.user.findUnique({ where: { id: prevLeaderId }, select: { name: true } })
+    await postSystemMessage(
+      poolId,
+      `🚨 ${newLeader.name} heeft ${prevLeader?.name ?? "de leider"} van de troon gestoten en staat nu eerste!`,
+      "LEADER_TAKEOVER"
+    )
+  } else {
+    await postSystemMessage(poolId, `🥇 ${newLeader.name} pakt de eerste plaats!`, "LEADER_TAKEOVER")
+  }
+}
+
+export async function postMatchdayRecap(date: Date) {
+  // Welke wedstrijden zijn op deze dag afgerond?
+  const dayStart = new Date(date)
+  dayStart.setHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setDate(dayEnd.getDate() + 1)
+
+  const matches = await prisma.match.findMany({
+    where: { status: "FINISHED", kickoff: { gte: dayStart, lt: dayEnd } },
+    include: { homeTeam: true, awayTeam: true, predictions: true },
+  })
+  if (matches.length === 0) return
+
+  const matchIds = matches.map((m) => m.id)
+  const pools = await prisma.pool.findMany({ include: { memberships: true } })
+
+  for (const pool of pools) {
+    const memberIds = pool.memberships.map((m) => m.userId)
+
+    // Punten per speler op deze dag
+    const dayPredictions = await prisma.prediction.findMany({
+      where: { userId: { in: memberIds }, matchId: { in: matchIds }, pointsAwarded: { not: null } },
+    })
+    const pointsByUser = new Map<string, number>()
+    for (const p of dayPredictions) {
+      pointsByUser.set(p.userId, (pointsByUser.get(p.userId) ?? 0) + (p.pointsAwarded ?? 0))
+    }
+    if (pointsByUser.size === 0) continue
+
+    const ranked = [...pointsByUser.entries()].sort((a, b) => b[1] - a[1])
+    const topUserId = ranked[0][0]
+    const topPoints = ranked[0][1]
+    const topUser = await prisma.user.findUnique({ where: { id: topUserId }, select: { name: true } })
+
+    const dayLabel = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })
+    const matchSummary = matches
+      .map((m) => `${m.homeTeam?.nameNl ?? "?"} ${m.homeScore}-${m.awayScore} ${m.awayTeam?.nameNl ?? "?"}`)
+      .join(" · ")
+
+    await postSystemMessage(
+      pool.id,
+      `📊 Dagoverzicht ${dayLabel}\n${matchSummary}\n\n🏆 Topscorer van de dag: ${topUser?.name ?? "?"} met ${topPoints} punten`,
+      "MATCHDAY_RECAP"
+    )
+  }
+}
+
 async function rebuildLeaderboards() {
   const pools = await prisma.pool.findMany({ include: { memberships: true } })
 
   for (const pool of pools) {
+    // Bewaar oude leider voordat we updaten
+    const oldLeader = await prisma.leaderboardEntry.findFirst({
+      where: { poolId: pool.id },
+      orderBy: { totalPoints: "desc" },
+      select: { userId: true, totalPoints: true },
+    })
+    const oldLeaderId = oldLeader && oldLeader.totalPoints > 0 ? oldLeader.userId : null
+
     for (const member of pool.memberships) {
       const uid = member.userId
 
@@ -601,6 +841,19 @@ async function rebuildLeaderboards() {
         },
       })
     }
+
+    // Na alle leden: detecteer leider-overname en achievements
+    const newLeader = await prisma.leaderboardEntry.findFirst({
+      where: { poolId: pool.id },
+      orderBy: { totalPoints: "desc" },
+      select: { userId: true, totalPoints: true },
+    })
+    const newLeaderId = newLeader && newLeader.totalPoints > 0 ? newLeader.userId : null
+    if (newLeaderId !== oldLeaderId) {
+      await detectLeaderTakeover(pool.id, oldLeaderId, newLeaderId)
+    }
+
+    await detectAchievementsForPool(pool.id)
   }
 }
 

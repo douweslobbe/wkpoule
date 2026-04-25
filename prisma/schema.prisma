@@ -20,6 +20,7 @@ model User {
   bonusAnswers  BonusAnswer[]
   championPicks ChampionPick[]
   poolMessages  PoolMessage[]
+  achievements  Achievement[]
 
   @@index([email])
 }
@@ -37,6 +38,7 @@ model Pool {
   championPicks  ChampionPick[]
   leaderboard    LeaderboardEntry[]
   messages       PoolMessage[]
+  achievements   Achievement[]
 }
 
 model PoolMembership {
@@ -121,6 +123,7 @@ model Prediction {
   submittedAt   DateTime @default(now())
   updatedAt     DateTime @updatedAt
   pointsAwarded Int?
+  isJoker       Boolean  @default(false)
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
@@ -128,6 +131,22 @@ model Prediction {
   @@unique([userId, matchId])
   @@index([matchId])
   @@index([userId])
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String
+  poolId    String
+  type      String
+  earnedAt  DateTime @default(now())
+  matchId   String?
+  detail    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poolId, type])
+  @@index([poolId, earnedAt])
 }
 
 model ChampionPick {
@@ -187,12 +206,14 @@ model BonusAnswer {
 model PoolMessage {
   id        String   @id @default(cuid())
   poolId    String
-  userId    String
+  userId    String?
   content   String
   createdAt DateTime @default(now())
+  isSystem  Boolean  @default(false)
+  kind      String?
 
   pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([poolId, createdAt])
 }
