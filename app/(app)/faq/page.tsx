@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ACHIEVEMENT_DEFS } from "@/lib/achievements"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -92,7 +93,30 @@ export default function FaqPage() {
         </p>
       </Section>
 
-      {/* === KAMPIOEN === */}
+      {/* === LUCKY SHOT === */}
+      <Section title="★ LUCKY SHOT — DE JOKER">
+        <p>
+          Op een wedstrijd kun je een <span style={{ color: "#FFD700" }}>joker</span> inzetten.
+          Punten op die wedstrijd <span style={{ color: "#FFD700" }}>tellen dubbel</span>.
+        </p>
+        <p className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>HOEVEEL JOKERS PER FASE</p>
+        <Row label="Poulefase"        value="3 jokers" />
+        <Row label="Ronde van 32"     value="1 joker" />
+        <Row label="Ronde van 16"     value="1 joker" />
+        <Row label="Kwartfinale"      value="1 joker" />
+        <Row label="Halve finale en verder" value="Geen jokers — daar staat al genoeg op het spel" />
+        <p>
+          De joker zet je aan via de gele knop onder je voorspelling. Je kunt hem
+          weer uitzetten tot 30 minuten voor aftrap. Kies dus zorgvuldig:
+          alleen de wedstrijden waarvan je het meest overtuigd bent.
+        </p>
+        <p>
+          Op de ranglijst zie je naast de naam van iedere speler een ★-badge met het
+          aantal jokers dat al ingezet is. Zo zie je in één oogopslag of iemand zijn
+          jokers nog op de plank heeft liggen.
+        </p>
+      </Section>
+
       <Section title="🥇 KAMPIOEN KIEZEN">
         <p>
           Kies vóór het toernooi welk land het WK 2026 wint. Als je goed zit:
@@ -141,6 +165,42 @@ export default function FaqPage() {
           <span className="pixel-live" style={{ animationPlayState: "paused", opacity: 1 }}>● LIVE</span>
           {" "}label. De score wordt bijgewerkt tijdens de wedstrijd.
           Voorspellingen zijn op dat moment al vergrendeld.
+        </p>
+      </Section>
+
+      {/* === ACHIEVEMENTS === */}
+      <Section title="🏅 ACHIEVEMENTS">
+        <p>
+          Tijdens het toernooi verdien je automatisch <span style={{ color: "#FFD700" }}>achievements</span> —
+          kleine pixel-emoji&apos;s die naast je naam verschijnen op de ranglijst, in het prikbord en
+          overal waar je naam staat. Ze leveren geen extra punten op, maar wel pure eer.
+        </p>
+        <p className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>WAT JE KUNT VERDIENEN</p>
+        {Object.entries(ACHIEVEMENT_DEFS).map(([key, def]) => (
+          <div key={key} className="flex items-baseline gap-3" style={{ borderBottom: "1px solid var(--c-border)", paddingBottom: "4px" }}>
+            <span style={{ minWidth: "32px", fontSize: "16px", lineHeight: 1 }}>{def.emoji}</span>
+            <span style={{ color: "var(--c-text-2)", minWidth: "140px" }}>{def.label}</span>
+            <span className="font-pixel" style={{ color: "#FFD700", fontSize: "9px" }}>{def.description}</span>
+          </div>
+        ))}
+        <p>
+          Achievements worden automatisch toegekend bij het verwerken van uitslagen. De
+          🤖 Pool-bot post een melding op het prikbord wanneer iemand er een verdient.
+        </p>
+      </Section>
+
+      {/* === POOL-BOT === */}
+      <Section title="🤖 DE POOL-BOT">
+        <p>
+          De Pool-bot is een automatische assistent die in het prikbord meldingen plaatst
+          bij belangrijke gebeurtenissen, zodat de pool levendig blijft zonder dat iemand
+          iets hoeft te typen.
+        </p>
+        <Row label="🚨 Leiderswissel"     value="Wanneer iemand de eerste plaats overneemt" />
+        <Row label="🏅 Achievement"        value="Wanneer iemand een nieuwe badge verdient" />
+        <Row label="📊 Dagoverzicht"       value="Na een speeldag — uitslagen + topscorer" />
+        <p style={{ color: "var(--c-text-3)", fontSize: "8px" }}>
+          Pool-bot berichten herken je aan de gouden zijbalk en de 🤖 POOL-BOT naam.
         </p>
       </Section>
 

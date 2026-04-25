@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PoolSubNav } from "./PoolSubNav"
 import { CopyButton } from "./CopyButton"
-import { ACHIEVEMENT_DEFS } from "@/lib/actions"
+import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
@@ -89,7 +89,6 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
     _count: { id: true },
   })
   const jokerUsageMap = new Map(jokerUsage.map((j) => [j.userId, j._count.id]))
-  const jokersTotal = 3 + 1 + 1 + 1 // poule + R32 + R16 + QF
 
   // Admin checklist data
   const memberCount = members.length
@@ -286,8 +285,14 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     background: isMe ? "#1e0800" : "var(--c-surface-alt)",
                   }}
                 >
-                  <span className="font-pixel text-sm truncate" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                  <span className="font-pixel text-sm truncate flex items-center gap-1" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                     {m.user.name}{isMe && <span style={{ color: "#FF6200", opacity: 0.6 }}> ◄</span>}
+                    <UserBadges
+                      achievements={achievementsByUser.get(m.userId) ?? []}
+                      jokerCount={jokerUsageMap.get(m.userId) ?? 0}
+                      size="xs"
+                      max={3}
+                    />
                   </span>
                   <div className="text-center shrink-0">
                     <div className="relative h-2 w-16 mx-auto mb-0.5" style={{ background: "var(--c-surface-deep)", border: "1px solid #333" }}>
@@ -386,34 +391,10 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                             {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
                           </span>
                         )}
-                        {(jokerUsageMap.get(entry.userId) ?? 0) > 0 && (
-                          <span
-                            title={`${jokerUsageMap.get(entry.userId)}/${jokersTotal} jokers ingezet`}
-                            className="font-pixel"
-                            style={{
-                              fontSize: "7px",
-                              background: "#FFD700",
-                              color: "#000",
-                              padding: "1px 3px",
-                              border: "1px solid #000",
-                            }}
-                          >
-                            ★{jokerUsageMap.get(entry.userId)}
-                          </span>
-                        )}
-                        {(achievementsByUser.get(entry.userId) ?? []).slice(0, 5).map((a) => {
-                          const def = ACHIEVEMENT_DEFS[a.type]
-                          if (!def) return null
-                          return (
-                            <span
-                              key={a.id}
-                              title={`${def.label} — ${def.description}${a.detail ? ` (${a.detail})` : ""}`}
-                              style={{ fontSize: "11px", lineHeight: 1, cursor: "help" }}
-                            >
-                              {def.emoji}
-                            </span>
-                          )
-                        })}
+                        <UserBadges
+                          achievements={achievementsByUser.get(entry.userId) ?? []}
+                          jokerCount={jokerUsageMap.get(entry.userId) ?? 0}
+                        />
                       </span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.matchPoints}</span>
                       <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{entry.bonusPoints + entry.championPoints}</span>
@@ -439,9 +420,15 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
                     <div className="sm:hidden flex items-center gap-3 px-4 py-3">
                       <span className="text-lg w-7">{medal}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate flex items-center gap-1.5" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
+                        <div className="font-bold text-sm truncate flex items-center gap-1.5 flex-wrap" style={{ color: isMe ? "#FF6200" : "var(--c-text)" }}>
                           {memberMap.get(entry.userId) ?? "?"}
                           {isMe && <span className="text-xs font-normal" style={{ opacity: 0.6, color: "#FF6200" }}>◄</span>}
+                          <UserBadges
+                            achievements={achievementsByUser.get(entry.userId) ?? []}
+                            jokerCount={jokerUsageMap.get(entry.userId) ?? 0}
+                            size="xs"
+                            max={3}
+                          />
                           {rankChange !== null && rankChange !== 0 && (
                             <span className="font-pixel" style={{
                               fontSize: "7px",

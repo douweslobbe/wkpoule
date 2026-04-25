@@ -8,6 +8,7 @@ import { AutoRefresh } from "./AutoRefresh"
 import { PrikbordSeenMarker } from "./PrikbordSeenMarker"
 import { formatDistanceToNow } from "date-fns"
 import { nl } from "date-fns/locale"
+import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
@@ -34,6 +35,23 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
   })
 
   const latestMessage = messages[messages.length - 1]
+
+  // Achievements + joker-gebruik per poolgenoot voor badges
+  const allAchievements = await prisma.achievement.findMany({ where: { poolId } })
+  const achievementsByUser = new Map<string, typeof allAchievements>()
+  for (const a of allAchievements) {
+    const list = achievementsByUser.get(a.userId) ?? []
+    list.push(a)
+    achievementsByUser.set(a.userId, list)
+  }
+  const memberIds = await prisma.poolMembership.findMany({ where: { poolId }, select: { userId: true } })
+    .then((ms) => ms.map((m) => m.userId))
+  const jokerUsage = await prisma.prediction.groupBy({
+    by: ["userId"],
+    where: { userId: { in: memberIds }, isJoker: true },
+    _count: { id: true },
+  })
+  const jokerUsageMap = new Map(jokerUsage.map((j) => [j.userId, j._count.id]))
 
   return (
     <div>
@@ -77,7 +95,7 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
                     borderLeft: isSystem ? "3px solid #FFD700" : isMe ? "3px solid #FF6200" : "3px solid transparent",
                   }}
                 >
-                  <div className="flex items-baseline gap-2 mb-1.5">
+                  <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
                     <span
                       className="font-pixel"
                       style={{ fontSize: "7px", color: isSystem ? "#FFD700" : isMe ? "#FF6200" : "var(--c-text-2)" }}
@@ -85,6 +103,14 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
                       {isSystem ? "🤖 POOL-BOT" : msg.user?.name ?? "Onbekend"}
                       {isMe && <span style={{ color: "#FF6200", opacity: 0.6 }}> ◄ jij</span>}
                     </span>
+                    {!isSystem && msg.user?.id && (
+                      <UserBadges
+                        achievements={achievementsByUser.get(msg.user.id) ?? []}
+                        jokerCount={jokerUsageMap.get(msg.user.id) ?? 0}
+                        size="xs"
+                        max={4}
+                      />
+                    )}
                     <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
                       {timeAgo}
                     </span>

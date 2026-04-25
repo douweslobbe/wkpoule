@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { MatchStage } from "@prisma/client"
 import { JOKER_QUOTA, jokersAllowedInStage } from "@/lib/jokers"
+import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Voorspellingen — WK Pool 2026" }
@@ -77,6 +78,26 @@ export default async function PredictionsPage({
   const jokerAllowedHere = jokersAllowedInStage(stage)
   const jokersRemaining = Math.max(0, JOKER_QUOTA[stage] - jokersUsedInStage)
 
+  // Achievements + joker-totaal voor poolgenoten (badges)
+  const memberIdsForBadges = poolMembers.map((m) => m.userId)
+  const memberAchievements = activePoolId && memberIdsForBadges.length > 0
+    ? await prisma.achievement.findMany({ where: { poolId: activePoolId, userId: { in: memberIdsForBadges } } })
+    : []
+  const achievementsByUser = new Map<string, typeof memberAchievements>()
+  for (const a of memberAchievements) {
+    const list = achievementsByUser.get(a.userId) ?? []
+    list.push(a)
+    achievementsByUser.set(a.userId, list)
+  }
+  const memberJokerCounts = memberIdsForBadges.length > 0
+    ? await prisma.prediction.groupBy({
+        by: ["userId"],
+        where: { userId: { in: memberIdsForBadges }, isJoker: true },
+        _count: { id: true },
+      })
+    : []
+  const jokerCountByUser = new Map(memberJokerCounts.map((j) => [j.userId, j._count.id]))
+
   const viewPredictions =
     viewUserId !== session.user.id
       ? await prisma.prediction.findMany({
@@ -132,16 +153,28 @@ export default async function PredictionsPage({
                 <Link
                   key={m.userId}
                   href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${m.userId}`}
-                  className={`px-2 py-1 text-xs font-bold transition-all ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+                  className={`px-2 py-1 text-xs font-bold transition-all inline-flex items-center gap-1 ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
                   style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
                 >
                   {m.user.name}
+                  <UserBadges
+                    achievements={achievementsByUser.get(m.userId) ?? []}
+                    jokerCount={jokerCountByUser.get(m.userId) ?? 0}
+                    size="xs"
+                    max={3}
+                  />
                 </Link>
               ))}
           </div>
           {viewUser && (
-            <div className="mt-2 px-2 py-1 font-bold inline-block" style={{ background: "#1a1200", border: "2px solid #FFD700", color: "#FFD700", fontSize: "11px", boxShadow: "2px 2px 0 #000" }}>
+            <div className="mt-2 px-2 py-1 font-bold inline-flex items-center gap-2" style={{ background: "#1a1200", border: "2px solid #FFD700", color: "#FFD700", fontSize: "11px", boxShadow: "2px 2px 0 #000" }}>
               👁 Picks van {viewUser.name}
+              <UserBadges
+                achievements={achievementsByUser.get(viewUser.id) ?? []}
+                jokerCount={jokerCountByUser.get(viewUser.id) ?? 0}
+                size="sm"
+                max={5}
+              />
             </div>
           )}
         </div>
