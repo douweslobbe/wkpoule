@@ -6,6 +6,7 @@ import { PixelBackground } from "@/components/PixelBackground"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { LogoutButton } from "@/components/LogoutButton"
 import { PoolTabs } from "@/components/PoolTabs"
+import { PixelGimmicks } from "@/components/PixelGimmicks"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex flex-col pitch-bg scanlines" style={{ position: "relative" }}>
       <PixelBackground />
+      <PixelGimmicks />
       {/* SNES-style header */}
       <header className="sticky top-0 z-50" style={{ background: "#071810", borderBottom: "4px solid #000", boxShadow: "0 4px 0 #0a3d1f" }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">

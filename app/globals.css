@@ -365,6 +365,134 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   KONAMI MODE — geheime regenboog-modus
+═══════════════════════════════════════ */
+@keyframes konami-rainbow {
+  0%   { color: #ff4444; }
+  16%  { color: #FF6200; }
+  33%  { color: #FFD700; }
+  50%  { color: #4af56a; }
+  66%  { color: #4499ff; }
+  83%  { color: #aa44ff; }
+  100% { color: #ff4444; }
+}
+@keyframes konami-bg {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.konami-active .font-pixel,
+.konami-active h1,
+.konami-active h2,
+.konami-active h3 {
+  animation: konami-rainbow 2s linear infinite;
+}
+.konami-active .pixel-card {
+  border-image: linear-gradient(45deg, #ff4444, #FFD700, #4af56a, #4499ff, #aa44ff, #ff4444) 1;
+  background-size: 200% 200%;
+  animation: konami-bg 4s ease infinite;
+}
+
+/* ═══════════════════════════════════════
+   CRT BOOT SCREEN — power-on splash
+═══════════════════════════════════════ */
+@keyframes crt-power-on {
+  0%   { transform: scaleY(0.001); opacity: 0; filter: brightness(8); }
+  20%  { transform: scaleY(0.003); opacity: 0.9; filter: brightness(8); }
+  40%  { transform: scaleY(1); opacity: 1; filter: brightness(2); }
+  100% { transform: scaleY(1); opacity: 1; filter: brightness(1); }
+}
+@keyframes crt-fade-out {
+  to { opacity: 0; visibility: hidden; }
+}
+@keyframes crt-text-blink {
+  50% { opacity: 0; }
+}
+.crt-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  pointer-events: none;
+  animation: crt-power-on 0.6s steps(8) forwards, crt-fade-out 0.4s ease 1.8s forwards;
+}
+.crt-boot-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 20px;
+  color: #FF6200;
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255, 98, 0, 0.4);
+}
+.crt-boot-sub {
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  color: #FFD700;
+  letter-spacing: 4px;
+  animation: crt-text-blink 0.5s steps(2) infinite;
+}
+.crt-boot-ball {
+  font-size: 32px;
+  animation: pixel-football-bounce 0.4s steps(4) infinite;
+}
+
+/* ═══════════════════════════════════════
+   WALKING SPRITE — sprite loopt af en toe over scherm
+═══════════════════════════════════════ */
+@keyframes sprite-walk {
+  0%   { left: -60px; transform: scaleX(1); }
+  49%  { left: calc(100% + 10px); transform: scaleX(1); }
+  50%  { left: calc(100% + 10px); transform: scaleX(-1); }
+  99%  { left: -60px; transform: scaleX(-1); }
+  100% { left: -60px; transform: scaleX(1); }
+}
+@keyframes sprite-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.walking-sprite {
+  position: fixed;
+  bottom: 36px;
+  font-size: 24px;
+  z-index: 50;
+  pointer-events: none;
+  user-select: none;
+  animation: sprite-walk 60s linear infinite;
+  filter: drop-shadow(2px 2px 0 #000);
+}
+.walking-sprite-inner {
+  display: inline-block;
+  animation: sprite-bob 0.4s steps(2) infinite;
+}
+
+/* ═══════════════════════════════════════
+   SCORE POPUP — "+N PT!" springt op
+═══════════════════════════════════════ */
+@keyframes score-pop {
+  0%   { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+  20%  { transform: translate(-50%, -10px) scale(1.4); opacity: 1; }
+  40%  { transform: translate(-50%, -20px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50px) scale(0.9); opacity: 0; }
+}
+.score-popup {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, 0);
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  color: #FFD700;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  pointer-events: none;
+  animation: score-pop 1.4s ease-out forwards;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════
    CRT SCANLINES — subtle overlay
 ═══════════════════════════════════════ */
 .scanlines::after {

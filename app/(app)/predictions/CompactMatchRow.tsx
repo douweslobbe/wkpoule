@@ -50,6 +50,8 @@ export function CompactMatchRow({
   const [isJoker, setIsJoker] = useState(myPred?.isJoker ?? false)
   const [jokerError, setJokerError] = useState("")
   const [jokerPending, startJokerTransition] = useTransition()
+  const [popupKey, setPopupKey] = useState(0)
+  const [showPopup, setShowPopup] = useState(false)
   const [saveStatus, setSaveStatus] = useState<"idle" | "debouncing" | "saving" | "saved" | "error">(
     myPred?.homeScore !== undefined && myPred?.awayScore !== undefined ? "saved" : "idle"
   )
@@ -100,6 +102,9 @@ export function CompactMatchRow({
         } else {
           setError("")
           setSaveStatus("saved")
+          setPopupKey((k) => k + 1)
+          setShowPopup(true)
+          setTimeout(() => setShowPopup(false), 1400)
         }
       })
     }, 700)
@@ -186,7 +191,10 @@ export function CompactMatchRow({
         </div>
 
         {/* Midden: score of invoer */}
-        <div className="shrink-0 flex items-center gap-1.5">
+        <div className="shrink-0 flex items-center gap-1.5" style={{ position: "relative" }}>
+          {showPopup && (
+            <span key={popupKey} className="score-popup">✓ SAVED!</span>
+          )}
           {isOwnView && !locked ? (
             /* Eigen invoer */
             <>

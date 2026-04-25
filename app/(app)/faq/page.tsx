@@ -204,6 +204,20 @@ export default function FaqPage() {
         </p>
       </Section>
 
+      {/* === EASTER EGG === */}
+      <Section title="🎮 ZIJN ER EASTER EGGS?">
+        <p>
+          Misschien wel. Misschien niet. Een echte gamer kent de magische volgorde
+          uit zijn hoofd:
+        </p>
+        <p className="font-pixel text-center" style={{ fontSize: "10px", color: "#FFD700", letterSpacing: "4px", lineHeight: 2 }}>
+          ↑ ↑ ↓ ↓ ← → ← → B A
+        </p>
+        <p style={{ color: "var(--c-text-3)", fontSize: "8px" }}>
+          Probeer het op een leeg invoerveld. Niemand zegt of het werkt.
+        </p>
+      </Section>
+
       {/* === FOOTER === */}
       <div className="text-center py-4">
         <Link href="/dashboard" className="font-pixel" style={{ fontSize: "7px", color: "#7070a0" }}>
