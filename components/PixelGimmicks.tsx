@@ -12,7 +12,6 @@ const KONAMI = [
 ]
 
 const SPRITES = ["⚽", "🏆", "🥅", "🦁", "🐻", "🦅", "🐯", "🦓"]
-const CONFETTI_COLORS = ["#FF6200", "#FFD700", "#4af56a", "#4499ff", "#ff4444", "#aa44ff"]
 
 export function PixelGimmicks() {
   const [showBoot, setShowBoot] = useState(false)

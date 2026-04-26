@@ -5,11 +5,10 @@ import { isSoundEnabled, setSoundEnabled, playClick } from "@/lib/pixel-sound"
 
 export function SoundToggle() {
   const [on, setOn] = useState(false)
-  const [mounted, setMounted] = useState(false)
 
+  // Lees status na hydration zodat SSR consistent blijft
   useEffect(() => {
     setOn(isSoundEnabled())
-    setMounted(true)
   }, [])
 
   function toggle() {
@@ -19,33 +18,25 @@ export function SoundToggle() {
     if (next) playClick()
   }
 
-  if (!mounted) {
-    return (
-      <span
-        className="shrink-0 px-2 py-1 font-pixel"
-        style={{ fontSize: "7px", color: "#8888aa", border: "1px solid #2d2d50" }}
-        aria-hidden="true"
-      >
-        ?
-      </span>
-    )
-  }
-
   return (
     <button
       type="button"
       onClick={toggle}
-      className="shrink-0 px-2 py-1 font-pixel transition-colors"
+      className="shrink-0 px-2 py-1 font-pixel transition-colors flex items-center gap-1"
       style={{
         fontSize: "7px",
-        color: on ? "#FFD700" : "#8888aa",
-        border: `1px solid ${on ? "#FFD700" : "#2d2d50"}`,
-        background: "transparent",
+        color: on ? "#000" : "#8888aa",
+        border: `2px solid ${on ? "#FFD700" : "#2d2d50"}`,
+        background: on ? "#FFD700" : "transparent",
+        boxShadow: on ? "1px 1px 0 #000" : "none",
         cursor: "pointer",
+        lineHeight: 1,
       }}
-      title={on ? "Geluid uit" : "Geluid aan (8-bit FX)"}
+      title={on ? "Geluid uit zetten" : "Geluid aan (8-bit FX)"}
+      aria-label={on ? "Geluid uit" : "Geluid aan"}
     >
-      {on ? "♪" : "♫"}
+      <span style={{ fontSize: "10px" }}>{on ? "♪" : "♪"}</span>
+      <span>{on ? "ON" : "OFF"}</span>
     </button>
   )
 }
