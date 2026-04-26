@@ -14,10 +14,10 @@
   --c-input-bg:      #12152a;
   --c-text:          #e0e0f0;
   --c-text-2:        #9999cc;
-  --c-text-3:        #555577;
-  --c-text-4:        #444466;
-  --c-text-5:        #333355;
-  --c-text-nav:      #8888aa;
+  --c-text-3:        #8888bb;
+  --c-text-4:        #7070a0;
+  --c-text-5:        #555580;
+  --c-text-nav:      #9999bb;
 }
 
 [data-theme="light"] {
