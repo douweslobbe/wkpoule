@@ -19,7 +19,7 @@ export function MemberManageRow({ poolId, userId, name, role, isMe }: Props) {
     setError(null)
     startTransition(async () => {
       const res = await promoteToAdmin(poolId, userId)
-      if ("error" in res) setError(res.error)
+      if ("error" in res) setError(res.error ?? null)
     })
   }
 
@@ -27,7 +27,7 @@ export function MemberManageRow({ poolId, userId, name, role, isMe }: Props) {
     setError(null)
     startTransition(async () => {
       const res = await demoteToMember(poolId, userId)
-      if ("error" in res) setError(res.error)
+      if ("error" in res) setError(res.error ?? null)
     })
   }
 
@@ -36,7 +36,7 @@ export function MemberManageRow({ poolId, userId, name, role, isMe }: Props) {
     setError(null)
     startTransition(async () => {
       const res = await removeMember(poolId, userId)
-      if ("error" in res) setError(res.error)
+      if ("error" in res) setError(res.error ?? null)
     })
   }
 
