@@ -7,6 +7,7 @@ import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
 import { PoolSettingsForm } from "./PoolSettingsForm"
 import { MemberManageRow } from "./MemberManageRow"
+import { CopyButton } from "@/components/CopyButton"
 import { BonusQuestionType } from "@prisma/client"
 import type { Metadata } from "next"
 
@@ -115,9 +116,11 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
           >
             {pool.inviteCode}
           </span>
-          <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
-            Deel deze code met vrienden, familie, collega&apos;s
-          </span>
+          <CopyButton text={pool.inviteCode} label="KOPIEER CODE" />
+          <CopyButton
+            text={`https://wkpool2026.wesl.nl/pools/join?code=${pool.inviteCode}`}
+            label="KOPIEER LINK"
+          />
         </div>
 
         <div>

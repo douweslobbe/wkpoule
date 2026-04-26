@@ -1,24 +1,31 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 export default function JoinPoolPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [code, setCode] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // Pre-fill code van URL parameter (?code=ABC12345)
+  useEffect(() => {
+    const urlCode = searchParams.get("code")
+    if (urlCode) setCode(urlCode.toUpperCase())
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
     setLoading(true)
 
-    const fd = new FormData(e.currentTarget)
     const res = await fetch("/api/pools/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inviteCode: fd.get("inviteCode") }),
+      body: JSON.stringify({ inviteCode: code }),
     })
     const data = await res.json()
 
@@ -41,13 +48,12 @@ export default function JoinPoolPage() {
       </Link>
 
       <div className="pixel-card overflow-hidden">
-        {/* Header */}
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h1 className="font-pixel text-white" style={{ fontSize: "9px" }}>🎟 MEEDOEN MET POOL</h1>
         </div>
 
         <div className="p-5">
-          <p className="mb-5" style={{ color: "#7070a0", fontSize: "8px", lineHeight: "2", fontFamily: "var(--font-pixel), monospace" }}>
+          <p className="mb-5 font-pixel" style={{ color: "#7070a0", fontSize: "8px", lineHeight: "2" }}>
             Voer de uitnodigingscode in die je hebt ontvangen van de beheerder.
           </p>
 
@@ -60,9 +66,12 @@ export default function JoinPoolPage() {
                 name="inviteCode"
                 type="text"
                 required
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="bijv. ABC12345"
                 className="pixel-input w-full px-3 py-2 uppercase tracking-widest"
                 style={{ letterSpacing: "0.2em" }}
+                autoFocus={!code}
               />
             </div>
 

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PoolSubNav } from "./PoolSubNav"
-import { CopyButton } from "./CopyButton"
+import { CopyButton } from "@/components/CopyButton"
 import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
 
@@ -141,7 +141,11 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
             <span className="font-pixel font-bold tracking-widest px-2 py-0.5 text-sm" style={{ background: "#FFD700", color: "#000", border: "2px solid #000", boxShadow: "2px 2px 0 #000" }}>
               {pool.inviteCode}
             </span>
-            <CopyButton text={pool.inviteCode} />
+            <CopyButton text={pool.inviteCode} label="KOPIEER CODE" />
+            <CopyButton
+              text={`${process.env.NEXT_PUBLIC_BASE_URL ?? "https://wkpool2026.wesl.nl"}/pools/join?code=${pool.inviteCode}`}
+              label="KOPIEER LINK"
+            />
           </div>
         </div>
         {isAdmin && (
