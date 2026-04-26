@@ -14,6 +14,7 @@ function formatGroup(g: string | null): string {
 
 type Match = {
   id: string
+  stage: string
   groupName: string | null
   kickoff: Date
   status: string
