@@ -44,7 +44,13 @@ export default async function AdminPage() {
   })
 
   const pools = await prisma.pool.findMany({
-    include: { _count: { select: { memberships: true } } },
+    include: {
+      _count: { select: { memberships: true } },
+      memberships: {
+        where: { role: "ADMIN" },
+        include: { user: { select: { name: true } } },
+      },
+    },
     orderBy: { createdAt: "desc" },
   })
 
@@ -124,24 +130,34 @@ export default async function AdminPage() {
           {pools.map((pool) => (
             <div
               key={pool.id}
-              className="flex items-center gap-3 px-5 py-3"
+              className="flex items-center gap-3 px-5 py-3 flex-wrap"
               style={{ borderBottom: "2px solid var(--c-border)" }}
             >
-              <div className="flex-1">
-                <span className="font-bold text-sm" style={{ color: "var(--c-text)" }}>{pool.name}</span>
-                <span className="ml-2 font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
-                  {pool.inviteCode}
-                </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm" style={{ color: "var(--c-text)" }}>{pool.name}</span>
+                  <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                    {pool.inviteCode}
+                  </span>
+                </div>
+                <div className="mt-0.5 flex gap-1 flex-wrap">
+                  {pool.memberships.map((m) => (
+                    <span key={m.userId} className="font-pixel px-1"
+                      style={{ fontSize: "6px", background: "#FFD700", color: "#000" }}>
+                      {m.user.name}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
                 {pool._count.memberships} leden
               </span>
               <Link
                 href={`/admin/pools/${pool.id}/bonus`}
-                className="font-pixel px-2 py-1"
+                className="font-pixel px-2 py-1 shrink-0"
                 style={{ fontSize: "7px", color: "#FF6200", border: "1px solid #FF6200" }}
               >
-                BONUSVRAGEN
+                ⚙ BEHEER
               </Link>
             </div>
           ))}

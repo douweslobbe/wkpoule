@@ -315,12 +315,67 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          {/* Code meedoen link */}
-          <div className="text-center">
-            <Link href="/pools/join" className="font-bold text-sm hover:underline" style={{ color: "#FFD700" }}>
-              Meedoen met een bestaande pool via uitnodigingscode →
-            </Link>
-          </div>
+          {/* Multi-pool aanmoediging — prominent als je ≤2 pools hebt */}
+          {memberships.length <= 2 && (
+            <div
+              className="pixel-card overflow-hidden mb-6"
+              style={{ borderColor: "#4af56a", borderWidth: "2px" }}
+            >
+              <div className="px-5 py-3" style={{ background: "#071f0e", borderBottom: "3px solid #000" }}>
+                <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
+                  🏆 SPEEL IN MEERDERE POOLS
+                </h2>
+                <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>
+                  Maak een pool voor elk gezelschap — voorspellingen vul je maar één keer in!
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-0" style={{ borderBottom: "none" }}>
+                {[
+                  { emoji: "👨‍👩‍👧‍👦", label: "Familie", desc: "Wie voorspelt het beste thuis?" },
+                  { emoji: "🤝", label: "Vrienden", desc: "Oude rivaliteiten, nieuwe inzetten" },
+                  { emoji: "💼", label: "Collega's", desc: "Kantoor-kampioen worden?" },
+                ].map((item, i) => (
+                  <Link
+                    key={item.label}
+                    href="/pools/new"
+                    className="flex items-center gap-3 px-5 py-4 transition-colors"
+                    style={{
+                      borderRight: i < 2 ? "2px solid var(--c-border)" : "none",
+                      borderBottom: "none",
+                    }}
+                  >
+                    <span style={{ fontSize: "24px", flexShrink: 0 }}>{item.emoji}</span>
+                    <div>
+                      <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>
+                        POOL: {item.label.toUpperCase()}
+                      </div>
+                      <div className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+                        {item.desc}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="px-5 py-2 flex items-center justify-between flex-wrap gap-2"
+                style={{ background: "var(--c-surface-deep)", borderTop: "2px solid var(--c-border)" }}>
+                <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+                  Of doe mee met een bestaande pool via een uitnodigingscode
+                </span>
+                <Link href="/pools/join" className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
+                  Meedoen met code →
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Subtiele link als je al 3+ pools hebt */}
+          {memberships.length > 2 && (
+            <div className="text-center mb-4">
+              <Link href="/pools/join" className="font-pixel" style={{ fontSize: "7px", color: "#555580" }}>
+                + Nog een pool aanmaken of meedoen met code →
+              </Link>
+            </div>
+          )}
         </>
       )}
     </div>

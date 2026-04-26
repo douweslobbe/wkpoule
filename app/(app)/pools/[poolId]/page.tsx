@@ -129,12 +129,6 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
     select: { createdAt: true },
   })
 
-  const championPicks = await prisma.championPick.findMany({
-    where: { poolId },
-    select: { userId: true },
-  })
-  const hasChampionPickSet = new Set(championPicks.map(p => p.userId))
-
   return (
     <div>
       <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
@@ -465,6 +459,38 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
             </div>
           </div>
         ) : null}
+      </div>
+
+      {/* Multi-pool nudge */}
+      <div
+        className="mt-6 pixel-card p-4 flex items-center gap-4 flex-wrap"
+        style={{ borderStyle: "dashed", borderColor: "var(--c-border-mid)", background: "transparent" }}
+      >
+        <span className="text-2xl" style={{ flexShrink: 0 }}>🏆</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>
+            SPEEL OOK IN ANDERE POOLS
+          </div>
+          <div className="font-pixel mt-1" style={{ fontSize: "7px", color: "var(--c-text-4)", lineHeight: "1.8" }}>
+            Maak een pool voor vrienden, familie of collega&apos;s. Voorspellingen tellen overal — je hoeft ze maar één keer in te vullen.
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap shrink-0">
+          <Link
+            href="/pools/new"
+            className="font-pixel px-3 py-2"
+            style={{ fontSize: "7px", background: "#4af56a", color: "#000", border: "2px solid #000", boxShadow: "2px 2px 0 #000" }}
+          >
+            + NIEUWE POOL
+          </Link>
+          <Link
+            href="/pools/join"
+            className="font-pixel px-3 py-2"
+            style={{ fontSize: "7px", color: "var(--c-text-2)", border: "2px solid var(--c-border)" }}
+          >
+            MEEDOEN MET CODE
+          </Link>
+        </div>
       </div>
     </div>
   )

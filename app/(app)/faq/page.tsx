@@ -102,7 +102,7 @@ export default function FaqPage() {
         <p className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>HOEVEEL JOKERS PER FASE</p>
         <Row label="Poulefase"        value="3 jokers" />
         <Row label="Ronde van 32"     value="1 joker" />
-        <Row label="Ronde van 16"     value="1 joker" />
+        <Row label="Achtste finale"    value="1 joker" />
         <Row label="Kwartfinale"      value="1 joker" />
         <Row label="Halve finale en verder" value="Geen jokers — daar staat al genoeg op het spel" />
         <p>

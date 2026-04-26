@@ -94,6 +94,70 @@ export async function joinPool(formData: FormData) {
   redirect(`/pools/${pool.id}`)
 }
 
+// ─── Ledenbeheer (pool-admin) ─────────────────────────────────────────────────
+
+async function requirePoolAdmin(sessionUserId: string, poolId: string) {
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: sessionUserId, poolId } },
+  })
+  if (!membership || membership.role !== "ADMIN") return null
+  return membership
+}
+
+export async function promoteToAdmin(poolId: string, targetUserId: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+  if (targetUserId === session.user.id) return { error: "Je kunt je eigen rol niet wijzigen" }
+
+  const caller = await requirePoolAdmin(session.user.id, poolId)
+  if (!caller && !session.user.isAdmin) return { error: "Geen toegang" }
+
+  await prisma.poolMembership.update({
+    where: { userId_poolId: { userId: targetUserId, poolId } },
+    data: { role: "ADMIN" },
+  })
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}`)
+  return { success: true }
+}
+
+export async function demoteToMember(poolId: string, targetUserId: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+  if (targetUserId === session.user.id) return { error: "Je kunt je eigen rol niet wijzigen" }
+
+  const caller = await requirePoolAdmin(session.user.id, poolId)
+  if (!caller && !session.user.isAdmin) return { error: "Geen toegang" }
+
+  // Zorg dat er altijd minstens één admin overblijft
+  const adminCount = await prisma.poolMembership.count({ where: { poolId, role: "ADMIN" } })
+  if (adminCount <= 1) return { error: "Er moet minimaal één beheerder zijn" }
+
+  await prisma.poolMembership.update({
+    where: { userId_poolId: { userId: targetUserId, poolId } },
+    data: { role: "MEMBER" },
+  })
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}`)
+  return { success: true }
+}
+
+export async function removeMember(poolId: string, targetUserId: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+  if (targetUserId === session.user.id) return { error: "Je kunt jezelf niet verwijderen uit de pool" }
+
+  const caller = await requirePoolAdmin(session.user.id, poolId)
+  if (!caller && !session.user.isAdmin) return { error: "Geen toegang" }
+
+  await prisma.poolMembership.delete({
+    where: { userId_poolId: { userId: targetUserId, poolId } },
+  })
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}`)
+  return { success: true }
+}
+
 // ─── Voorspellingen ──────────────────────────────────────────────────────────
 
 export async function savePrediction(formData: FormData) {

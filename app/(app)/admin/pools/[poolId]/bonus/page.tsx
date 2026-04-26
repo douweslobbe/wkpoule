@@ -6,7 +6,15 @@ import { SetAnswerForm } from "./SetAnswerForm"
 import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
 import { PoolSettingsForm } from "./PoolSettingsForm"
+import { MemberManageRow } from "./MemberManageRow"
 import { BonusQuestionType } from "@prisma/client"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ poolId: string }> }): Promise<Metadata> {
+  const { poolId } = await params
+  const pool = await prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } })
+  return { title: pool ? `Beheer: ${pool.name} — WK Pool 2026` : "WK Pool 2026" }
+}
 
 const TYPE_LABELS: Record<BonusQuestionType, string> = {
   OPEN: "Openvraag",
@@ -29,6 +37,12 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
   const pool = await prisma.pool.findUnique({ where: { id: poolId } })
   if (!pool) notFound()
 
+  const members = await prisma.poolMembership.findMany({
+    where: { poolId },
+    include: { user: { select: { id: true, name: true } } },
+    orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+  })
+
   const questions = await prisma.bonusQuestion.findMany({
     where: { poolId },
     include: { _count: { select: { answers: true } } },
@@ -46,21 +60,32 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
     byCategory.set(cat, list)
   }
 
+  const isGlobalAdmin = session.user.isAdmin
+
   return (
     <div>
+      {/* Terug-links */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <Link href="/admin" className="font-pixel" style={{ fontSize: "7px", color: "#7070a0" }}>
-          ◄ ADMIN
+        <Link href={`/pools/${poolId}`} className="font-pixel" style={{ fontSize: "7px", color: "#7070a0" }}>
+          ◄ {pool.name.toUpperCase()}
         </Link>
+        {isGlobalAdmin && (
+          <>
+            <span className="font-pixel" style={{ fontSize: "7px", color: "#333360" }}>·</span>
+            <Link href="/admin" className="font-pixel" style={{ fontSize: "7px", color: "#555580" }}>
+              SYSTEEM-ADMIN
+            </Link>
+          </>
+        )}
         <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>
-          BONUSVRAGEN — {pool.name.toUpperCase()}
+          ⚙ BEHEER — {pool.name.toUpperCase()}
         </h1>
       </div>
 
       {/* Pool instellingen */}
       <div className="pixel-card overflow-hidden mb-6">
         <div className="px-5 py-3" style={{ background: "#1a0d00", borderBottom: "3px solid #000" }}>
-          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚙ POOL INSTELLINGEN</h2>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📋 POOL INSTELLINGEN</h2>
           <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
             Poolbericht — zichtbaar voor alle leden (inzet, afspraken, regels)
           </p>
@@ -70,11 +95,58 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
         </div>
       </div>
 
+      {/* Leden beheren */}
+      <div className="pixel-card overflow-hidden mb-6">
+        <div className="px-5 py-3" style={{ background: "#0a1f3d", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
+            👥 LEDEN ({members.length})
+          </h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4499ff" }}>
+            Beheer wie lid of beheerder is. Nodig meer mensen uit via de uitnodigingscode.
+          </p>
+        </div>
+
+        {/* Uitnodigingscode banner */}
+        <div className="px-5 py-3 flex items-center gap-3 flex-wrap" style={{ background: "#0d1a30", borderBottom: "2px solid var(--c-border)" }}>
+          <span className="font-pixel" style={{ fontSize: "7px", color: "#4499ff" }}>UITNODIGINGSCODE:</span>
+          <span
+            className="font-pixel tracking-widest px-3 py-1"
+            style={{ background: "#FFD700", color: "#000", border: "2px solid #000", boxShadow: "2px 2px 0 #000", fontSize: "11px" }}
+          >
+            {pool.inviteCode}
+          </span>
+          <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+            Deel deze code met vrienden, familie, collega&apos;s
+          </span>
+        </div>
+
+        <div>
+          {members.map((m) => (
+            <MemberManageRow
+              key={m.userId}
+              poolId={poolId}
+              userId={m.userId}
+              name={m.user.name}
+              role={m.role}
+              isMe={m.userId === session.user.id}
+            />
+          ))}
+        </div>
+
+        {members.length === 1 && (
+          <div className="px-5 py-4 text-center" style={{ background: "var(--c-surface-deep)", borderTop: "2px solid var(--c-border)" }}>
+            <p className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+              Je bent voorlopig de enige. Deel de code om vrienden, familie of collega&apos;s uit te nodigen!
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Huidige vragen */}
       <div className="pixel-card overflow-hidden mb-6">
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
-            📋 VRAGEN IN DEZE POOL ({questions.length})
+            📋 BONUSVRAGEN IN DEZE POOL ({questions.length})
           </h2>
         </div>
 

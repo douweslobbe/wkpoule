@@ -14,7 +14,7 @@ export const JOKER_QUOTA: Record<MatchStage, number> = {
 export const STAGE_LABELS_NL: Record<MatchStage, string> = {
   GROUP: "Poulefase",
   ROUND_OF_32: "Ronde van 32",
-  ROUND_OF_16: "Ronde van 16",
+  ROUND_OF_16: "Achtste finale",
   QUARTER_FINAL: "Kwartfinale",
   SEMI_FINAL: "Halve finale",
   THIRD_PLACE: "Derde plaats",
