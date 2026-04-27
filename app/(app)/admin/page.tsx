@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { SyncButton } from "./SyncButton"
 import { RecalcButton } from "./RecalcButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
+import { HardDeletePoolButton } from "./HardDeletePoolButton"
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -127,40 +128,49 @@ export default async function AdminPage() {
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>🏆 POOLS</h2>
         </div>
         <div>
-          {pools.map((pool) => (
-            <div
-              key={pool.id}
-              className="flex items-center gap-3 px-5 py-3 flex-wrap"
-              style={{ borderBottom: "2px solid var(--c-border)" }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm" style={{ color: "var(--c-text)" }}>{pool.name}</span>
-                  <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
-                    {pool.inviteCode}
-                  </span>
-                </div>
-                <div className="mt-0.5 flex gap-1 flex-wrap">
-                  {pool.memberships.map((m) => (
-                    <span key={m.userId} className="font-pixel px-1"
-                      style={{ fontSize: "6px", background: "#FFD700", color: "#000" }}>
-                      {m.user.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
-                {pool._count.memberships} leden
-              </span>
-              <Link
-                href={`/admin/pools/${pool.id}/bonus`}
-                className="font-pixel px-2 py-1 shrink-0"
-                style={{ fontSize: "7px", color: "#FF6200", border: "1px solid #FF6200" }}
+          {pools.map((pool) => {
+            const deleteRequested = pool.description?.startsWith("[VERWIJDERING AANGEVRAAGD]") ?? false
+            return (
+              <div
+                key={pool.id}
+                className="flex items-center gap-3 px-5 py-3 flex-wrap"
+                style={{ borderBottom: "2px solid var(--c-border)", background: deleteRequested ? "#1a0000" : undefined }}
               >
-                ⚙ BEHEER
-              </Link>
-            </div>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-sm" style={{ color: deleteRequested ? "#ff8888" : "var(--c-text)" }}>{pool.name}</span>
+                    {deleteRequested && (
+                      <span className="font-pixel px-1" style={{ fontSize: "6px", background: "#ff4444", color: "#fff" }}>
+                        VERWIJDERING AANGEVRAAGD
+                      </span>
+                    )}
+                    <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                      {pool.inviteCode}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex gap-1 flex-wrap">
+                    {pool.memberships.map((m) => (
+                      <span key={m.userId} className="font-pixel px-1"
+                        style={{ fontSize: "6px", background: "#FFD700", color: "#000" }}>
+                        {m.user.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+                  {pool._count.memberships} leden
+                </span>
+                <Link
+                  href={`/admin/pools/${pool.id}/bonus`}
+                  className="font-pixel px-2 py-1 shrink-0"
+                  style={{ fontSize: "7px", color: "#FF6200", border: "1px solid #FF6200" }}
+                >
+                  ⚙ BEHEER
+                </Link>
+                <HardDeletePoolButton poolId={pool.id} poolName={pool.name} highlight={deleteRequested} />
+              </div>
+            )
+          })}
         </div>
       </div>
 

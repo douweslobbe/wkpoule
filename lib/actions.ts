@@ -94,6 +94,36 @@ export async function joinPool(formData: FormData) {
   redirect(`/pools/${pool.id}`)
 }
 
+// ─── Pool verwijderen ────────────────────────────────────────────────────────
+
+export async function requestDeletePool(poolId: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
+
+  // Markeer pool als "verwijdering aangevraagd" via description prefix
+  await prisma.pool.update({
+    where: { id: poolId },
+    data: { description: `[VERWIJDERING AANGEVRAAGD] ${(await prisma.pool.findUnique({ where: { id: poolId }, select: { description: true } }))?.description ?? ""}`.trim() },
+  })
+  revalidatePath("/admin")
+  return { success: true }
+}
+
+export async function hardDeletePool(poolId: string) {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  await prisma.pool.delete({ where: { id: poolId } })
+  revalidatePath("/admin")
+  revalidatePath("/dashboard")
+  return { success: true }
+}
+
 // ─── Ledenbeheer (pool-admin) ─────────────────────────────────────────────────
 
 async function requirePoolAdmin(sessionUserId: string, poolId: string) {

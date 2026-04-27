@@ -7,6 +7,7 @@ import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
 import { PoolSettingsForm } from "./PoolSettingsForm"
 import { MemberManageRow } from "./MemberManageRow"
+import { DeletePoolButton } from "./DeletePoolButton"
 import { CopyButton } from "@/components/CopyButton"
 import { BonusQuestionType } from "@prisma/client"
 import type { Metadata } from "next"
@@ -233,6 +234,25 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
         </div>
         <div className="p-5">
           <AddQuestionForm poolId={poolId} />
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div className="pixel-card overflow-hidden mt-6" style={{ borderColor: "#550000" }}>
+        <div className="px-5 py-3" style={{ background: "#1a0000", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚠ GEVAARLIJKE ZONE</h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#ff8888" }}>
+            Onomkeerbare acties — wees voorzichtig
+          </p>
+        </div>
+        <div className="p-5">
+          <p className="font-pixel mb-1" style={{ fontSize: "8px", color: "var(--c-text-2)" }}>
+            Pool verwijderen
+          </p>
+          <p className="font-pixel mb-3" style={{ fontSize: "7px", color: "var(--c-text-3)", lineHeight: "1.8" }}>
+            Vraagt de globale beheerder om de pool definitief te verwijderen. Alle leden, bonusvragen en scores gaan verloren.
+          </p>
+          <DeletePoolButton poolId={poolId} poolName={pool.name} />
         </div>
       </div>
     </div>
