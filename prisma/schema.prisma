@@ -15,12 +15,13 @@ model User {
   isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  memberships   PoolMembership[]
-  predictions   Prediction[]
-  bonusAnswers  BonusAnswer[]
-  championPicks ChampionPick[]
-  poolMessages  PoolMessage[]
-  achievements  Achievement[]
+  memberships    PoolMembership[]
+  predictions    Prediction[]
+  bonusAnswers   BonusAnswer[]
+  championPicks  ChampionPick[]
+  poolMessages   PoolMessage[]
+  achievements   Achievement[]
+  survivorEntry  SurvivorEntry?
 
   @@index([email])
 }
@@ -71,6 +72,7 @@ model Team {
   homeMatches   Match[]        @relation("HomeTeam")
   awayMatches   Match[]        @relation("AwayTeam")
   championPicks ChampionPick[]
+  survivorPicks SurvivorPick[]
 }
 
 model Match {
@@ -216,6 +218,42 @@ model PoolMessage {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([poolId, createdAt])
+}
+
+// ─── WK Survivor ──────────────────────────────────────────────────────────────
+
+model SurvivorEntry {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  hardcoreAlive     Boolean  @default(true)
+  hardcoreElimRound String?
+  highscoreTotal    Int      @default(0)
+  resetUsed         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  picks SurvivorPick[]
+}
+
+model SurvivorPick {
+  id       String   @id @default(cuid())
+  entryId  String
+  userId   String
+  mode     String   // HARDCORE | HIGHSCORE
+  teamId   String
+  round    String   // GROUP_1 | GROUP_2 | GROUP_3 | ROUND_OF_32 | ROUND_OF_16 | QUARTER_FINAL | SEMI_FINAL | FINAL
+  cycle    Int      @default(0) // HIGHSCORE: 0=before reset, 1=after reset
+  result   String   @default("PENDING") // PENDING | SURVIVED | ELIMINATED
+  goalDiff Int?
+  pickedAt DateTime @default(now())
+
+  entry SurvivorEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  team  Team          @relation(fields: [teamId], references: [id])
+
+  @@unique([entryId, round, mode])
+  @@unique([userId, mode, teamId, cycle])
+  @@index([entryId])
+  @@index([round])
 }
 
 model LeaderboardEntry {

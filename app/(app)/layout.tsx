@@ -63,6 +63,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {session.user.name?.toUpperCase()}
             </Link>
             <Link
+              href="/survivor"
+              className="shrink-0 px-2 py-1 font-pixel"
+              style={{ fontSize: "7px", color: "#ff4444", border: "1px solid #440000", background: "#0d0000", whiteSpace: "nowrap" }}
+              title="WK Survivor"
+            >
+              ⚔ SURVIVOR
+            </Link>
+            <Link
               href="/faq"
               className="shrink-0 px-2 py-1 font-pixel"
               style={{ fontSize: "7px", color: "#8888aa", border: "1px solid #2d2d50" }}

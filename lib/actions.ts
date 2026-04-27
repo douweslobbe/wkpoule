@@ -11,6 +11,7 @@ import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_
 import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType } from "@prisma/client"
+import { matchToSurvivorRound, getFirstMatchOfRound, type SurvivorRound } from "./survivor"
 
 // Toernooi start — deadline voor bonus vragen en kampioen pick
 const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z")
@@ -609,6 +610,75 @@ async function recalcMatch(externalId: number) {
       data: { pointsAwarded: pts },
     })
   }
+
+  // WK Survivor scoring
+  await scoreSurvivorPicksForMatch(match)
+}
+
+async function scoreSurvivorPicksForMatch(match: {
+  homeTeamId: string | null
+  awayTeamId: string | null
+  homeScore: number | null
+  awayScore: number | null
+  stage: string
+  matchday: number | null
+}) {
+  const round = matchToSurvivorRound({ stage: match.stage, matchday: match.matchday })
+  if (!round) return
+  if (match.homeScore === null || match.awayScore === null) return
+  if (!match.homeTeamId || !match.awayTeamId) return
+
+  const picks = await prisma.survivorPick.findMany({
+    where: {
+      round,
+      teamId: { in: [match.homeTeamId, match.awayTeamId] },
+      result: "PENDING",
+    },
+    include: { entry: true },
+  })
+
+  for (const pick of picks) {
+    const isHome = pick.teamId === match.homeTeamId
+    const teamGoals = isHome ? match.homeScore! : match.awayScore!
+    const oppGoals = isHome ? match.awayScore! : match.homeScore!
+    const goalDiff = teamGoals - oppGoals
+
+    // Group stage: must WIN. Knockout: draw = survived (goes to extra time / penalties).
+    const result =
+      match.stage === "GROUP"
+        ? goalDiff > 0
+          ? "SURVIVED"
+          : "ELIMINATED"
+        : goalDiff >= 0
+        ? "SURVIVED"
+        : "ELIMINATED"
+
+    await prisma.survivorPick.update({
+      where: { id: pick.id },
+      data: { result, goalDiff },
+    })
+
+    // HARDCORE elimination
+    if (pick.mode === "HARDCORE" && result === "ELIMINATED" && pick.entry.hardcoreAlive) {
+      await prisma.survivorEntry.update({
+        where: { id: pick.entryId },
+        data: { hardcoreAlive: false, hardcoreElimRound: round },
+      })
+    }
+  }
+
+  // Rebuild highscore totals for all affected entries
+  const entryIds = [...new Set(picks.map((p) => p.entryId))]
+  for (const entryId of entryIds) {
+    const hsPicks = await prisma.survivorPick.findMany({
+      where: { entryId, mode: "HIGHSCORE", goalDiff: { not: null } },
+    })
+    const total = hsPicks.reduce((s, p) => s + (p.goalDiff ?? 0), 0)
+    await prisma.survivorEntry.update({
+      where: { id: entryId },
+      data: { highscoreTotal: total },
+    })
+  }
 }
 
 async function recalcBonusQuestion(questionId: string) {
@@ -1000,5 +1070,108 @@ export async function deletePoolMessage(formData: FormData) {
 
   await prisma.poolMessage.delete({ where: { id: messageId } })
   revalidatePath(`/pools/${message.poolId}/prikbord`)
+  return { success: true }
+}
+
+// ─── WK Survivor ─────────────────────────────────────────────────────────────
+
+export async function joinSurvivor() {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const existing = await prisma.survivorEntry.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (existing) return { error: "Je doet al mee aan WK Survivor" }
+
+  await prisma.survivorEntry.create({
+    data: { userId: session.user.id },
+  })
+
+  revalidatePath("/survivor")
+  return { success: true }
+}
+
+export async function makeSurvivorPick(mode: "HARDCORE" | "HIGHSCORE", teamId: string, round: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const entry = await prisma.survivorEntry.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!entry) return { error: "Je doet niet mee aan WK Survivor" }
+
+  // HARDCORE: must still be alive
+  if (mode === "HARDCORE" && !entry.hardcoreAlive) {
+    return { error: "Je bent uitgeschakeld in HARDCORE modus" }
+  }
+
+  // Check deadline
+  const firstMatch = await getFirstMatchOfRound(round as SurvivorRound)
+  if (!firstMatch) return { error: "Ronde niet gevonden" }
+  const deadline = new Date(firstMatch.kickoff.getTime() - 30 * 60 * 1000)
+  if (new Date() > deadline) return { error: "De deadline voor deze ronde is verstreken" }
+
+  // Determine cycle: HIGHSCORE uses reset cycle, HARDCORE always 0
+  const cycle = mode === "HIGHSCORE" && entry.resetUsed ? 1 : 0
+
+  // Check: team already scored a result for this round's pick (can't change after match)
+  const existingPick = await prisma.survivorPick.findUnique({
+    where: { entryId_round_mode: { entryId: entry.id, round, mode } },
+  })
+  if (existingPick && existingPick.result !== "PENDING") {
+    return { error: "De uitslag van jouw pick is al verwerkt" }
+  }
+
+  // If changing team: check new team not already used in another round this cycle+mode
+  // (The DB unique constraint catches this, but give a friendly error first)
+  if (!existingPick || existingPick.teamId !== teamId) {
+    const alreadyUsed = await prisma.survivorPick.findFirst({
+      where: {
+        userId: session.user.id,
+        mode,
+        teamId,
+        cycle,
+        NOT: existingPick ? { id: existingPick.id } : undefined,
+      },
+    })
+    if (alreadyUsed) {
+      return { error: "Je hebt dit team al gebruikt in deze cyclus" }
+    }
+  }
+
+  await prisma.survivorPick.upsert({
+    where: { entryId_round_mode: { entryId: entry.id, round, mode } },
+    create: {
+      entryId: entry.id,
+      userId: session.user.id,
+      mode,
+      teamId,
+      round,
+      cycle,
+    },
+    update: { teamId, cycle, result: "PENDING", goalDiff: null },
+  })
+
+  revalidatePath("/survivor")
+  return { success: true }
+}
+
+export async function resetHighscore() {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const entry = await prisma.survivorEntry.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!entry) return { error: "Je doet niet mee" }
+  if (entry.resetUsed) return { error: "Je hebt je reset al gebruikt" }
+
+  await prisma.survivorEntry.update({
+    where: { id: entry.id },
+    data: { resetUsed: true },
+  })
+
+  revalidatePath("/survivor")
   return { success: true }
 }
