@@ -15,13 +15,14 @@ model User {
   isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  memberships    PoolMembership[]
-  predictions    Prediction[]
-  bonusAnswers   BonusAnswer[]
-  championPicks  ChampionPick[]
-  poolMessages   PoolMessage[]
-  achievements   Achievement[]
-  survivorEntry  SurvivorEntry?
+  memberships       PoolMembership[]
+  predictions       Prediction[]
+  bonusAnswers      BonusAnswer[]
+  championPicks     ChampionPick[]
+  poolMessages      PoolMessage[]
+  achievements      Achievement[]
+  survivorEntry     SurvivorEntry?
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
 }
@@ -88,7 +89,8 @@ model Match {
   status       MatchStatus @default(SCHEDULED)
   kickoff      DateTime
   venue        String?
-  lastSyncedAt DateTime?
+  lastSyncedAt       DateTime?
+  notificationSentAt DateTime?
 
   homeTeam    Team?        @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam    Team?        @relation("AwayTeam", fields: [awayTeamId], references: [id])
@@ -218,6 +220,21 @@ model PoolMessage {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([poolId, createdAt])
+}
+
+// ─── Push notificaties ────────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ─── WK Survivor ──────────────────────────────────────────────────────────────

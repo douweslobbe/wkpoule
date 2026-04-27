@@ -138,12 +138,12 @@ export default async function PredictionsPage({
       {/* Picks van andere poolgenoten bekijken */}
       {activePoolId && poolMembers.length > 1 && (
         <div className="mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 no-scrollbar" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
             <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>BEKIJK:</span>
             <Link
               href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${session.user.id}`}
-              className={`px-2.5 py-1 text-xs font-bold transition-all ${viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"}`}
-              style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
+              className={`shrink-0 px-2.5 py-1 text-xs font-bold transition-all ${viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+              style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
             >
               🙋 Mijn picks
             </Link>
@@ -153,8 +153,8 @@ export default async function PredictionsPage({
                 <Link
                   key={m.userId}
                   href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${m.userId}`}
-                  className={`px-2 py-1 text-xs font-bold transition-all inline-flex items-center gap-1 ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
-                  style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
+                  className={`shrink-0 px-2 py-1 text-xs font-bold transition-all inline-flex items-center gap-1 ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+                  style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
                 >
                   {m.user.name}
                   <UserBadges
@@ -181,13 +181,13 @@ export default async function PredictionsPage({
       )}
 
       {/* Fase-tabs */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
+      <div className="flex gap-1.5 mb-4 no-scrollbar" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
         {STAGE_ORDER.map((s) => (
           <Link
             key={s}
             href={`/predictions?stage=${s}${activePoolId ? `&pool=${activePoolId}` : ""}${viewUserId !== session.user.id ? `&view=${viewUserId}` : ""}`}
-            className={`px-2.5 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
-            style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
+            className={`px-2.5 py-1.5 text-xs font-bold shrink-0 ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
           >
             {STAGE_LABELS[s]}
           </Link>

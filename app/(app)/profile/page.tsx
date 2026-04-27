@@ -4,6 +4,9 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UserBadges } from "@/components/UserBadges"
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements"
+import { UpdateNameForm } from "./UpdateNameForm"
+import { ChangePasswordForm } from "./ChangePasswordForm"
+import { PushSubscribeButton } from "@/components/PushSubscribeButton"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Mijn Profiel — WK Pool 2026" }
@@ -68,6 +71,36 @@ export default async function ProfilePage() {
           <div className="mt-2">
             <UserBadges achievements={previewAchievements} jokerCount={jokerCount} size="md" max={10} />
           </div>
+        </div>
+      </div>
+
+      {/* Instellingen */}
+      <div className="pixel-card overflow-hidden mb-5">
+        <div className="px-5 py-3" style={{ background: "#0a1f3d", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚙ INSTELLINGEN</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-0" style={{ borderBottom: "none" }}>
+          {/* Naam */}
+          <div className="p-5" style={{ borderRight: "2px solid var(--c-border)" }}>
+            <h3 className="font-pixel mb-4" style={{ fontSize: "8px", color: "var(--c-text-2)" }}>
+              👤 NAAM WIJZIGEN
+            </h3>
+            <UpdateNameForm currentName={session.user.name ?? ""} />
+          </div>
+          {/* Wachtwoord */}
+          <div className="p-5">
+            <h3 className="font-pixel mb-4" style={{ fontSize: "8px", color: "var(--c-text-2)" }}>
+              🔑 WACHTWOORD WIJZIGEN
+            </h3>
+            <ChangePasswordForm />
+          </div>
+        </div>
+        {/* Push notificaties — volle breedte onderaan */}
+        <div className="p-5" style={{ borderTop: "2px solid var(--c-border)" }}>
+          <h3 className="font-pixel mb-4" style={{ fontSize: "8px", color: "var(--c-text-2)" }}>
+            🔔 PUSH NOTIFICATIES
+          </h3>
+          <PushSubscribeButton vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         </div>
       </div>
 

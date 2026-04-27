@@ -571,6 +571,9 @@ export async function syncMatches() {
       }
     }
   }
+  // Push notificaties: stuur herinneringen voor wedstrijden die binnenkort beginnen
+  await sendMatchReminders()
+
   revalidatePath("/admin")
 
   return { success: true, synced, updated }
@@ -1073,6 +1076,45 @@ export async function deletePoolMessage(formData: FormData) {
   return { success: true }
 }
 
+// ─── Profiel instellingen ────────────────────────────────────────────────────
+
+export async function updateName(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const name = (formData.get("name") as string)?.trim()
+  if (!name || name.length < 2) return { error: "Naam moet minimaal 2 tekens zijn" }
+  if (name.length > 50) return { error: "Naam mag maximaal 50 tekens zijn" }
+
+  await prisma.user.update({ where: { id: session.user.id }, data: { name } })
+  revalidatePath("/profile")
+  revalidatePath("/dashboard")
+  return { success: true }
+}
+
+export async function changePassword(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const currentPassword = formData.get("currentPassword") as string
+  const newPassword = formData.get("newPassword") as string
+  const confirmPassword = formData.get("confirmPassword") as string
+
+  if (!currentPassword || !newPassword || !confirmPassword) return { error: "Vul alle velden in" }
+  if (newPassword.length < 6) return { error: "Nieuw wachtwoord minimaal 6 tekens" }
+  if (newPassword !== confirmPassword) return { error: "Wachtwoorden komen niet overeen" }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  if (!user) return { error: "Gebruiker niet gevonden" }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash)
+  if (!valid) return { error: "Huidig wachtwoord klopt niet" }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  await prisma.user.update({ where: { id: session.user.id }, data: { passwordHash } })
+  return { success: true }
+}
+
 // ─── WK Survivor ─────────────────────────────────────────────────────────────
 
 export async function joinSurvivor() {
@@ -1155,6 +1197,79 @@ export async function makeSurvivorPick(mode: "HARDCORE" | "HIGHSCORE", teamId: s
 
   revalidatePath("/survivor")
   return { success: true }
+}
+
+// ─── Push notificaties ───────────────────────────────────────────────────────
+
+/**
+ * Stuur herinneringen voor wedstrijden die binnen 90 minuten beginnen,
+ * aan gebruikers die nog geen voorspelling hebben gedaan.
+ * Sla daarna notificationSentAt op zodat we niet dubbel sturen.
+ */
+async function sendMatchReminders() {
+  const { pushEnabled, sendPush } = await import("./push")
+  if (!pushEnabled) return
+
+  const now = new Date()
+  const windowEnd = new Date(now.getTime() + 90 * 60 * 1000)
+
+  // Vind wedstrijden die binnenkort beginnen en nog geen notificatie hebben gehad
+  const upcomingMatches = await prisma.match.findMany({
+    where: {
+      kickoff: { gte: now, lte: windowEnd },
+      status: { in: ["SCHEDULED", "TIMED"] },
+      notificationSentAt: null,
+    },
+    include: {
+      homeTeam: { select: { nameNl: true, name: true } },
+      awayTeam: { select: { nameNl: true, name: true } },
+    },
+  })
+
+  if (upcomingMatches.length === 0) return
+
+  for (const match of upcomingMatches) {
+    const homeLabel = match.homeTeam?.nameNl ?? match.homeTeam?.name ?? "?"
+    const awayLabel = match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "?"
+    const minutesLeft = Math.round((match.kickoff.getTime() - now.getTime()) / 60000)
+
+    // Haal alle subscribers op die nog niet hebben voorspeld voor dit duel
+    const subscribers = await prisma.pushSubscription.findMany({
+      where: {
+        user: {
+          predictions: {
+            none: { matchId: match.id },
+          },
+        },
+      },
+      select: { endpoint: true, p256dh: true, auth: true },
+    })
+
+    const expiredEndpoints: string[] = []
+
+    for (const sub of subscribers) {
+      const result = await sendPush(sub, {
+        title: "⚽ Wedstrijd begint bijna!",
+        body: `${homeLabel} – ${awayLabel} begint over ${minutesLeft} minuten. Maak snel je voorspelling!`,
+        url: "/predictions",
+        tag: `match-reminder-${match.id}`,
+      })
+      if (result.expired) expiredEndpoints.push(sub.endpoint)
+    }
+
+    // Verwijder verlopen subscriptions
+    if (expiredEndpoints.length > 0) {
+      await prisma.pushSubscription.deleteMany({
+        where: { endpoint: { in: expiredEndpoints } },
+      })
+    }
+
+    // Markeer de wedstrijd als notificatie verstuurd
+    await prisma.match.update({
+      where: { id: match.id },
+      data: { notificationSentAt: new Date() },
+    })
+  }
 }
 
 export async function resetHighscore() {

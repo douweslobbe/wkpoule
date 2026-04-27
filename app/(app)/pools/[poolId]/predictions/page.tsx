@@ -103,7 +103,7 @@ export default async function PredictionsPage({
       <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       {/* Wie bekijken we? */}
-      <div className="flex gap-2 flex-wrap mb-4">
+      <div className="flex gap-2 mb-4 no-scrollbar" style={{ overflowX: "auto" } as React.CSSProperties}>
         <Link
           href={`/pools/${poolId}/predictions?stage=${stage}&view=${session.user.id}`}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
@@ -132,12 +132,13 @@ export default async function PredictionsPage({
       </div>
 
       {/* Stage tabs */}
-      <div className="flex gap-1 flex-wrap mb-5">
+      <div className="flex gap-1 mb-5 no-scrollbar" style={{ overflowX: "auto" } as React.CSSProperties}>
         {STAGE_ORDER.map((s) => (
           <Link
             key={s}
             href={`/pools/${poolId}/predictions?stage=${s}&view=${viewUserId}`}
-            className={`px-3 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            className={`shrink-0 px-3 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            style={{ whiteSpace: "nowrap" }}
           >
             {STAGE_LABELS[s]}
           </Link>

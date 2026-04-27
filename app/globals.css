@@ -75,6 +75,17 @@
 }
 
 /* ═══════════════════════════════════════
+   HIDE SCROLLBAR UTILITY
+═══════════════════════════════════════ */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══════════════════════════════════════
    GLOBAL PIXEL BASELINE
 ═══════════════════════════════════════ */
 body {
@@ -206,7 +217,8 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
   border-bottom: 1px solid var(--c-surface);
   cursor: pointer;
   color: var(--c-text-2);
@@ -215,6 +227,7 @@ body {
   transition: background 0.05s;
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
+  touch-action: manipulation;
 }
 .pixel-list-item:hover {
   background: var(--c-surface-alt);
@@ -273,6 +286,33 @@ body {
 }
 .pixel-pm:active {
   box-shadow: none;
+  transform: translate(1px, 1px);
+}
+
+/* Grotere touch-target variant voor mobiel */
+.pixel-pm-mobile {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface-alt);
+  border: 2px solid var(--c-border-bright);
+  color: var(--c-text-2);
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 1px 1px 0 #000;
+  touch-action: manipulation;
+  transition: all 0.05s;
+}
+.pixel-pm-mobile:active {
+  box-shadow: none;
+  background: var(--c-surface);
+  color: #FF6200;
+  border-color: #FF6200;
   transform: translate(1px, 1px);
 }
 

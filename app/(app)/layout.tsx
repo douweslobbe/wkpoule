@@ -76,7 +76,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               style={{ fontSize: "7px", color: "#ff4444", border: "1px solid #440000", background: "#0d0000", whiteSpace: "nowrap" }}
               title="WK Survivor"
             >
-              ⚔ SURVIVOR
+              <span className="hidden min-[360px]:inline">⚔ SURVIVOR</span>
+              <span className="min-[360px]:hidden">⚔</span>
             </Link>
             <Link
               href="/faq"

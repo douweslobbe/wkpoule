@@ -55,17 +55,24 @@ export function PoolSubNav({
   ]
 
   return (
-    <div className="flex gap-2 flex-wrap mb-5">
+    <div
+      className="flex gap-2 mb-5 no-scrollbar"
+      style={{
+        overflowX: "auto",
+        paddingBottom: "4px",
+        WebkitOverflowScrolling: "touch",
+      } as React.CSSProperties}
+    >
       {tabs.map((tab) => {
         const active = tab.isActive(pathname)
         return (
           <Link
             key={tab.href}
             href={tab.href}
-            className={`relative px-3 py-2 text-xs font-bold transition-all ${
+            className={`relative px-3 py-2 text-xs font-bold transition-all shrink-0 ${
               active ? "pixel-tab-active" : "pixel-tab-inactive"
             }`}
-            style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px" }}
+            style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
           >
             {tab.label}
             {tab.badge && !active && (

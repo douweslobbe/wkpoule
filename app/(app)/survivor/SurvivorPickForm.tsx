@@ -77,8 +77,8 @@ export function SurvivorPickForm({ mode, round, currentPickTeamId, usedTeamIds, 
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "3px",
-                  padding: "6px 8px",
+                  gap: "4px",
+                  padding: "8px 10px",
                   background: isSelected ? (mode === "HARDCORE" ? "#2a0000" : "#1a1500") : "#0d0f1a",
                   border: isSelected
                     ? `2px solid ${accentColor}`
@@ -88,21 +88,25 @@ export function SurvivorPickForm({ mode, round, currentPickTeamId, usedTeamIds, 
                   boxShadow: isSelected ? `0 0 6px ${accentColor}44` : "none",
                   opacity: isUsed ? 0.3 : isPending ? 0.7 : 1,
                   cursor: isUsed ? "not-allowed" : "pointer",
-                  minWidth: "52px",
+                  minWidth: "56px",
+                  minHeight: "56px",
+                  justifyContent: "center",
                   transition: "all 0.1s",
+                  // Bigger tap area on touch devices
+                  touchAction: "manipulation",
                 }}
               >
                 {team.flagUrl ? (
                   <Image
                     src={team.flagUrl}
                     alt={displayName}
-                    width={28}
-                    height={20}
+                    width={32}
+                    height={22}
                     style={{ objectFit: "cover", imageRendering: "pixelated" }}
                     unoptimized
                   />
                 ) : (
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🏳</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>🏳</span>
                 )}
                 <span
                   className="font-pixel"
@@ -110,7 +114,7 @@ export function SurvivorPickForm({ mode, round, currentPickTeamId, usedTeamIds, 
                     fontSize: "5px",
                     color: isSelected ? accentColor : isUsed ? "#333355" : "var(--c-text-3)",
                     textAlign: "center",
-                    maxWidth: "52px",
+                    maxWidth: "56px",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",

@@ -269,13 +269,14 @@ export default async function SurvivorPage() {
             </p>
           </div>
         ) : (
-          <>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
             {/* Table header */}
             <div
               className="grid px-4 py-2"
               style={{
-                gridTemplateColumns: "1fr 90px 80px 80px 90px",
+                gridTemplateColumns: "minmax(120px, 1fr) 90px 80px 80px 90px",
                 gap: "8px",
+                minWidth: "480px",
                 background: "var(--c-surface-deep)",
                 borderBottom: "2px solid var(--c-border)",
               }}
@@ -298,8 +299,9 @@ export default async function SurvivorPage() {
                   key={entry.id}
                   className="grid px-4 py-3 items-center"
                   style={{
-                    gridTemplateColumns: "1fr 90px 80px 80px 90px",
+                    gridTemplateColumns: "minmax(120px, 1fr) 90px 80px 80px 90px",
                     gap: "8px",
+                    minWidth: "480px",
                     borderBottom: "1px solid var(--c-border)",
                     background: isMe ? "#0d1a10" : undefined,
                   }}
@@ -423,7 +425,7 @@ export default async function SurvivorPage() {
                 </div>
               )
             })}
-          </>
+          </div>
         )}
       </div>
 

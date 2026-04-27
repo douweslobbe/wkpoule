@@ -190,8 +190,91 @@ export function CompactMatchRow({
         </span>
       </div>
 
-      {/* Main match row */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      {/* ── MOBIEL: twee rijen (< sm) ────────────────────────────── */}
+      <div className="sm:hidden px-3 py-2" style={{ position: "relative" }}>
+        {showPopup && (
+          <>
+            <span key={popupKey} className="score-popup">✓ SAVED!</span>
+            <PixelConfetti count={10} />
+          </>
+        )}
+
+        {/* Thuisploeg */}
+        <div className="flex items-center gap-2 mb-1.5">
+          {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="sm" />}
+          <span className="font-bold flex-1 min-w-0 truncate" style={{ color: "var(--c-text)", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>
+            {homeName}
+          </span>
+          {/* Score / invoer thuis */}
+          {isOwnView && !locked ? (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button type="button" onClick={() => setHome(adj(home, -1))} className="pixel-pm-mobile">–</button>
+              <input
+                type="number" min={0} max={20}
+                value={home}
+                onChange={(e) => setHome(e.target.value)}
+                className="pixel-input text-center font-bold"
+                style={{ width: "2.25rem", fontSize: "11px", padding: "4px 0" }}
+                placeholder="–"
+                inputMode="numeric"
+              />
+              <button type="button" onClick={() => setHome(adj(home, +1))} className="pixel-pm-mobile">+</button>
+            </div>
+          ) : (finished || live) ? (
+            <span className="font-pixel shrink-0" style={{
+              fontSize: "13px", width: "2rem", textAlign: "center",
+              color: live ? "#ff4444" : "#FFD700",
+            }}>
+              {match.homeScore ?? "?"}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Scheidingslijn met VS / status */}
+        <div className="flex items-center gap-2 my-1 pl-8">
+          <div style={{ flex: 1, height: "1px", background: "var(--c-border)" }} />
+          <span className="font-pixel shrink-0" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>
+            {(finished || live) ? "–" : isOwnView && !locked ? (
+              <span style={{ color: statusColor }}>{statusLabel || "VS"}</span>
+            ) : "VS"}
+          </span>
+          <div style={{ flex: 1, height: "1px", background: "var(--c-border)" }} />
+        </div>
+
+        {/* Uitploeg */}
+        <div className="flex items-center gap-2 mt-1.5">
+          {match.awayTeam?.code && <PixelFlag code={match.awayTeam.code} size="sm" />}
+          <span className="font-bold flex-1 min-w-0 truncate" style={{ color: "var(--c-text)", fontSize: "9px", fontFamily: "var(--font-pixel), monospace" }}>
+            {awayName}
+          </span>
+          {/* Score / invoer uit */}
+          {isOwnView && !locked ? (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button type="button" onClick={() => setAway(adj(away, -1))} className="pixel-pm-mobile">–</button>
+              <input
+                type="number" min={0} max={20}
+                value={away}
+                onChange={(e) => setAway(e.target.value)}
+                className="pixel-input text-center font-bold"
+                style={{ width: "2.25rem", fontSize: "11px", padding: "4px 0" }}
+                placeholder="–"
+                inputMode="numeric"
+              />
+              <button type="button" onClick={() => setAway(adj(away, +1))} className="pixel-pm-mobile">+</button>
+            </div>
+          ) : (finished || live) ? (
+            <span className="font-pixel shrink-0" style={{
+              fontSize: "13px", width: "2rem", textAlign: "center",
+              color: live ? "#ff4444" : "#FFD700",
+            }}>
+              {match.awayScore ?? "?"}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── DESKTOP: één rij (>= sm) ─────────────────────────────── */}
+      <div className="hidden sm:flex items-center gap-2 px-3 py-2.5">
         {/* Thuisploeg */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {match.homeTeam?.code && <PixelFlag code={match.homeTeam.code} size="sm" />}
@@ -207,9 +290,7 @@ export function CompactMatchRow({
             </>
           )}
           {isOwnView && !locked ? (
-            /* Eigen invoer */
             <>
-              {/* Thuis +/- */}
               <div className="flex items-center gap-0.5">
                 <button type="button" onClick={() => setHome(adj(home, -1))} className="pixel-pm">–</button>
                 <input
@@ -222,7 +303,6 @@ export function CompactMatchRow({
                 <button type="button" onClick={() => setHome(adj(home, +1))} className="pixel-pm">+</button>
               </div>
               <span className="font-bold text-sm" style={{ color: "var(--c-text-4)" }}>–</span>
-              {/* Uit +/- */}
               <div className="flex items-center gap-0.5">
                 <button type="button" onClick={() => setAway(adj(away, -1))} className="pixel-pm">–</button>
                 <input
@@ -239,7 +319,6 @@ export function CompactMatchRow({
               </span>
             </>
           ) : finished || live ? (
-            /* Eindstand / Live score */
             <div className="flex items-center gap-1">
               <span className="w-8 text-center font-pixel py-0.5 text-sm" style={{
                 background: "#000",
@@ -269,14 +348,14 @@ export function CompactMatchRow({
         </div>
       </div>
 
-      {/* Joker toggle (eigen view, niet vergrendeld, joker toegestaan in deze fase, voorspelling al ingevuld) */}
+      {/* Joker toggle */}
       {isOwnView && !locked && jokerAllowed && myPred !== undefined && (
         <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid var(--c-border)" }}>
           <button
             type="button"
             onClick={handleToggleJoker}
             disabled={jokerPending || (!isJoker && jokersRemaining === 0)}
-            className="font-pixel px-2 py-1 transition-all"
+            className="font-pixel px-2 py-1.5 transition-all"
             style={{
               fontSize: "7px",
               background: isJoker ? "#FFD700" : (jokersRemaining === 0 ? "var(--c-surface-deep)" : "transparent"),
@@ -285,10 +364,11 @@ export function CompactMatchRow({
               boxShadow: isJoker ? "2px 2px 0 #000" : "none",
               cursor: (jokerPending || (!isJoker && jokersRemaining === 0)) ? "not-allowed" : "pointer",
               opacity: (!isJoker && jokersRemaining === 0) ? 0.5 : 1,
+              touchAction: "manipulation",
             }}
             title={isJoker ? "Joker uitzetten" : jokersRemaining === 0 ? "Geen jokers meer in deze ronde" : "Lucky Shot — punten verdubbelen"}
           >
-            {jokerPending ? "..." : isJoker ? "★ JOKER ACTIEF — KLIK OM UIT TE ZETTEN" : "★ ZET JOKER IN (×2 PUNTEN)"}
+            {jokerPending ? "..." : isJoker ? "★ JOKER ACTIEF — UIT" : "★ ZET JOKER IN (×2)"}
           </button>
           {jokerError && <span className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>{jokerError}</span>}
         </div>
@@ -296,7 +376,7 @@ export function CompactMatchRow({
 
       {/* Voorspelling tonen (vergrendeld of anderen bekijken) */}
       {(!isOwnView || (isOwnView && locked)) && (
-        <div className="flex items-center justify-center gap-2 px-3 pb-2" style={{ borderTop: "1px solid var(--c-border)", fontSize: "11px" }}>
+        <div className="flex items-center justify-center gap-2 px-3 pb-2 flex-wrap" style={{ borderTop: "1px solid var(--c-border)", fontSize: "11px" }}>
           {viewPred ? (
             <>
               <span style={{ color: "var(--c-text-4)" }}>{isOwnView ? "Jouw pick:" : "Pick:"}</span>

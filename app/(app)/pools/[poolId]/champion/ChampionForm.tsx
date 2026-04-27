@@ -88,10 +88,15 @@ export function ChampionForm({
         placeholder="Zoek land..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pixel-input w-full px-3 py-2 mb-3"
+        className="pixel-input w-full mb-3"
+        style={{ padding: "10px 12px", fontSize: "9px" }}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
       />
 
-      <div className="pixel-list">
+      <div className="pixel-list" style={{ maxHeight: "18rem" }}>
         {filtered.map((t) => (
           <button
             key={t.id}
@@ -99,6 +104,7 @@ export function ChampionForm({
             onClick={() => handleSelect(t.id)}
             disabled={isPending}
             className={`pixel-list-item ${selected === t.id ? "selected" : ""}`}
+            style={{ minHeight: "44px", touchAction: "manipulation" }}
           >
             <PixelFlag code={t.code} size="sm" />
             <span className="text-sm font-medium">{t.name}</span>
