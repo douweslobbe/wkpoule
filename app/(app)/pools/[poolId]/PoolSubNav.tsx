@@ -31,6 +31,11 @@ export function PoolSubNav({
       isActive: (p: string) => p === "/predictions" || p.includes("/predictions"),
     },
     {
+      href: `/bracket`,
+      label: "🏟 Bracket",
+      isActive: (p: string) => p === "/bracket" || p.startsWith("/bracket"),
+    },
+    {
       href: `/pools/${poolId}/bonus`,
       label: "🏆 Het Grote Plaatje",
       isActive: (p: string) => p.includes("/bonus"),

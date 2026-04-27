@@ -63,6 +63,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {session.user.name?.toUpperCase()}
             </Link>
             <Link
+              href="/bracket"
+              className="shrink-0 px-2 py-1 font-pixel hidden sm:inline"
+              style={{ fontSize: "7px", color: "#FFD700", border: "1px solid #443300", background: "#0d0a00", whiteSpace: "nowrap" }}
+              title="WK 2026 Bracket & Groepen"
+            >
+              ⚽ BRACKET
+            </Link>
+            <Link
               href="/survivor"
               className="shrink-0 px-2 py-1 font-pixel"
               style={{ fontSize: "7px", color: "#ff4444", border: "1px solid #440000", background: "#0d0000", whiteSpace: "nowrap" }}

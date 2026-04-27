@@ -79,6 +79,14 @@ export default async function PredictionsPage({
     select: { createdAt: true },
   })
 
+  // Totaal over alle fases (alleen eigen view)
+  const [totalMatchesAll, totalPredictionsAll] = viewUserId === session.user.id
+    ? await Promise.all([
+        prisma.match.count(),
+        prisma.prediction.count({ where: { userId: session.user.id } }),
+      ])
+    : [0, 0]
+
   const now = new Date()
 
   // Voortgang voor deze fase
@@ -136,38 +144,67 @@ export default async function PredictionsPage({
         ))}
       </div>
 
-      {/* Voortgangsbalk — eigen view + er zijn wedstrijden */}
-      {viewUserId === session.user.id && totalMatches > 0 && (
+      {/* Voortgang — totaal + per fase */}
+      {viewUserId === session.user.id && totalMatchesAll > 0 && (
         <div className="pixel-card overflow-hidden mb-4">
-          <div className="px-4 py-3 flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
-                  {STAGE_LABELS[stage].toUpperCase()} VOORSPELLINGEN
-                </span>
-                <span className="font-pixel" style={{ fontSize: "7px", color: filledIn === totalMatches ? "#4af56a" : "var(--c-text-2)" }}>
-                  {filledIn}/{totalMatches}
-                </span>
-              </div>
-              <div className="relative h-3 w-full" style={{ background: "var(--c-surface-deep)", border: "2px solid #000" }}>
-                <div
-                  className="h-full transition-all"
-                  style={{
-                    width: totalMatches > 0 ? `${Math.round((filledIn / totalMatches) * 100)}%` : "0%",
-                    background: filledIn === totalMatches ? "#16a34a" : "#FF6200",
-                  }}
-                />
-              </div>
+          {/* Totaal over alles */}
+          <div
+            className="px-4 py-2 flex items-center gap-3"
+            style={{ borderBottom: "2px solid var(--c-border)", background: "var(--c-surface-deep)" }}
+          >
+            <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+              TOTAAL ALLE FASES
+            </span>
+            <div className="flex-1 relative h-2" style={{ background: "#0a0a1a", border: "1px solid #1a1a3a" }}>
+              <div
+                className="h-full"
+                style={{
+                  width: `${Math.round((totalPredictionsAll / totalMatchesAll) * 100)}%`,
+                  background: totalPredictionsAll === totalMatchesAll ? "#16a34a" : "#FF6200",
+                  transition: "width 0.3s",
+                }}
+              />
             </div>
-            {closingSoonNotFilled > 0 && (
-              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#FFD700" }}>
-                ⏱ {closingSoonNotFilled} sluiten snel
-              </span>
-            )}
-            {filledIn === totalMatches && (
-              <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#4af56a" }}>✓ ALLES INGEVULD</span>
+            <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: totalPredictionsAll === totalMatchesAll ? "#4af56a" : "#FF6200" }}>
+              {totalPredictionsAll}/{totalMatchesAll}
+            </span>
+            {totalPredictionsAll === totalMatchesAll && (
+              <span className="font-pixel shrink-0" style={{ fontSize: "6px", color: "#4af56a" }}>🏆 VOLLEDIG!</span>
             )}
           </div>
+
+          {/* Per fase */}
+          {totalMatches > 0 && (
+            <div className="px-4 py-3 flex items-center gap-4 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+                    {STAGE_LABELS[stage].toUpperCase()}
+                  </span>
+                  <span className="font-pixel" style={{ fontSize: "7px", color: filledIn === totalMatches ? "#4af56a" : "var(--c-text-2)" }}>
+                    {filledIn}/{totalMatches}
+                  </span>
+                </div>
+                <div className="relative h-3 w-full" style={{ background: "var(--c-surface-deep)", border: "2px solid #000" }}>
+                  <div
+                    className="h-full transition-all"
+                    style={{
+                      width: `${Math.round((filledIn / totalMatches) * 100)}%`,
+                      background: filledIn === totalMatches ? "#16a34a" : "#FF6200",
+                    }}
+                  />
+                </div>
+              </div>
+              {closingSoonNotFilled > 0 && (
+                <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#FFD700" }}>
+                  ⏱ {closingSoonNotFilled} sluiten snel
+                </span>
+              )}
+              {filledIn === totalMatches && totalMatches > 0 && (
+                <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#4af56a" }}>✓ FASE KLAAR</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
