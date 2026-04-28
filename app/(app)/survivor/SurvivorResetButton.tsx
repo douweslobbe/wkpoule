@@ -28,7 +28,7 @@ export function SurvivorResetButton() {
       <button
         onClick={handleClick}
         disabled={isPending}
-        className="font-pixel px-3 py-1.5"
+        className="font-pixel px-3 py-2"
         style={{
           fontSize: "7px",
           background: confirmed ? "#ff8800" : "transparent",
@@ -36,6 +36,8 @@ export function SurvivorResetButton() {
           border: `2px solid #ff8800`,
           cursor: "pointer",
           opacity: isPending ? 0.5 : 1,
+          minHeight: "44px",
+          touchAction: "manipulation",
         }}
       >
         {isPending ? "BEZIG..." : confirmed ? "⚠ KLIK NOGMAALS OM TE BEVESTIGEN" : "🔄 RESET GEBRUIKEN"}

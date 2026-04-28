@@ -61,7 +61,7 @@ export function MessageForm({ poolId }: { poolId: string }) {
       <button
         type="submit"
         disabled={isPending || !content.trim()}
-        className="mt-2 px-4 py-2 font-pixel disabled:opacity-40"
+        className="mt-2 px-4 py-3 font-pixel disabled:opacity-40"
         style={{
           background: "#FF6200",
           color: "white",

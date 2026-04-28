@@ -142,7 +142,7 @@ export default async function PredictionsPage({
             <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>BEKIJK:</span>
             <Link
               href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${session.user.id}`}
-              className={`shrink-0 px-2.5 py-1 text-xs font-bold transition-all ${viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+              className={`shrink-0 px-2.5 py-2 text-xs font-bold transition-all ${viewUserId === session.user.id ? "pixel-tab-active" : "pixel-tab-inactive"}`}
               style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
             >
               🙋 Mijn picks
@@ -153,7 +153,7 @@ export default async function PredictionsPage({
                 <Link
                   key={m.userId}
                   href={`/predictions?stage=${stage}&pool=${activePoolId}&view=${m.userId}`}
-                  className={`shrink-0 px-2 py-1 text-xs font-bold transition-all inline-flex items-center gap-1 ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+                  className={`shrink-0 px-2 py-2 text-xs font-bold transition-all inline-flex items-center gap-1 ${viewUserId === m.userId ? "pixel-tab-active" : "pixel-tab-inactive"}`}
                   style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
                 >
                   {m.user.name}
@@ -186,7 +186,7 @@ export default async function PredictionsPage({
           <Link
             key={s}
             href={`/predictions?stage=${s}${activePoolId ? `&pool=${activePoolId}` : ""}${viewUserId !== session.user.id ? `&view=${viewUserId}` : ""}`}
-            className={`px-2.5 py-1.5 text-xs font-bold shrink-0 ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            className={`px-2.5 py-2 text-xs font-bold shrink-0 ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
             style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
           >
             {STAGE_LABELS[s]}

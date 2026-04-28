@@ -56,6 +56,8 @@ export function UpdateNameForm({ currentName }: { currentName: string }) {
           boxShadow: isPending ? "none" : "2px 2px 0 #000",
           cursor: isPending ? "default" : "pointer",
           opacity: isPending ? 0.6 : 1,
+          minHeight: "44px",
+          touchAction: "manipulation",
         }}
       >
         {isPending ? "OPSLAAN..." : "NAAM OPSLAAN"}

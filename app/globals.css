@@ -192,6 +192,7 @@ body {
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
   line-height: 1.8;
+  min-height: 44px;
 }
 .pixel-input:focus {
   outline: none;

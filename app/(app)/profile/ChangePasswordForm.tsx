@@ -65,6 +65,8 @@ export function ChangePasswordForm() {
           border: "2px solid #FF6200",
           cursor: isPending ? "default" : "pointer",
           opacity: isPending ? 0.6 : 1,
+          minHeight: "44px",
+          touchAction: "manipulation",
         }}
       >
         {isPending ? "OPSLAAN..." : "WACHTWOORD WIJZIGEN"}

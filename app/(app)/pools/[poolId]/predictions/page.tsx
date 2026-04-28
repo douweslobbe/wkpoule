@@ -106,7 +106,7 @@ export default async function PredictionsPage({
       <div className="flex gap-2 mb-4 no-scrollbar" style={{ overflowX: "auto" } as React.CSSProperties}>
         <Link
           href={`/pools/${poolId}/predictions?stage=${stage}&view=${session.user.id}`}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+          className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
             viewUserId === session.user.id
               ? "bg-orange-500 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -120,7 +120,7 @@ export default async function PredictionsPage({
             <Link
               key={m.userId}
               href={`/pools/${poolId}/predictions?stage=${stage}&view=${m.userId}`}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
                 viewUserId === m.userId
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -137,7 +137,7 @@ export default async function PredictionsPage({
           <Link
             key={s}
             href={`/pools/${poolId}/predictions?stage=${s}&view=${viewUserId}`}
-            className={`shrink-0 px-3 py-1.5 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            className={`shrink-0 px-3 py-2 text-xs font-bold ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
             style={{ whiteSpace: "nowrap" }}
           >
             {STAGE_LABELS[s]}
