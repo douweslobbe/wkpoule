@@ -8,7 +8,6 @@ import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Voorspellingen — WK Pool 2026" }
-import { PoolSubNav } from "../pools/[poolId]/PoolSubNav"
 import { CompactMatchRow } from "./CompactMatchRow"
 
 const STAGE_LABELS: Record<MatchStage, string> = {
@@ -121,20 +120,8 @@ export default async function PredictionsPage({
   )
   const missedOpen = openMatches.filter((m) => !myPredMap.get(m.id)).length
 
-  // Gebruik eerste pool als geen pool geselecteerd
-  const navPoolId = activePoolId ?? myPools[0]?.pool.id ?? ""
-
-  const latestMessage = navPoolId ? await prisma.poolMessage.findFirst({
-    where: { poolId: navPoolId },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  }) : null
-
   return (
     <div>
-      {/* Pool navigatie tabs — altijd zichtbaar */}
-      {navPoolId && <PoolSubNav poolId={navPoolId} latestMessageAt={latestMessage?.createdAt.getTime()} />}
-
       {/* Picks van andere poolgenoten bekijken */}
       {activePoolId && poolMembers.length > 1 && (
         <div className="mb-3">

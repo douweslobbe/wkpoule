@@ -2,7 +2,6 @@ import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { PoolSubNav } from "./PoolSubNav"
 import { CopyButton } from "@/components/CopyButton"
 import { UserBadges } from "@/components/UserBadges"
 import type { Metadata } from "next"
@@ -123,15 +122,8 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
     : []
   const predCountMap = new Map(predictionCounts.map((p) => [p.userId, p._count.id]))
 
-  const latestMessage = await prisma.poolMessage.findFirst({
-    where: { poolId },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  })
-
   return (
     <div>
-      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
 
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { Suspense } from "react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PixelBackground } from "@/components/PixelBackground"
@@ -9,6 +10,7 @@ import { PoolTabs } from "@/components/PoolTabs"
 import { PixelGimmicks } from "@/components/PixelGimmicks"
 import { SoundToggle } from "@/components/SoundToggle"
 import { RetroTips } from "@/components/RetroTips"
+import { GlobalNav } from "@/components/GlobalNav"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -19,6 +21,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     include: { pool: { select: { id: true, name: true } } },
     orderBy: { joinedAt: "asc" },
   })
+
+  const poolList = pools.map((m) => ({ id: m.pool.id, name: m.pool.name }))
+  const poolIds = poolList.map((p) => p.id)
+
+  // Latest prikbord message per pool, for the unread badge in GlobalNav
+  const latestMsgs = poolIds.length > 0
+    ? await prisma.poolMessage.groupBy({
+        by: ["poolId"],
+        where: { poolId: { in: poolIds } },
+        _max: { createdAt: true },
+      })
+    : []
+  const latestMessages: Record<string, number> = Object.fromEntries(
+    latestMsgs.map((m) => [m.poolId, m._max.createdAt?.getTime() ?? 0])
+  )
 
   return (
     <div className="min-h-screen flex flex-col pitch-bg scanlines" style={{ position: "relative" }}>
@@ -50,7 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
 
           {/* Pool tabs */}
-          <PoolTabs pools={pools.map((m) => ({ id: m.pool.id, name: m.pool.name }))} />
+          <PoolTabs pools={poolList} />
 
           {/* User / admin */}
           <div className="flex items-center gap-2 shrink-0">
@@ -61,31 +78,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               title="Mijn profiel"
             >
               {session.user.name?.toUpperCase()}
-            </Link>
-            <Link
-              href="/bracket"
-              className="shrink-0 px-2 py-1 font-pixel hidden sm:inline"
-              style={{ fontSize: "7px", color: "#FFD700", border: "1px solid #443300", background: "#0d0a00", whiteSpace: "nowrap" }}
-              title="WK 2026 Bracket & Groepen"
-            >
-              ⚽ BRACKET
-            </Link>
-            <Link
-              href="/survivor"
-              className="shrink-0 px-2 py-1 font-pixel"
-              style={{ fontSize: "7px", color: "#ff4444", border: "1px solid #440000", background: "#0d0000", whiteSpace: "nowrap" }}
-              title="WK Survivor"
-            >
-              <span className="hidden min-[360px]:inline">⚔ SURVIVOR</span>
-              <span className="min-[360px]:hidden">⚔</span>
-            </Link>
-            <Link
-              href="/faq"
-              className="shrink-0 px-2 py-1 font-pixel"
-              style={{ fontSize: "7px", color: "#8888aa", border: "1px solid #2d2d50" }}
-              title="Spelregels & FAQ"
-            >
-              ?
             </Link>
             <SoundToggle />
             <ThemeToggle />
@@ -103,7 +95,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6" style={{ position: "relative", zIndex: 1 }}>
+      {/* Global navigation — shown on every page */}
+      {poolList.length > 0 && (
+        <div
+          className="max-w-6xl mx-auto w-full px-4 pt-3"
+          style={{ position: "relative", zIndex: 2 }}
+        >
+          <Suspense fallback={<div style={{ height: "36px" }} />}>
+            <GlobalNav pools={poolList} latestMessages={latestMessages} />
+          </Suspense>
+        </div>
+      )}
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-5" style={{ position: "relative", zIndex: 1 }}>
         {children}
       </main>
 

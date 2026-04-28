@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PredictionForm } from "./PredictionForm"
 import { MatchStage } from "@prisma/client"
-import { PoolSubNav } from "../PoolSubNav"
 import { PixelFlag } from "@/components/PixelFlag"
 import { DeadlineDisplay } from "@/components/DeadlineDisplay"
 
@@ -73,12 +72,6 @@ export default async function PredictionsPage({
     orderBy: { user: { name: "asc" } },
   })
 
-  const latestMessage = await prisma.poolMessage.findFirst({
-    where: { poolId },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  })
-
   // Totaal over alle fases (alleen eigen view)
   const [totalMatchesAll, totalPredictionsAll] = viewUserId === session.user.id
     ? await Promise.all([
@@ -100,8 +93,6 @@ export default async function PredictionsPage({
 
   return (
     <div>
-      <PoolSubNav poolId={poolId} latestMessageAt={latestMessage?.createdAt.getTime()} />
-
       {/* Wie bekijken we? */}
       <div className="flex gap-2 mb-4 no-scrollbar" style={{ overflowX: "auto" } as React.CSSProperties}>
         <Link

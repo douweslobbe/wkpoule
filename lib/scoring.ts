@@ -65,12 +65,17 @@ export function scoreEstimationQuestion(
   const result = new Map<string, number>()
   if (answers.length === 0) return result
 
+  // Top 20% rounded up get points — e.g. 4→1, 5→1, 6→2, 10→2, 11→3, 16→4
+  const winnerCount = Math.ceil(answers.length * 0.2)
+
   const sorted = [...answers].sort(
     (a, b) => Math.abs(a.answer - correct) - Math.abs(b.answer - correct)
   )
 
-  // Top 3 win; ties at position 3 are all awarded
-  const cutoff = Math.abs((sorted[2] ?? sorted[sorted.length - 1]).answer - correct)
+  // Cutoff distance is the distance of the last guaranteed winner.
+  // Everyone AT that distance or closer gets points (handles ties).
+  const cutoffIdx = Math.min(winnerCount - 1, sorted.length - 1)
+  const cutoff = Math.abs(sorted[cutoffIdx].answer - correct)
 
   for (const a of answers) {
     result.set(a.userId, Math.abs(a.answer - correct) <= cutoff ? BONUS_POINTS : 0)
