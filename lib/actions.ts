@@ -1217,7 +1217,7 @@ async function sendMatchReminders() {
   const upcomingMatches = await prisma.match.findMany({
     where: {
       kickoff: { gte: now, lte: windowEnd },
-      status: { in: ["SCHEDULED", "TIMED"] },
+      status: "SCHEDULED",
       notificationSentAt: null,
     },
     include: {
