@@ -67,6 +67,7 @@ export default async function DashboardPage() {
       deadline: new Date(m.kickoff.getTime() - 30 * 60 * 1000),
       hasPred: missingPools.length === 0,
       missingPools,
+      firstMissingPool: missingPools[0] ?? myPoolIds[0],
     }
   }).filter((m) => m.deadline > now)
 
@@ -259,9 +260,10 @@ export default async function DashboardPage() {
                     : `${minutes}min`
 
                   return (
-                    <div
+                    <Link
                       key={m.id}
-                      className="flex items-center gap-3 px-4 py-2.5"
+                      href={`/pools/${m.firstMissingPool}/predictions`}
+                      className="flex items-center gap-3 px-4 py-2.5 transition-colors"
                       style={{
                         borderBottom: "1px solid var(--c-border)",
                         borderLeft: m.hasPred ? "3px solid #16a34a" : "3px solid #FF6200",
@@ -272,8 +274,11 @@ export default async function DashboardPage() {
                         <div className="font-pixel truncate" style={{ fontSize: "8px", color: "var(--c-text)" }}>
                           {m.homeTeam?.nameNl ?? m.homeTeam?.name ?? "?"} – {m.awayTeam?.nameNl ?? m.awayTeam?.name ?? "?"}
                         </div>
-                        <div className="font-pixel mt-0.5" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                        <div className="font-pixel mt-0.5 flex items-center gap-2" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
                           {new Date(m.kickoff).toLocaleString("nl-NL", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          {!m.hasPred && m.missingPools.length > 1 && (
+                            <span style={{ color: "#FF6200" }}>· {m.missingPools.length}× open</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
@@ -285,12 +290,16 @@ export default async function DashboardPage() {
                           </span>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
               <div className="px-5 py-2 text-right" style={{ borderTop: "1px solid var(--c-border)", background: "var(--c-surface-deep)" }}>
-                <Link href={`/pools/${memberships[0]?.pool.id}/predictions`} className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
+                <Link
+                  href={`/pools/${upcomingWithDeadline.find((m) => !m.hasPred)?.firstMissingPool ?? memberships[0]?.pool.id}/predictions`}
+                  className="font-pixel"
+                  style={{ fontSize: "7px", color: "#FF6200" }}
+                >
                   Alle voorspellingen invullen →
                 </Link>
               </div>

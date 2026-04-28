@@ -253,7 +253,18 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
           </p>
         </div>
         <div className="p-4">
-          <TemplateLibrary poolId={poolId} existingQuestions={existingQuestionTexts} />
+          <TemplateLibrary
+            poolId={poolId}
+            existingQuestions={existingQuestionTexts}
+            limits={{
+              remainingTotal: Math.max(0, pool.maxQuestionsTotal - currentCounts.total),
+              remaining: {
+                OPEN: Math.max(0, pool.maxQuestionsOpen - currentCounts.OPEN),
+                ESTIMATION: Math.max(0, pool.maxQuestionsEst - currentCounts.ESTIMATION),
+                STATEMENT: Math.max(0, pool.maxQuestionsStmt - currentCounts.STATEMENT),
+              },
+            }}
+          />
         </div>
       </div>
 
