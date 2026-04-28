@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma"
 import { PixelBackground } from "@/components/PixelBackground"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { LogoutButton } from "@/components/LogoutButton"
-import { PoolTabs } from "@/components/PoolTabs"
 import { PixelGimmicks } from "@/components/PixelGimmicks"
 import { SoundToggle } from "@/components/SoundToggle"
 import { RetroTips } from "@/components/RetroTips"
@@ -66,9 +65,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </div>
           </Link>
 
-          {/* Pool tabs */}
-          <PoolTabs pools={poolList} />
-
           {/* User / admin */}
           <div className="flex items-center gap-2 shrink-0">
             <Link
@@ -95,17 +91,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Global navigation — shown on every page */}
-      {poolList.length > 0 && (
-        <div
-          className="max-w-6xl mx-auto w-full px-4 pt-3"
-          style={{ position: "relative", zIndex: 2 }}
-        >
-          <Suspense fallback={<div style={{ height: "36px" }} />}>
-            <GlobalNav pools={poolList} latestMessages={latestMessages} />
-          </Suspense>
-        </div>
-      )}
+      {/* Global navigation — altijd zichtbaar */}
+      <div
+        className="max-w-6xl mx-auto w-full px-4 pt-3"
+        style={{ position: "relative", zIndex: 2 }}
+      >
+        <Suspense fallback={<div style={{ height: "36px" }} />}>
+          <GlobalNav pools={poolList} latestMessages={latestMessages} />
+        </Suspense>
+      </div>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-5" style={{ position: "relative", zIndex: 1 }}>
         {children}
