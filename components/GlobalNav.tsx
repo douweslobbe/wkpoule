@@ -51,7 +51,7 @@ export function GlobalNav({
       isActive: pathname === "/dashboard",
     },
     {
-      href: `/predictions?pool=${activePoolId}`,
+      href: `/pools/${activePoolId}/predictions`,
       label: "⚽ De Wedstrijden",
       isActive:
         pathname === "/predictions" ||

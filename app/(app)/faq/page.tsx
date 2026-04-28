@@ -1,5 +1,8 @@
 import Link from "next/link"
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Spelregels & FAQ — WK Pool 2026" }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -40,9 +43,9 @@ export default function FaqPage() {
           Wie de meeste punten scoort in jouw pool wint.
         </p>
         <p>
-          Je kunt in meerdere pools deelnemen. <span style={{ color: "#FFD700" }}>Wedstrijd&shy;voorspellingen
-          gelden voor al je pools tegelijk</span> — je hoeft ze maar één keer in te vullen.
-          Bonusvragen en de kampioen&shy;keuze zijn wél per pool apart.
+          Je kunt in meerdere pools deelnemen — <span style={{ color: "#FFD700" }}>elke pool heeft
+          zijn eigen voorspellingen, stand en bonusvragen</span>. Zo kun je per gezelschap
+          een andere strategie kiezen. Bonusvragen en de kampioen&shy;keuze zijn per pool apart.
         </p>
       </Section>
 
@@ -84,12 +87,13 @@ export default function FaqPage() {
           is de start van het toernooi</span> (11 juni 2026, 22:00). Daarna zijn antwoorden vergrendeld.
         </p>
         <p className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>SOORTEN VRAGEN</p>
-        <Row label="Schatting"  value="Top 3 dichtst bij het goede antwoord = 7 pt" />
+        <Row label="Schatting"  value="Top 20% dichtst bij het goede antwoord = 7 pt" />
         <Row label="Stelling"   value="Goed of fout = 7 pt" />
         <Row label="Open vraag" value="Admin bepaalt correct antwoord = 7 pt" />
         <p>
-          Bij schattingsvragen worden <span style={{ color: "#FFD700" }}>gelijke derde plaatsen</span> ook
-          beloond — iedereen die even dichtbij zit als de derde plek krijgt 7 punten.
+          Bij schattingsvragen wint de <span style={{ color: "#FFD700" }}>bovenste 20%</span> (naar
+          boven afgerond). Bij 5 deelnemers is dat 1 winnaar, bij 6 zijn het er 2, bij 11 zijn het er 3.
+          Bij gelijke afstand deelt iedereen op die plek de prijs.
         </p>
       </Section>
 

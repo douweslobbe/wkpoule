@@ -3,3 +3,10 @@ nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = ["npm install --legacy-peer-deps"]
+
+[phases.build]
+cmds = [
+  "npx prisma generate",
+  "npx prisma migrate deploy",
+  "npm run build"
+]

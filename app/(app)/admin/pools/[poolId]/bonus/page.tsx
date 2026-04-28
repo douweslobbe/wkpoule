@@ -6,6 +6,7 @@ import { SetAnswerForm } from "./SetAnswerForm"
 import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
 import { PoolSettingsForm } from "./PoolSettingsForm"
+import { PoolMaxQuestionsForm } from "./PoolMaxQuestionsForm"
 import { MemberManageRow } from "./MemberManageRow"
 import { DeletePoolButton } from "./DeletePoolButton"
 import { CopyButton } from "@/components/CopyButton"
@@ -53,6 +54,18 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
 
   const existingQuestionTexts = questions.map((q) => q.question)
 
+  // Aantallen per type (voor limieten-UI)
+  const questionCountsByType = questions.reduce(
+    (acc, q) => { acc[q.type] = (acc[q.type] ?? 0) + 1; return acc },
+    {} as Record<string, number>
+  )
+  const currentCounts = {
+    total: questions.length,
+    OPEN: questionCountsByType["OPEN"] ?? 0,
+    ESTIMATION: questionCountsByType["ESTIMATION"] ?? 0,
+    STATEMENT: questionCountsByType["STATEMENT"] ?? 0,
+  }
+
   // Groepeer per categorie
   const byCategory = new Map<string, typeof questions>()
   for (const q of questions) {
@@ -94,6 +107,26 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
         </div>
         <div className="p-5">
           <PoolSettingsForm poolId={poolId} currentDescription={pool.description ?? ""} />
+        </div>
+      </div>
+
+      {/* Max bonusvragen per type */}
+      <div className="pixel-card overflow-hidden mb-6">
+        <div className="px-5 py-3" style={{ background: "#0a1f3d", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>🎯 MAX BONUSVRAGEN</h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4499ff" }}>
+            Stel in hoeveel vragen er per type en totaal mogen worden toegevoegd
+          </p>
+        </div>
+        <div className="p-5">
+          <PoolMaxQuestionsForm
+            poolId={poolId}
+            maxQuestionsTotal={pool.maxQuestionsTotal}
+            maxQuestionsOpen={pool.maxQuestionsOpen}
+            maxQuestionsEst={pool.maxQuestionsEst}
+            maxQuestionsStmt={pool.maxQuestionsStmt}
+            currentCounts={currentCounts}
+          />
         </div>
       </div>
 

@@ -6,6 +6,18 @@ import { useState, useRef, useEffect } from "react"
 
 type Pool = { id: string; name: string }
 
+/**
+ * Detecteer het huidige pagina-segment zodat een pool-switch je op
+ * dezelfde soort pagina laat — bijv. wedstrijden blijft wedstrijden.
+ */
+function poolLink(targetPoolId: string, pathname: string): string {
+  if (pathname.includes("/predictions")) return `/pools/${targetPoolId}/predictions`
+  if (pathname.includes("/bonus") || pathname.includes("/champion")) return `/pools/${targetPoolId}/bonus`
+  if (pathname.includes("/prikbord")) return `/pools/${targetPoolId}/prikbord`
+  // Default: ranglijst / pool-dashboard
+  return `/pools/${targetPoolId}`
+}
+
 export function PoolTabs({ pools }: { pools: Pool[] }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -57,7 +69,7 @@ export function PoolTabs({ pools }: { pools: Pool[] }) {
             return (
               <Link
                 key={pool.id}
-                href={`/pools/${pool.id}`}
+                href={poolLink(pool.id, pathname)}
                 className="shrink-0 px-2.5 py-1 font-bold whitespace-nowrap transition-all"
                 style={tabStyle(active)}
               >
@@ -85,7 +97,7 @@ export function PoolTabs({ pools }: { pools: Pool[] }) {
                 return (
                   <Link
                     key={pool.id}
-                    href={`/pools/${pool.id}`}
+                    href={poolLink(pool.id, pathname)}
                     onClick={() => setOpen(false)}
                     className="block px-3 py-2 font-bold whitespace-nowrap"
                     style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", color: active ? "#FF6200" : "var(--c-text-nav)", borderBottom: "1px solid #1a1d30", background: active ? "#1a0800" : "transparent" }}

@@ -45,16 +45,30 @@ export default async function DashboardPage() {
     orderBy: { kickoff: "asc" },
     take: 10,
   })
-  const myPredMatchIds = await prisma.prediction.findMany({
+  // Voorspellingen per match én pool — match is "gedaan" als alle pools een voorspelling hebben
+  const myPoolIds = memberships.map((m) => m.pool.id)
+  const myPredictions = await prisma.prediction.findMany({
     where: { userId: session.user.id, matchId: { in: upcomingMatches.map((m) => m.id) } },
-    select: { matchId: true },
-  }).then((ps) => new Set(ps.map((p) => p.matchId)))
+    select: { matchId: true, poolId: true },
+  })
+  // Bouw een Map: matchId → Set van poolIds met voorspelling
+  const predByMatch = new Map<string, Set<string>>()
+  for (const p of myPredictions) {
+    const s = predByMatch.get(p.matchId) ?? new Set()
+    s.add(p.poolId)
+    predByMatch.set(p.matchId, s)
+  }
 
-  const upcomingWithDeadline = upcomingMatches.map((m) => ({
-    ...m,
-    deadline: new Date(m.kickoff.getTime() - 30 * 60 * 1000),
-    hasPred: myPredMatchIds.has(m.id),
-  })).filter((m) => m.deadline > now)
+  const upcomingWithDeadline = upcomingMatches.map((m) => {
+    const predictedPools = predByMatch.get(m.id) ?? new Set()
+    const missingPools = myPoolIds.filter((id) => !predictedPools.has(id))
+    return {
+      ...m,
+      deadline: new Date(m.kickoff.getTime() - 30 * 60 * 1000),
+      hasPred: missingPools.length === 0,
+      missingPools,
+    }
+  }).filter((m) => m.deadline > now)
 
   // Bereken positie per pool
   const poolStandings = memberships.map(({ pool, role }) => {
@@ -276,7 +290,7 @@ export default async function DashboardPage() {
                 })}
               </div>
               <div className="px-5 py-2 text-right" style={{ borderTop: "1px solid var(--c-border)", background: "var(--c-surface-deep)" }}>
-                <Link href="/predictions" className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
+                <Link href={`/pools/${memberships[0]?.pool.id}/predictions`} className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
                   Alle voorspellingen invullen →
                 </Link>
               </div>
@@ -285,7 +299,7 @@ export default async function DashboardPage() {
 
           {/* Snelle acties */}
           <div className="grid gap-3 sm:grid-cols-3 mb-6">
-            <Link href="/predictions" className="pixel-card p-4 flex items-center gap-3 transition-colors"
+            <Link href={`/pools/${memberships[0]?.pool.id}/predictions`} className="pixel-card p-4 flex items-center gap-3 transition-colors"
               style={{ borderLeft: "4px solid #FF6200" }}>
               <span className="text-2xl">⚽</span>
               <div>
@@ -326,7 +340,7 @@ export default async function DashboardPage() {
                   🏆 SPEEL IN MEERDERE POOLS
                 </h2>
                 <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>
-                  Maak een pool voor elk gezelschap — voorspellingen vul je maar één keer in!
+                  Maak een pool voor elk gezelschap — elke pool heeft zijn eigen stand en uitdagingen!
                 </p>
               </div>
               <div className="grid sm:grid-cols-3 gap-0" style={{ borderBottom: "none" }}>

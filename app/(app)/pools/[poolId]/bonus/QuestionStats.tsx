@@ -71,9 +71,13 @@ export function QuestionStats({
     const max = nums[nums.length - 1]
     const myNum = myAnswer !== undefined ? Number(myAnswer) : NaN
 
+    // Top 20% wint (naar boven afgerond) — zelfde logica als scoring.ts
+    const winnerCount = Math.ceil(nums.length * 0.2)
+
     const distToMedian = (n: number) => Math.abs(n - median)
     const myDist = !isNaN(myNum) ? distToMedian(myNum) : Infinity
     const myRankAmongAll = nums.filter((n) => distToMedian(n) < myDist).length + 1
+    const isWinner = myRankAmongAll <= winnerCount
 
     return (
       <div className="mt-2 space-y-1" style={{ fontSize: "8px", color: "var(--c-text-3)", fontFamily: "var(--font-pixel), monospace", lineHeight: "1.8" }}>
@@ -82,13 +86,14 @@ export function QuestionStats({
           <span>Gem: <strong style={{ color: "var(--c-text-2)" }}>{avg}</strong></span>
           <span>Mediaan: <strong style={{ color: "var(--c-text-2)" }}>{median}</strong></span>
           <span>Bereik: {min}–{max}</span>
+          <span style={{ color: "var(--c-text-4)" }}>Top {winnerCount} wint</span>
         </div>
         {!isNaN(myNum) && (
           <div className="flex items-center gap-2">
             <span>Jij: <strong style={{ color: "var(--c-text-2)" }}>{myNum}</strong></span>
-            <span className="font-semibold" style={{ color: myRankAmongAll <= 3 ? "#4af56a" : "var(--c-text-3)" }}>
-              → positie ~{myRankAmongAll}/{nums.length} t.o.v. mediaan
-              {myRankAmongAll <= 3 && " 🎯"}
+            <span className="font-semibold" style={{ color: isWinner ? "#4af56a" : "var(--c-text-3)" }}>
+              → positie ~{myRankAmongAll}/{nums.length}
+              {isWinner && " 🎯 in de top!"}
             </span>
           </div>
         )}

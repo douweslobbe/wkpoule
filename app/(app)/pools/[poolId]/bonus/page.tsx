@@ -212,7 +212,7 @@ export default async function BonusPage({ params }: { params: Promise<{ poolId: 
             const firstType = qs[0].type
             const subtitle =
               firstType === "ESTIMATION"
-                ? "7 punten · 3 dichtstbijzijnde voorspellingen worden beloond"
+                ? "7 punten · top 20% dichtst bij het juiste antwoord wint"
                 : firstType === "STATEMENT"
                 ? "7 punten · kies Eens of Oneens"
                 : "7 punten · admin bepaalt het correcte antwoord"

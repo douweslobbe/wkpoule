@@ -81,10 +81,10 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
     achievementsByUser.set(a.userId, list)
   }
 
-  // Joker-gebruik per gebruiker (toont op leaderboard hoeveel jokers actief zijn)
+  // Joker-gebruik per gebruiker in deze pool (voor badges op het leaderboard)
   const jokerUsage = await prisma.prediction.groupBy({
     by: ["userId"],
-    where: { userId: { in: members.map((m) => m.userId) }, isJoker: true },
+    where: { userId: { in: members.map((m) => m.userId) }, poolId, isJoker: true },
     _count: { id: true },
   })
   const jokerUsageMap = new Map(jokerUsage.map((j) => [j.userId, j._count.id]))
@@ -111,12 +111,12 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
     : []
   const bonusAnswerMap = new Map(bonusAnswerCounts.map((b) => [b.userId, b._count.id]))
 
-  // Predictions per user for progress (only group stage)
+  // Predictions per user for progress (only group stage, only this pool)
   const groupMatchCount = await prisma.match.count({ where: { stage: "GROUP" } })
   const predictionCounts = groupMatchCount > 0
     ? await prisma.prediction.groupBy({
         by: ["userId"],
-        where: { userId: { in: allMemberIds }, match: { stage: "GROUP" } },
+        where: { userId: { in: allMemberIds }, poolId, match: { stage: "GROUP" } },
         _count: { id: true },
       })
     : []
@@ -468,7 +468,7 @@ export default async function PoolPage({ params }: { params: Promise<{ poolId: s
             SPEEL OOK IN ANDERE POOLS
           </div>
           <div className="mt-1" style={{ fontSize: "10px", color: "var(--c-text-2)", lineHeight: "1.8" }}>
-            Maak een pool voor vrienden, familie of collega&apos;s. Voorspellingen tellen overal — je hoeft ze maar één keer in te vullen.
+            Maak een pool voor vrienden, familie of collega&apos;s. Elke pool heeft zijn eigen stand en strategie.
           </div>
         </div>
         <Link

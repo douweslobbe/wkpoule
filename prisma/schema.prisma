@@ -35,12 +35,19 @@ model Pool {
   createdAt   DateTime @default(now())
   createdById String
 
+  // Max bonusvragen per pool (instelbaar door admin)
+  maxQuestionsTotal Int @default(25)
+  maxQuestionsOpen  Int @default(10)
+  maxQuestionsEst   Int @default(5)
+  maxQuestionsStmt  Int @default(10)
+
   memberships    PoolMembership[]
   bonusQuestions BonusQuestion[]
   championPicks  ChampionPick[]
   leaderboard    LeaderboardEntry[]
   messages       PoolMessage[]
   achievements   Achievement[]
+  predictions    Prediction[]
 }
 
 model PoolMembership {
@@ -122,6 +129,7 @@ model Prediction {
   id            String   @id @default(cuid())
   userId        String
   matchId       String
+  poolId        String
   homeScore     Int
   awayScore     Int
   submittedAt   DateTime @default(now())
@@ -131,10 +139,12 @@ model Prediction {
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  pool  Pool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, matchId])
+  @@unique([userId, matchId, poolId])
   @@index([matchId])
   @@index([userId])
+  @@index([poolId])
 }
 
 model Achievement {

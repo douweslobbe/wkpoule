@@ -196,12 +196,20 @@ export async function savePrediction(formData: FormData) {
   if (!session?.user) redirect("/login")
 
   const matchId = formData.get("matchId") as string
+  const poolId = formData.get("poolId") as string
   const homeScore = parseInt(formData.get("homeScore") as string, 10)
   const awayScore = parseInt(formData.get("awayScore") as string, 10)
 
+  if (!poolId) return { error: "Pool niet opgegeven" }
   if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
     return { error: "Ongeldige score" }
   }
+
+  // Verify user is in this pool
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership) return { error: "Je bent geen lid van deze pool" }
 
   const match = await prisma.match.findUnique({ where: { id: matchId } })
   if (!match) return { error: "Wedstrijd niet gevonden" }
@@ -210,12 +218,12 @@ export async function savePrediction(formData: FormData) {
   if (new Date() > deadline) return { error: "De voorspeltermijn is verstreken" }
 
   await prisma.prediction.upsert({
-    where: { userId_matchId: { userId: session.user.id, matchId } },
-    create: { userId: session.user.id, matchId, homeScore, awayScore },
+    where: { userId_matchId_poolId: { userId: session.user.id, matchId, poolId } },
+    create: { userId: session.user.id, matchId, poolId, homeScore, awayScore },
     update: { homeScore, awayScore, pointsAwarded: null },
   })
 
-  revalidatePath("/pools")
+  revalidatePath(`/pools/${poolId}/predictions`)
   return { success: true }
 }
 
@@ -226,6 +234,9 @@ export async function toggleJoker(formData: FormData) {
   if (!session?.user) return { error: "Niet ingelogd" }
 
   const matchId = formData.get("matchId") as string
+  const poolId = formData.get("poolId") as string
+  if (!poolId) return { error: "Pool niet opgegeven" }
+
   const match = await prisma.match.findUnique({ where: { id: matchId } })
   if (!match) return { error: "Wedstrijd niet gevonden" }
 
@@ -237,15 +248,16 @@ export async function toggleJoker(formData: FormData) {
   }
 
   const existing = await prisma.prediction.findUnique({
-    where: { userId_matchId: { userId: session.user.id, matchId } },
+    where: { userId_matchId_poolId: { userId: session.user.id, matchId, poolId } },
   })
   if (!existing) return { error: "Eerst een voorspelling invullen" }
 
-  // Toggle: als aanzetten, check quota
+  // Toggle: als aanzetten, check quota per pool
   if (!existing.isJoker) {
     const usedInStage = await prisma.prediction.count({
       where: {
         userId: session.user.id,
+        poolId,
         isJoker: true,
         match: { stage: match.stage },
       },
@@ -260,8 +272,7 @@ export async function toggleJoker(formData: FormData) {
     data: { isJoker: !existing.isJoker, pointsAwarded: null },
   })
 
-  revalidatePath("/predictions")
-  revalidatePath("/pools")
+  revalidatePath(`/pools/${poolId}/predictions`)
   return { success: true, isJoker: !existing.isJoker }
 }
 
@@ -379,6 +390,29 @@ export async function addBonusQuestion(formData: FormData) {
 
   if (!question) return { error: "Vul een vraag in" }
 
+  // Controleer limieten
+  const pool = await prisma.pool.findUnique({ where: { id: poolId }, select: { maxQuestionsTotal: true, maxQuestionsOpen: true, maxQuestionsEst: true, maxQuestionsStmt: true } })
+  if (pool) {
+    const counts = await prisma.bonusQuestion.groupBy({
+      by: ["type"],
+      where: { poolId },
+      _count: { id: true },
+    })
+    const countByType = new Map(counts.map((c) => [c.type, c._count.id]))
+    const totalCount = counts.reduce((s, c) => s + c._count.id, 0)
+
+    if (totalCount >= pool.maxQuestionsTotal) {
+      return { error: `Maximum aantal vragen bereikt (${pool.maxQuestionsTotal})` }
+    }
+
+    const typeLimit = type === "OPEN" ? pool.maxQuestionsOpen : type === "ESTIMATION" ? pool.maxQuestionsEst : pool.maxQuestionsStmt
+    const typeCount = countByType.get(type) ?? 0
+    if (typeCount >= typeLimit) {
+      const typeLabel = type === "OPEN" ? "openvragen" : type === "ESTIMATION" ? "benaderingsvragen" : "stellingen"
+      return { error: `Maximum aantal ${typeLabel} bereikt (${typeLimit})` }
+    }
+  }
+
   const last = await prisma.bonusQuestion.findFirst({
     where: { poolId },
     orderBy: { orderIndex: "desc" },
@@ -400,6 +434,7 @@ export async function addBonusQuestion(formData: FormData) {
   })
 
   revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}/bonus`)
   return { success: true }
 }
 
@@ -425,6 +460,36 @@ export async function addQuestionsFromLibrary(
   })
   if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
 
+  // Controleer limieten: filter vragen die nog binnen de limiet passen
+  const pool = await prisma.pool.findUnique({
+    where: { id: poolId },
+    select: { maxQuestionsTotal: true, maxQuestionsOpen: true, maxQuestionsEst: true, maxQuestionsStmt: true },
+  })
+  let allowedQuestions = questions
+  if (pool) {
+    const counts = await prisma.bonusQuestion.groupBy({
+      by: ["type"],
+      where: { poolId },
+      _count: { id: true },
+    })
+    const countByType = new Map(counts.map((c) => [c.type, c._count.id]))
+    const totalCount = counts.reduce((s, c) => s + c._count.id, 0)
+    let remaining = pool.maxQuestionsTotal - totalCount
+    allowedQuestions = []
+    for (const q of questions) {
+      if (remaining <= 0) break
+      const typeLimit = q.type === "OPEN" ? pool.maxQuestionsOpen : q.type === "ESTIMATION" ? pool.maxQuestionsEst : pool.maxQuestionsStmt
+      const typeCount = countByType.get(q.type) ?? 0
+      if (typeCount < typeLimit) {
+        allowedQuestions.push(q)
+        countByType.set(q.type, typeCount + 1)
+        remaining--
+      }
+    }
+  }
+
+  if (allowedQuestions.length === 0) return { success: true, skipped: questions.length }
+
   const last = await prisma.bonusQuestion.findFirst({
     where: { poolId },
     orderBy: { orderIndex: "desc" },
@@ -432,7 +497,7 @@ export async function addQuestionsFromLibrary(
   let nextIndex = (last?.orderIndex ?? 0) + 1
 
   await prisma.bonusQuestion.createMany({
-    data: questions.map((q, i) => ({
+    data: allowedQuestions.map((q, i) => ({
       poolId,
       type: q.type,
       category: q.category,
@@ -445,6 +510,7 @@ export async function addQuestionsFromLibrary(
   })
 
   revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}/bonus`)
   return { success: true }
 }
 
@@ -465,6 +531,40 @@ export async function updatePoolDescription(formData: FormData) {
   await prisma.pool.update({ where: { id: poolId }, data: { description } })
   revalidatePath(`/pools/${poolId}`)
   revalidatePath(`/admin/pools/${poolId}/bonus`)
+  return { success: true }
+}
+
+// ─── Admin: bonusvragen limiet instellen ──────────────────────────────────────
+
+export async function updatePoolQuestionLimits(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const poolId = formData.get("poolId") as string
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
+
+  const total = parseInt(formData.get("maxQuestionsTotal") as string, 10)
+  const open  = parseInt(formData.get("maxQuestionsOpen") as string, 10)
+  const est   = parseInt(formData.get("maxQuestionsEst") as string, 10)
+  const stmt  = parseInt(formData.get("maxQuestionsStmt") as string, 10)
+
+  if ([total, open, est, stmt].some(isNaN) || total < 0 || open < 0 || est < 0 || stmt < 0) {
+    return { error: "Ongeldige waarden" }
+  }
+  if (open + est + stmt > total) {
+    return { error: "Som van de typen mag het totaal niet overschrijden" }
+  }
+
+  await prisma.pool.update({
+    where: { id: poolId },
+    data: { maxQuestionsTotal: total, maxQuestionsOpen: open, maxQuestionsEst: est, maxQuestionsStmt: stmt },
+  })
+
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}/bonus`)
   return { success: true }
 }
 
@@ -806,7 +906,7 @@ async function detectAchievementsForPool(poolId: string) {
 
   for (const userId of userIds) {
     const preds = await prisma.prediction.findMany({
-      where: { userId, pointsAwarded: { not: null }, match: { status: "FINISHED" } },
+      where: { userId, poolId, pointsAwarded: { not: null }, match: { status: "FINISHED" } },
       include: { match: { select: { homeScore: true, awayScore: true, kickoff: true } } },
       orderBy: { match: { kickoff: "asc" } },
     })
@@ -836,9 +936,9 @@ async function detectAchievementsForPool(poolId: string) {
     )
     if (zeroZero) await awardAchievement(userId, poolId, "GOKKER")
 
-    // JOKER_HIT: een joker met punten
+    // JOKER_HIT: een joker met punten (in deze pool)
     const jokerHit = await prisma.prediction.findFirst({
-      where: { userId, isJoker: true, pointsAwarded: { gt: 0 } },
+      where: { userId, poolId, isJoker: true, pointsAwarded: { gt: 0 } },
     })
     if (jokerHit) await awardAchievement(userId, poolId, "JOKER_HIT")
   }
@@ -894,9 +994,9 @@ export async function postMatchdayRecap(date: Date) {
   for (const pool of pools) {
     const memberIds = pool.memberships.map((m) => m.userId)
 
-    // Punten per speler op deze dag
+    // Punten per speler op deze dag (alleen voor deze pool)
     const dayPredictions = await prisma.prediction.findMany({
-      where: { userId: { in: memberIds }, matchId: { in: matchIds }, pointsAwarded: { not: null } },
+      where: { userId: { in: memberIds }, poolId: pool.id, matchId: { in: matchIds }, pointsAwarded: { not: null } },
     })
     const pointsByUser = new Map<string, number>()
     for (const p of dayPredictions) {
@@ -937,9 +1037,9 @@ async function rebuildLeaderboards() {
     for (const member of pool.memberships) {
       const uid = member.userId
 
-      // Match points
+      // Match points (pool-specifiek: telt alleen voorspellingen van deze pool)
       const predictions = await prisma.prediction.findMany({
-        where: { userId: uid, pointsAwarded: { not: null } },
+        where: { userId: uid, poolId: pool.id, pointsAwarded: { not: null } },
       })
       const matchPts = predictions.reduce((s, p) => s + (p.pointsAwarded ?? 0), 0)
 
@@ -1233,17 +1333,37 @@ async function sendMatchReminders() {
     const awayLabel = match.awayTeam?.nameNl ?? match.awayTeam?.name ?? "?"
     const minutesLeft = Math.round((match.kickoff.getTime() - now.getTime()) / 60000)
 
-    // Haal alle subscribers op die nog niet hebben voorspeld voor dit duel
-    const subscribers = await prisma.pushSubscription.findMany({
-      where: {
+    // Haal alle subscribers op met hun pool-lidmaatschappen en bestaande voorspellingen
+    const allSubscriptions = await prisma.pushSubscription.findMany({
+      select: {
+        endpoint: true,
+        p256dh: true,
+        auth: true,
+        userId: true,
         user: {
-          predictions: {
-            none: { matchId: match.id },
+          select: {
+            memberships: { select: { poolId: true } },
+            predictions: {
+              where: { matchId: match.id },
+              select: { poolId: true },
+            },
           },
         },
       },
-      select: { endpoint: true, p256dh: true, auth: true },
     })
+
+    // Stuur reminder aan gebruikers die in minstens één pool nog geen voorspelling hebben
+    type SubWithPool = { endpoint: string; p256dh: string; auth: string; firstMissingPool: string }
+    const subscribers: SubWithPool[] = []
+    for (const sub of allSubscriptions) {
+      const poolIds = sub.user.memberships.map((m) => m.poolId)
+      if (poolIds.length === 0) continue
+      const predictedPoolIds = new Set(sub.user.predictions.map((p) => p.poolId))
+      const firstMissing = poolIds.find((id) => !predictedPoolIds.has(id))
+      if (firstMissing) {
+        subscribers.push({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth, firstMissingPool: firstMissing })
+      }
+    }
 
     const expiredEndpoints: string[] = []
 
@@ -1251,7 +1371,7 @@ async function sendMatchReminders() {
       const result = await sendPush(sub, {
         title: "⚽ Wedstrijd begint bijna!",
         body: `${homeLabel} – ${awayLabel} begint over ${minutesLeft} minuten. Maak snel je voorspelling!`,
-        url: "/predictions",
+        url: `/pools/${sub.firstMissingPool}/predictions`,
         tag: `match-reminder-${match.id}`,
       })
       if (result.expired) expiredEndpoints.push(sub.endpoint)
