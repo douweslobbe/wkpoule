@@ -35,8 +35,8 @@ export function SoundToggle() {
       title={on ? "Geluid uit zetten" : "Geluid aan (8-bit FX)"}
       aria-label={on ? "Geluid uit" : "Geluid aan"}
     >
-      <span style={{ fontSize: "10px" }}>{on ? "♪" : "♪"}</span>
-      <span>{on ? "ON" : "OFF"}</span>
+      <span style={{ fontSize: "11px" }}>♪</span>
+      <span className="hidden sm:inline">{on ? "ON" : "OFF"}</span>
     </button>
   )
 }

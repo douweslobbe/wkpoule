@@ -415,7 +415,7 @@ export default async function DashboardPage() {
       )}
 
       {/* === EXTRA NAVIGATIE (altijd zichtbaar) === */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
         <Link href="/faq" className="pixel-card px-3 py-3 flex items-center gap-2 transition-colors">
           <span style={{ fontSize: "16px" }}>❓</span>
           <div>

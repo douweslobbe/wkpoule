@@ -91,11 +91,11 @@ export default async function ArenaPage() {
                 >
                   {/* Pool header */}
                   <div
-                    className="px-5 py-4 flex items-center justify-between gap-4 flex-wrap"
+                    className="px-4 py-3 flex items-center justify-between gap-3"
                     style={{ background: "#0a1220", borderBottom: "3px solid #000" }}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <h2 className="font-pixel text-white truncate" style={{ fontSize: "11px" }}>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <h2 className="font-pixel text-white truncate" style={{ fontSize: "10px" }}>
                         {pool.name.toUpperCase()}
                       </h2>
                       {role === "ADMIN" && (
@@ -106,64 +106,53 @@ export default async function ArenaPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
-                      {/* Rank badge */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {/* Rank + punten compact naast elkaar */}
                       {rank ? (
-                        <div className="text-center">
-                          <div className="font-pixel" style={{
-                            fontSize: "13px",
-                            color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "var(--c-text-2)",
-                          }}>
-                            {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
-                          </div>
-                          <div className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>
-                            VAN {total}
-                          </div>
-                        </div>
+                        <span className="font-pixel" style={{
+                          fontSize: "11px",
+                          color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "var(--c-text-2)",
+                        }}>
+                          {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
+                          <span style={{ fontSize: "8px", color: "var(--c-text-5)" }}>/{total}</span>
+                        </span>
                       ) : (
-                        <div className="font-pixel text-center" style={{ fontSize: "7px", color: "var(--c-text-5)" }}>
+                        <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-5)" }}>
                           {total} spelers
-                        </div>
+                        </span>
                       )}
-                      {/* Punten */}
                       {myEntry && (
-                        <div className="text-center">
-                          <div className="font-pixel" style={{ fontSize: "13px", color: "#FFD700" }}>
-                            {myEntry.totalPoints}
-                          </div>
-                          <div className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>
-                            PUNTEN
-                          </div>
-                        </div>
+                        <span className="font-pixel" style={{ fontSize: "10px", color: "#FFD700" }}>
+                          {myEntry.totalPoints}<span style={{ fontSize: "7px" }}>pt</span>
+                        </span>
                       )}
                     </div>
                   </div>
 
                   {/* Navigatieknoppen */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4">
+                  <div className="grid grid-cols-4">
                     {[
-                      { href: `/pools/${pool.id}/predictions`, icon: "⚽", label: "DE WEDSTRIJDEN", color: "#FF6200" },
-                      { href: `/pools/${pool.id}/bonus`,       icon: "🏆", label: "HET GROTE PLAATJE", color: "#FFD700" },
-                      { href: `/pools/${pool.id}/prikbord`,    icon: "📌", label: "HET PRIKBORD", color: "#4499ff", unread: latestAt > 0 },
-                      { href: `/pools/${pool.id}`,             icon: "📊", label: "DE RANGLIJST", color: "#4af56a" },
+                      { href: `/pools/${pool.id}/predictions`, icon: "⚽", label: "WEDSTRIJDEN", color: "#FF6200" },
+                      { href: `/pools/${pool.id}/bonus`,       icon: "🏆", label: "PLAATJE",     color: "#FFD700" },
+                      { href: `/pools/${pool.id}/prikbord`,    icon: "📌", label: "PRIKBORD",    color: "#4499ff", unread: latestAt > 0 },
+                      { href: `/pools/${pool.id}`,             icon: "📊", label: "RANGLIJST",   color: "#4af56a" },
                     ].map((btn, i) => (
                       <Link
                         key={btn.href}
                         href={btn.href}
-                        className="relative flex flex-col items-center justify-center gap-1 py-4 px-2 transition-all"
+                        className="relative flex flex-col items-center justify-center gap-1 py-3 px-1 transition-all"
                         style={{
                           borderRight: i < 3 ? "2px solid var(--c-border)" : "none",
-                          borderTop: "none",
                           background: "transparent",
                         }}
                       >
-                        <span style={{ fontSize: "20px" }}>{btn.icon}</span>
-                        <span className="font-pixel text-center" style={{ fontSize: "6px", color: btn.color, lineHeight: "1.6" }}>
+                        <span style={{ fontSize: "18px" }}>{btn.icon}</span>
+                        <span className="font-pixel text-center" style={{ fontSize: "5px", color: btn.color, lineHeight: "1.6" }}>
                           {btn.label}
                         </span>
                         {btn.unread && (
                           <span style={{
-                            position: "absolute", top: "6px", right: "6px",
+                            position: "absolute", top: "4px", right: "4px",
                             width: "7px", height: "7px",
                             background: "#ff4444", border: "1px solid #000",
                           }} />
