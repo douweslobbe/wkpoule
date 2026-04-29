@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getActiveSurvivorRound, getRoundDeadline, ROUND_LABELS } from "@/lib/survivor"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Dashboard — WK Pool 2026" }
@@ -12,19 +13,16 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  // Laad alle pools inclusief ranglijst-info
+  const now = new Date()
+
+  // === POOLS ===
   const memberships = await prisma.poolMembership.findMany({
     where: { userId: session.user.id },
     include: {
       pool: {
         include: {
           _count: { select: { memberships: true } },
-          leaderboard: {
-            orderBy: { totalPoints: "desc" },
-          },
-          bonusQuestions: {
-            select: { id: true, correctAnswer: true },
-          },
+          leaderboard: { orderBy: { totalPoints: "desc" } },
         },
       },
     },
@@ -32,26 +30,55 @@ export default async function DashboardPage() {
   })
 
   const completedMatches = await prisma.match.count({ where: { status: "FINISHED" } })
+  const totalMatches = await prisma.match.count()
 
-  // Komende wedstrijden zonder voorspelling (deadline binnen 7 dagen)
-  const now = new Date()
+  // === SURVIVOR ===
+  const survivorEntry = await prisma.survivorEntry.findUnique({
+    where: { userId: session.user.id },
+    include: { picks: { include: { team: { select: { nameNl: true, name: true, flagUrl: true } } } } },
+  })
+
+  const activeRound = await getActiveSurvivorRound()
+  const survivorDeadline = activeRound ? await getRoundDeadline(activeRound) : null
+  const survivorDeadlinePassed = survivorDeadline ? now > survivorDeadline : false
+
+  function survivorStatus(mode: "HARDCORE" | "HIGHSCORE") {
+    if (!survivorEntry) return "not_enrolled"
+    const cycle = mode === "HIGHSCORE" && survivorEntry.resetUsed ? 1 : 0
+    const eliminated = survivorEntry.picks.some(
+      (p) => p.mode === mode && p.cycle === cycle && p.result === "ELIMINATED"
+    )
+    if (eliminated) return "eliminated"
+    const hasPick = activeRound
+      ? survivorEntry.picks.some((p) => p.round === activeRound && p.mode === mode)
+      : false
+    return hasPick ? "pick_made" : "needs_pick"
+  }
+
+  function currentPickTeam(mode: "HARDCORE" | "HIGHSCORE") {
+    if (!survivorEntry || !activeRound) return null
+    const pick = survivorEntry.picks.find((p) => p.round === activeRound && p.mode === mode)
+    return pick?.team ?? null
+  }
+
+  const hcStatus = survivorStatus("HARDCORE")
+  const hsStatus = survivorStatus("HIGHSCORE")
+  const survivorNeedsPick = !survivorDeadlinePassed && (hcStatus === "needs_pick" || hsStatus === "needs_pick")
+
+  // === KOMENDE DEADLINES ===
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
   const upcomingMatches = await prisma.match.findMany({
-    where: {
-      status: "SCHEDULED",
-      kickoff: { lte: new Date(in7Days.getTime() + 30 * 60 * 1000) },
-    },
+    where: { status: "SCHEDULED", kickoff: { lte: new Date(in7Days.getTime() + 30 * 60 * 1000) } },
     include: { homeTeam: true, awayTeam: true },
     orderBy: { kickoff: "asc" },
-    take: 10,
+    take: 8,
   })
-  // Voorspellingen per match én pool — match is "gedaan" als alle pools een voorspelling hebben
+
   const myPoolIds = memberships.map((m) => m.pool.id)
   const myPredictions = await prisma.prediction.findMany({
     where: { userId: session.user.id, matchId: { in: upcomingMatches.map((m) => m.id) } },
     select: { matchId: true, poolId: true },
   })
-  // Bouw een Map: matchId → Set van poolIds met voorspelling
   const predByMatch = new Map<string, Set<string>>()
   for (const p of myPredictions) {
     const s = predByMatch.get(p.matchId) ?? new Set()
@@ -71,336 +98,346 @@ export default async function DashboardPage() {
     }
   }).filter((m) => m.deadline > now)
 
-  // Bereken positie per pool
+  // Pool standings (compact)
   const poolStandings = memberships.map(({ pool, role }) => {
     const lb = pool.leaderboard
     const myEntry = lb.find((e) => e.userId === session.user.id)
     const rank = myEntry ? lb.findIndex((e) => e.userId === session.user.id) + 1 : null
     const total = pool._count.memberships
-
-    const bonusTotal = pool.bonusQuestions.length
-    const bonusScored = pool.bonusQuestions.filter((q) => q.correctAnswer).length
-
-    const projectedMatchPts =
-      completedMatches > 0 && myEntry
-        ? Math.round((myEntry.matchPoints / completedMatches) * TOTAL_MATCHES)
-        : null
-
-    const projectedTotal =
-      projectedMatchPts !== null && myEntry
-        ? projectedMatchPts + myEntry.bonusPoints + myEntry.championPoints
-        : null
-
-    const maxBonus = myEntry ? myEntry.bonusPoints + (bonusTotal - bonusScored) * 7 : bonusTotal * 7
-    const maxPossible = (projectedMatchPts ?? 0) + maxBonus + (myEntry?.championPoints === 0 ? 15 : myEntry?.championPoints ?? 0)
-
-    return { pool, role, myEntry, rank, total, projectedTotal, maxPossible, bonusTotal, bonusScored }
+    const projectedMatchPts = completedMatches > 0 && myEntry
+      ? Math.round((myEntry.matchPoints / completedMatches) * TOTAL_MATCHES)
+      : null
+    const projectedTotal = projectedMatchPts !== null && myEntry
+      ? projectedMatchPts + myEntry.bonusPoints + myEntry.championPoints
+      : null
+    return { pool, role, myEntry, rank, total, projectedTotal }
   })
 
+  const statusColor = (s: string) =>
+    s === "eliminated" ? "#ff4444"
+    : s === "pick_made" ? "#4af56a"
+    : s === "needs_pick" ? "#FFD700"
+    : "var(--c-text-5)"
+
+  const statusLabel = (s: string, mode: string) => {
+    if (s === "not_enrolled") return "Niet ingeschreven"
+    if (s === "eliminated") return "💀 Uitgeschakeld"
+    if (s === "pick_made") {
+      const team = currentPickTeam(mode as "HARDCORE" | "HIGHSCORE")
+      return team ? `✓ ${team.nameNl ?? team.name}` : "✓ Pick gemaakt"
+    }
+    return survivorDeadlinePassed ? "Deadline voorbij" : "⚡ Pick nodig!"
+  }
+
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-pixel text-white mb-1" style={{ fontSize: "10px" }}>
-          WELKOM, <span style={{ color: "#FFD700" }}>{session.user.name?.toUpperCase()}!</span>
-        </h1>
-        <p className="font-pixel mt-1" style={{ fontSize: "7px", color: completedMatches > 0 ? "#4af56a" : "var(--c-text-3)" }}>
-          {completedMatches > 0
-            ? `${completedMatches}/${TOTAL_MATCHES} WEDSTRIJDEN GESPEELD`
-            : "WK 2026 START 11 JUNI · ZET ALVAST JE VOORSPELLINGEN KLAAR!"}
-        </p>
+    <div className="space-y-5">
+      {/* === WELKOM === */}
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-pixel text-white" style={{ fontSize: "11px" }}>
+            WELKOM, <span style={{ color: "#FFD700" }}>{session.user.name?.toUpperCase()}!</span>
+          </h1>
+          <p className="font-pixel mt-1" style={{
+            fontSize: "7px",
+            color: completedMatches > 0 ? "#4af56a" : "var(--c-text-3)",
+          }}>
+            {completedMatches > 0
+              ? `${completedMatches}/${totalMatches} WEDSTRIJDEN GESPEELD`
+              : "WK 2026 START 11 JUNI · ZET ALVAST JE VOORSPELLINGEN KLAAR!"}
+          </p>
+        </div>
+        {completedMatches > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="h-2 overflow-hidden" style={{ width: "120px", background: "#0a1a0a", border: "2px solid #0a3d1f" }}>
+              <div
+                style={{
+                  width: `${Math.round((completedMatches / totalMatches) * 100)}%`,
+                  height: "100%",
+                  background: "#4af56a",
+                  boxShadow: "0 0 4px #4af56a",
+                }}
+              />
+            </div>
+            <span className="font-pixel" style={{ fontSize: "6px", color: "#4a7a4a" }}>
+              {Math.round((completedMatches / totalMatches) * 100)}%
+            </span>
+          </div>
+        )}
       </div>
 
-      {memberships.length === 0 ? (
-        <div className="pixel-card p-10 text-center">
-          <div className="text-5xl mb-4">⚽</div>
-          <h2 className="font-pixel mb-3" style={{ fontSize: "9px", color: "#FFD700" }}>GEEN POOLS</h2>
-          <p className="text-sm mb-6" style={{ color: "var(--c-text-3)" }}>
-            Maak een nieuwe pool aan of doe mee via een uitnodigingscode.
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/pools/new" className="pixel-btn px-5 py-2.5 text-sm font-bold"
-              style={{ background: "#FF6200", color: "white" }}>
-              Pool aanmaken
-            </Link>
-            <Link href="/pools/join" className="pixel-btn px-5 py-2.5 text-sm font-bold"
-              style={{ background: "var(--c-border)", color: "var(--c-text)", border: "2px solid #333360" }}>
-              Meedoen met code
+      {/* === SNELKOPPELINGEN === */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { href: "/arena",     icon: "🏟️", label: "DE ARENA",          sub: "Jouw WK pools",          color: "#FF6200" },
+          { href: "/survivor",  icon: "⚔",  label: "WK SURVIVOR",        sub: "Overleven of sterven",   color: "#ff4444", urgent: survivorNeedsPick },
+          { href: "/bracket",   icon: "🏆", label: "DE BRACKET",          sub: "Knock-outschema",        color: "#FFD700" },
+          { href: "/ranglijst", icon: "📊", label: "MEGALOMANE RANGLIJST",sub: "Iedereen vs iedereen",   color: "#4499ff" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="pixel-card p-4 flex flex-col items-center text-center gap-1.5 transition-all relative"
+            style={{ borderTop: `3px solid ${item.color}` }}
+          >
+            {item.urgent && (
+              <span style={{
+                position: "absolute", top: "-5px", right: "-5px",
+                width: "10px", height: "10px",
+                background: "#ff4444", border: "2px solid #000",
+                animation: "pulse 1s infinite",
+              }} />
+            )}
+            <span style={{ fontSize: "24px" }}>{item.icon}</span>
+            <span className="font-pixel" style={{ fontSize: "6px", color: item.color, lineHeight: "1.6" }}>
+              {item.label}
+            </span>
+            <span style={{ fontSize: "9px", color: "var(--c-text-4)" }}>{item.sub}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* === TUSSENSTANDEN + SURVIVOR naast elkaar === */}
+      <div className="grid sm:grid-cols-2 gap-4">
+
+        {/* Pool tussenstanden */}
+        <div className="pixel-card overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between" style={{ background: "#0a1220", borderBottom: "3px solid #000" }}>
+            <h2 className="font-pixel text-white" style={{ fontSize: "8px" }}>📊 MIJN POOLS</h2>
+            <Link href="/arena" className="font-pixel" style={{ fontSize: "6px", color: "#FF6200" }}>
+              De Arena →
             </Link>
           </div>
-        </div>
-      ) : (
-        <>
-          {/* Mijn standings per pool */}
-          <div className="pixel-card overflow-hidden mb-6">
-            <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-              <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>📊 MIJN TUSSENSTANDEN</h2>
-              {completedMatches > 0 && (
-                <p className="mt-1" style={{ fontSize: "10px", color: "#4af56a" }}>Prognose = huidig tempo × 104 wedstrijden</p>
-              )}
-            </div>
 
-            {/* Header */}
-            <div className="hidden sm:grid px-5 py-2 font-bold uppercase"
-              style={{
-                gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem",
-                fontSize: "8px",
-                color: "var(--c-text-3)",
-                borderBottom: "2px solid var(--c-border)",
-                fontFamily: "var(--font-pixel), monospace",
-              }}>
-              <span>Pool</span>
-              <span className="text-center">Positie</span>
-              <span className="text-center">⚽ Wedstr.</span>
-              <span className="text-center">🏆 Plaatje</span>
-              <span className="text-center">TOTAAL</span>
-              <span className="text-center" style={{ color: "#4499ff" }}>📈 Prognose</span>
+          {memberships.length === 0 ? (
+            <div className="p-5 text-center">
+              <p className="font-pixel mb-3" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                Nog geen pools. Start De Arena!
+              </p>
+              <Link href="/arena" className="font-pixel px-3 py-1.5"
+                style={{ background: "#FF6200", color: "white", border: "2px solid #000", fontSize: "7px" }}>
+                🏟️ Naar De Arena
+              </Link>
             </div>
-
-            <div>
-              {poolStandings.map(({ pool, role, myEntry, rank, total, projectedTotal, maxPossible }) => (
+          ) : (
+            <>
+              {poolStandings.map(({ pool, myEntry, rank, total, projectedTotal }) => (
                 <Link
                   key={pool.id}
                   href={`/pools/${pool.id}`}
-                  className="block pool-row"
-                  style={{ borderBottom: "2px solid var(--c-border)" }}
+                  className="flex items-center gap-3 px-4 py-3 transition-colors"
+                  style={{ borderBottom: "1px solid var(--c-border)" }}
                 >
-                  {/* Desktop */}
-                  <div className="hidden sm:grid px-5 py-3 items-center gap-2"
-                    style={{ gridTemplateColumns: "1fr 4rem 7rem 7rem 5rem 5.5rem" }}>
-                    <div>
-                      <span className="font-bold text-sm" style={{ color: "var(--c-text)" }}>{pool.name}</span>
-                      {role === "ADMIN" && (
-                        <span className="ml-2 px-1.5 py-0.5 font-pixel"
-                          style={{ background: "#FFD700", color: "#000", fontSize: "6px" }}>
-                          ADMIN
-                        </span>
-                      )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-pixel truncate" style={{ fontSize: "8px", color: "var(--c-text)" }}>
+                      {pool.name}
                     </div>
-                    <div className="text-center">
-                      {rank ? (
-                        <span className="font-pixel" style={{
-                          color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "var(--c-text-2)",
-                          fontSize: "11px",
-                        }}>
-                          {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
-                          <span style={{ fontSize: "9px", color: "var(--c-text-4)" }}>/{total}</span>
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--c-text-5)", fontSize: "11px" }}>—</span>
-                      )}
+                    <div className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+                      ⚽{myEntry?.matchPoints ?? 0} + 🏆{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}
                     </div>
-                    <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{myEntry?.matchPoints ?? 0}</span>
-                    <span className="text-center text-sm" style={{ color: "var(--c-text-2)" }}>{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}</span>
-                    <span className="text-center font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
-                      {myEntry?.totalPoints ?? 0}
-                    </span>
-                    <span className="text-center text-sm font-semibold" style={{ color: "#4499ff" }}>
-                      {projectedTotal !== null ? (
-                        <span title={`Max mogelijk: ${maxPossible}`}>
-                          ~{projectedTotal}
-                          {completedMatches < TOTAL_MATCHES && (
-                            <span className="text-xs ml-0.5" style={{ color: "var(--c-text-5)" }}>/{maxPossible}</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--c-text-5)", fontSize: "11px" }}>—</span>
-                      )}
-                    </span>
                   </div>
-
-                  {/* Mobile */}
-                  <div className="sm:hidden px-4 py-3 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm truncate" style={{ color: "var(--c-text)" }}>{pool.name}</div>
-                      <div className="text-xs mt-0.5" style={{ color: "var(--c-text-4)" }}>
-                        ⚽{myEntry?.matchPoints ?? 0} + 🏆{(myEntry?.bonusPoints ?? 0) + (myEntry?.championPoints ?? 0)}
+                  <div className="text-right shrink-0">
+                    {rank ? (
+                      <div className="font-pixel" style={{
+                        fontSize: "11px",
+                        color: rank === 1 ? "#FFD700" : rank <= 3 ? "#FF6200" : "var(--c-text-3)",
+                      }}>
+                        {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
+                        <span style={{ fontSize: "8px", color: "var(--c-text-5)" }}>/{total}</span>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      {rank && (
-                        <div style={{ fontSize: "10px", color: "var(--c-text-3)" }}>#{rank}/{total}</div>
-                      )}
-                      <div className="font-pixel" style={{ color: "#FFD700", fontSize: "11px" }}>
-                        {myEntry?.totalPoints ?? 0}pt
-                      </div>
+                    ) : null}
+                    <div className="font-pixel" style={{ fontSize: "9px", color: "#FFD700" }}>
+                      {myEntry?.totalPoints ?? 0}pt
                       {projectedTotal !== null && (
-                        <div className="text-xs" style={{ color: "#4499ff" }}>~{projectedTotal}</div>
+                        <span style={{ color: "#4499ff", fontSize: "7px" }}> ~{projectedTotal}</span>
                       )}
                     </div>
                   </div>
                 </Link>
               ))}
-            </div>
-
-            <div className="px-5 py-3 flex flex-wrap gap-4"
-              style={{ borderTop: "2px solid var(--c-border)", background: "var(--c-surface-deep)", fontSize: "10px", color: "var(--c-text-4)" }}>
-              <span>⚽ wedstrijdpunten · 🏆 bonus + kampioen</span>
-              {completedMatches === 0 && <span>Prognose beschikbaar zodra wedstrijden gespeeld zijn</span>}
-            </div>
-          </div>
-
-          {/* Komende deadlines */}
-          {upcomingWithDeadline.length > 0 && (
-            <div className="pixel-card overflow-hidden mb-6">
-              <div className="px-5 py-3" style={{ background: "#1a0a00", borderBottom: "3px solid #000" }}>
-                <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⏱ KOMENDE DEADLINES</h2>
-                <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
-                  Wedstrijden waarvoor de invoertijd binnenkort sluit
-                </p>
-              </div>
-              <div>
-                {upcomingWithDeadline.map((m) => {
-                  const diffMs = m.deadline.getTime() - now.getTime()
-                  const hours = Math.floor(diffMs / 3_600_000)
-                  const minutes = Math.floor((diffMs % 3_600_000) / 60_000)
-                  const isUrgent = diffMs < 3_600_000
-                  const timeLabel = hours > 0
-                    ? `${hours}u ${minutes}min`
-                    : `${minutes}min`
-
-                  return (
-                    <Link
-                      key={m.id}
-                      href={`/pools/${m.firstMissingPool}/predictions`}
-                      className="flex items-center gap-3 px-4 py-2.5 transition-colors"
-                      style={{
-                        borderBottom: "1px solid var(--c-border)",
-                        borderLeft: m.hasPred ? "3px solid #16a34a" : "3px solid #FF6200",
-                        background: m.hasPred ? "transparent" : (isUrgent ? "#1a0500" : "transparent"),
-                      }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-pixel truncate" style={{ fontSize: "8px", color: "var(--c-text)" }}>
-                          {m.homeTeam?.nameNl ?? m.homeTeam?.name ?? "?"} – {m.awayTeam?.nameNl ?? m.awayTeam?.name ?? "?"}
-                        </div>
-                        <div className="font-pixel mt-0.5 flex items-center gap-2" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
-                          {new Date(m.kickoff).toLocaleString("nl-NL", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          {!m.hasPred && m.missingPools.length > 1 && (
-                            <span style={{ color: "#FF6200" }}>· {m.missingPools.length}× open</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        {m.hasPred ? (
-                          <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>✓ INGEVULD</span>
-                        ) : (
-                          <span className="font-pixel" style={{ fontSize: "7px", color: isUrgent ? "#ff4444" : "#FFD700" }}>
-                            {isUrgent ? "⚠ " : "⏱ "}{timeLabel}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-              <div className="px-5 py-2 text-right" style={{ borderTop: "1px solid var(--c-border)", background: "var(--c-surface-deep)" }}>
-                <Link
-                  href={`/pools/${upcomingWithDeadline.find((m) => !m.hasPred)?.firstMissingPool ?? memberships[0]?.pool.id}/predictions`}
-                  className="font-pixel"
-                  style={{ fontSize: "7px", color: "#FF6200" }}
-                >
-                  Alle voorspellingen invullen →
+              <div className="px-4 py-2" style={{ background: "var(--c-surface-deep)", borderTop: "1px solid var(--c-border)" }}>
+                <Link href="/pools/start" className="font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>
+                  + Pool aanmaken of meedoen
                 </Link>
               </div>
-            </div>
+            </>
           )}
+        </div>
 
-          {/* Snelle acties */}
-          <div className="grid gap-3 sm:grid-cols-3 mb-6">
-            <Link href={`/pools/${memberships[0]?.pool.id}/predictions`} className="pixel-card p-4 flex items-center gap-3 transition-colors"
-              style={{ borderLeft: "4px solid #FF6200" }}>
-              <span className="text-2xl">⚽</span>
-              <div>
-                <div className="font-pixel" style={{ fontSize: "8px", color: "#FF6200" }}>DE WEDSTRIJDEN</div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>Voorspellingen invullen</div>
-              </div>
-            </Link>
-
-            {memberships.slice(0, 1).map(({ pool }) => (
-              <Link key={pool.id} href={`/pools/${pool.id}/bonus`} className="pixel-card p-4 flex items-center gap-3 transition-colors"
-                style={{ borderLeft: "4px solid #FFD700" }}>
-                <span className="text-2xl">🏆</span>
-                <div>
-                  <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>HET GROTE PLAATJE</div>
-                  <div className="text-xs mt-0.5" style={{ color: "var(--c-text-3)" }}>Bonus & kampioen kiezen</div>
-                </div>
-              </Link>
-            ))}
-
-            <Link href="/pools/new" className="pixel-card p-4 flex items-center gap-3 transition-colors"
-              style={{ borderStyle: "dashed", borderLeft: "4px dashed var(--c-border-mid)" }}>
-              <span className="text-2xl" style={{ color: "#4af56a" }}>+</span>
-              <div>
-                <div className="font-pixel" style={{ fontSize: "8px", color: "#4af56a" }}>NIEUWE POOL</div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--c-text-4)" }}>Aanmaken of meedoen</div>
-              </div>
+        {/* Survivor widget */}
+        <div className="pixel-card overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between" style={{ background: "#1a0a00", borderBottom: "3px solid #000" }}>
+            <h2 className="font-pixel text-white" style={{ fontSize: "8px" }}>⚔ WK SURVIVOR</h2>
+            <Link href="/survivor" className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>
+              Naar Survivor →
             </Link>
           </div>
 
-          {/* Multi-pool aanmoediging — prominent als je ≤2 pools hebt */}
-          {memberships.length <= 2 && (
-            <div
-              className="pixel-card overflow-hidden mb-6"
-              style={{ borderColor: "#4af56a", borderWidth: "2px" }}
-            >
-              <div className="px-5 py-3" style={{ background: "#071f0e", borderBottom: "3px solid #000" }}>
-                <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
-                  🏆 SPEEL IN MEERDERE POOLS
-                </h2>
-                <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>
-                  Maak een pool voor elk gezelschap — elke pool heeft zijn eigen stand en uitdagingen!
-                </p>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-0" style={{ borderBottom: "none" }}>
-                {[
-                  { emoji: "👨‍👩‍👧‍👦", label: "Familie", desc: "Wie voorspelt het beste thuis?" },
-                  { emoji: "🤝", label: "Vrienden", desc: "Oude rivaliteiten, nieuwe inzetten" },
-                  { emoji: "💼", label: "Collega's", desc: "Kantoor-kampioen worden?" },
-                ].map((item, i) => (
-                  <Link
-                    key={item.label}
-                    href="/pools/new"
-                    className="flex items-center gap-3 px-5 py-4 transition-colors"
-                    style={{
-                      borderRight: i < 2 ? "2px solid var(--c-border)" : "none",
-                      borderBottom: "none",
-                    }}
+          {!survivorEntry ? (
+            <div className="p-5 text-center space-y-3">
+              <p style={{ fontSize: "9px", color: "var(--c-text-3)" }}>
+                Kies elke ronde een team. Gokt het erop!
+              </p>
+              <Link href="/survivor" className="inline-block font-pixel px-4 py-2"
+                style={{ background: "#ff4444", color: "white", border: "2px solid #000", boxShadow: "2px 2px 0 #000", fontSize: "7px" }}>
+                ⚔ MEEDOEN
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Actieve ronde info */}
+              {activeRound && survivorDeadline && (
+                <div className="px-4 py-2.5" style={{ background: "#0d0800", borderBottom: "1px solid var(--c-border)" }}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
+                      {ROUND_LABELS[activeRound]}
+                    </span>
+                    <span className="font-pixel" style={{
+                      fontSize: "6px",
+                      color: survivorDeadlinePassed ? "var(--c-text-5)" : survivorNeedsPick ? "#FFD700" : "#4af56a",
+                    }}>
+                      {survivorDeadlinePassed
+                        ? "Deadline voorbij"
+                        : `Deadline: ${survivorDeadline.toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* HARDCORE & HIGHSCORE status */}
+              {(["HARDCORE", "HIGHSCORE"] as const).map((mode) => {
+                const s = survivorStatus(mode)
+                return (
+                  <div
+                    key={mode}
+                    className="flex items-center justify-between px-4 py-3"
+                    style={{ borderBottom: "1px solid var(--c-border)" }}
                   >
-                    <span style={{ fontSize: "24px", flexShrink: 0 }}>{item.emoji}</span>
                     <div>
-                      <div className="font-pixel" style={{ fontSize: "8px", color: "#FFD700" }}>
-                        POOL: {item.label.toUpperCase()}
+                      <div className="font-pixel" style={{ fontSize: "7px", color: mode === "HARDCORE" ? "#ff4444" : "#FFD700" }}>
+                        {mode}
                       </div>
-                      <div className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
-                        {item.desc}
+                      <div className="font-pixel mt-0.5" style={{ fontSize: "7px", color: statusColor(s) }}>
+                        {statusLabel(s, mode)}
                       </div>
                     </div>
-                  </Link>
-                ))}
-              </div>
-              <div className="px-5 py-2 flex items-center justify-between flex-wrap gap-2"
-                style={{ background: "var(--c-surface-deep)", borderTop: "2px solid var(--c-border)" }}>
-                <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
-                  Of doe mee met een bestaande pool via een uitnodigingscode
-                </span>
-                <Link href="/pools/join" className="font-pixel" style={{ fontSize: "7px", color: "#FF6200" }}>
-                  Meedoen met code →
-                </Link>
-              </div>
-            </div>
-          )}
+                    {s === "needs_pick" && !survivorDeadlinePassed && (
+                      <Link href="/survivor" className="font-pixel px-2 py-1 shrink-0"
+                        style={{ background: "#FFD700", color: "#000", border: "2px solid #000", fontSize: "6px", boxShadow: "1px 1px 0 #000" }}>
+                        PICK →
+                      </Link>
+                    )}
+                    {s === "eliminated" && (
+                      <span style={{ fontSize: "20px" }}>💀</span>
+                    )}
+                    {s === "pick_made" && (
+                      <span style={{ fontSize: "20px" }}>✅</span>
+                    )}
+                  </div>
+                )
+              })}
 
-          {/* Subtiele link als je al 3+ pools hebt */}
-          {memberships.length > 2 && (
-            <div className="text-center mb-4">
-              <Link href="/pools/join" className="font-pixel" style={{ fontSize: "7px", color: "#555580" }}>
-                + Nog een pool aanmaken of meedoen met code →
-              </Link>
-            </div>
+              {!activeRound && (
+                <div className="px-4 py-3 text-center">
+                  <p className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                    Wacht op de volgende ronde...
+                  </p>
+                </div>
+              )}
+            </>
           )}
-        </>
+        </div>
+      </div>
+
+      {/* === KOMENDE DEADLINES === */}
+      {upcomingWithDeadline.length > 0 && (
+        <div className="pixel-card overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between" style={{ background: "#1a0a00", borderBottom: "3px solid #000" }}>
+            <div>
+              <h2 className="font-pixel text-white" style={{ fontSize: "8px" }}>⏱ KOMENDE DEADLINES</h2>
+              <p className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "#FF6200" }}>
+                Wedstrijden waarvoor de invoertijd binnenkort sluit
+              </p>
+            </div>
+            {myPoolIds.length > 0 && (
+              <Link
+                href={`/pools/${upcomingWithDeadline.find((m) => !m.hasPred)?.firstMissingPool ?? myPoolIds[0]}/predictions`}
+                className="font-pixel shrink-0"
+                style={{ fontSize: "6px", color: "#FF6200" }}
+              >
+                Alle voorspellingen →
+              </Link>
+            )}
+          </div>
+          <div>
+            {upcomingWithDeadline.map((m) => {
+              const diffMs = m.deadline.getTime() - now.getTime()
+              const hours = Math.floor(diffMs / 3_600_000)
+              const minutes = Math.floor((diffMs % 3_600_000) / 60_000)
+              const isUrgent = diffMs < 3_600_000
+              const timeLabel = hours > 0 ? `${hours}u ${minutes}m` : `${minutes}m`
+
+              return (
+                <Link
+                  key={m.id}
+                  href={`/pools/${m.firstMissingPool}/predictions`}
+                  className="flex items-center gap-3 px-4 py-2.5 transition-colors"
+                  style={{
+                    borderBottom: "1px solid var(--c-border)",
+                    borderLeft: m.hasPred ? "3px solid #16a34a" : "3px solid #FF6200",
+                    background: !m.hasPred && isUrgent ? "#1a0500" : "transparent",
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-pixel truncate" style={{ fontSize: "8px", color: "var(--c-text)" }}>
+                      {m.homeTeam?.nameNl ?? m.homeTeam?.name ?? "?"} – {m.awayTeam?.nameNl ?? m.awayTeam?.name ?? "?"}
+                    </div>
+                    <div className="font-pixel mt-0.5 flex items-center gap-2" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+                      {new Date(m.kickoff).toLocaleString("nl-NL", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {!m.hasPred && m.missingPools.length > 1 && (
+                        <span style={{ color: "#FF6200" }}>· {m.missingPools.length}× open</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {m.hasPred ? (
+                      <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>✓</span>
+                    ) : (
+                      <span className="font-pixel" style={{ fontSize: "7px", color: isUrgent ? "#ff4444" : "#FFD700" }}>
+                        {isUrgent ? "⚠ " : "⏱ "}{timeLabel}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
       )}
+
+      {/* === EXTRA NAVIGATIE (altijd zichtbaar) === */}
+      <div className="grid grid-cols-3 gap-2">
+        <Link href="/faq" className="pixel-card px-3 py-3 flex items-center gap-2 transition-colors">
+          <span style={{ fontSize: "16px" }}>❓</span>
+          <div>
+            <div className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>FAQ</div>
+            <div className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-5)" }}>Spelregels</div>
+          </div>
+        </Link>
+        <Link href="/bracket" className="pixel-card px-3 py-3 flex items-center gap-2 transition-colors">
+          <span style={{ fontSize: "16px" }}>🏟</span>
+          <div>
+            <div className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>BRACKET</div>
+            <div className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-5)" }}>Knock-out schema</div>
+          </div>
+        </Link>
+        <Link href="/profile" className="pixel-card px-3 py-3 flex items-center gap-2 transition-colors">
+          <span style={{ fontSize: "16px" }}>👤</span>
+          <div>
+            <div className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>PROFIEL</div>
+            <div className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-5)" }}>Naam & wachtwoord</div>
+          </div>
+        </Link>
+      </div>
     </div>
   )
 }
