@@ -166,12 +166,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* === SNELKOPPELINGEN === */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { href: "/arena",     icon: "🏟️", label: "DE ARENA",          sub: "Jouw WK pools",          color: "#FF6200" },
           { href: "/survivor",  icon: "⚔",  label: "WK SURVIVOR",        sub: "Overleven of sterven",   color: "#ff4444", urgent: survivorNeedsPick },
           { href: "/fantasy",   icon: "⚽", label: "FANTASY WK",         sub: "Kies je selectie",        color: "#4af56a" },
-          { href: "/bracket",   icon: "🏆", label: "DE BRACKET",          sub: "Knock-outschema",        color: "#FFD700" },
           { href: "/ranglijst", icon: "📊", label: "MEGALOMANE RANGLIJST",sub: "Iedereen vs iedereen",   color: "#4499ff" },
         ].map((item) => (
           <Link

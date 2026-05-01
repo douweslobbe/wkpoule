@@ -72,12 +72,6 @@ export function GlobalNav({
       isActive: pathname === "/fantasy" || pathname.startsWith("/fantasy/"),
     },
     {
-      href: "/bracket",
-      label: "🏟 Bracket",
-      labelShort: "🏟",
-      isActive: pathname === "/bracket" || pathname.startsWith("/bracket/"),
-    },
-    {
       href: "/ranglijst",
       label: "📊 Ranglijst",
       labelShort: "📊",
