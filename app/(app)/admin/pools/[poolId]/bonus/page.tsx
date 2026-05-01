@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { SetAnswerForm } from "./SetAnswerForm"
 import { AddQuestionForm } from "./AddQuestionForm"
 import { TemplateLibrary } from "./TemplateLibrary"
+import { DeleteQuestionButton } from "./DeleteQuestionButton"
 import { PoolSettingsForm } from "./PoolSettingsForm"
 import { PoolMaxQuestionsForm } from "./PoolMaxQuestionsForm"
 import { MemberManageRow } from "./MemberManageRow"
@@ -76,6 +77,9 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
   }
 
   const isGlobalAdmin = session.user.isAdmin
+  const BONUS_EDIT_DEADLINE = new Date("2026-06-11T20:00:00Z")
+  const canEdit = new Date() < BONUS_EDIT_DEADLINE
+  const daysUntilDeadline = Math.ceil((BONUS_EDIT_DEADLINE.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
   return (
     <div>
@@ -185,6 +189,17 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
           <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>
             📋 BONUSVRAGEN IN DEZE POOL ({questions.length})
           </h2>
+          {canEdit ? (
+            <p className="mt-1 font-pixel" style={{ fontSize: "6px", color: daysUntilDeadline <= 7 ? "#FFD700" : "#4a7a4a" }}>
+              {daysUntilDeadline <= 7
+                ? `⚠ Nog ${daysUntilDeadline} dag${daysUntilDeadline === 1 ? "" : "en"} om vragen te wijzigen — deadline 11 jun 22:00`
+                : `Vragen aanpassen kan tot 11 juni 2026, 22:00 · nog ${daysUntilDeadline} dagen`}
+            </p>
+          ) : (
+            <p className="mt-1 font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>
+              🔒 Toernooi gestart — vragen zijn vergrendeld
+            </p>
+          )}
         </div>
 
         {questions.length === 0 ? (
@@ -226,9 +241,18 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
                         </span>
                         <span style={{ color: "var(--c-text)", fontSize: "9px" }}>{q.question}</span>
                       </div>
-                      <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
-                        {q._count.answers} antw.
-                      </span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+                          {q._count.answers} antw.
+                        </span>
+                        {canEdit && (
+                          <DeleteQuestionButton
+                            questionId={q.id}
+                            poolId={poolId}
+                            answerCount={q._count.answers}
+                          />
+                        )}
+                      </div>
                     </div>
                     {q.description && (
                       <p className="font-pixel mb-2" style={{ fontSize: "6px", color: "var(--c-text-4)", lineHeight: "1.8" }}>

@@ -438,6 +438,41 @@ export async function addBonusQuestion(formData: FormData) {
   return { success: true }
 }
 
+// ─── Admin: bonusvraag verwijderen (tot toernooideadline) ────────────────────
+
+// Toernooideadline: 11 juni 2026, 22:00 CEST = 20:00 UTC
+const BONUS_EDIT_DEADLINE = new Date("2026-06-11T20:00:00Z")
+
+export async function deleteBonusQuestion(questionId: string, poolId: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  if (new Date() > BONUS_EDIT_DEADLINE) {
+    return { error: "Het toernooi is gestart — vragen kunnen niet meer worden verwijderd" }
+  }
+
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership || (membership.role !== "ADMIN" && !session.user.isAdmin)) {
+    return { error: "Geen toegang" }
+  }
+
+  // Controleer dat de vraag bij deze pool hoort
+  const question = await prisma.bonusQuestion.findUnique({
+    where: { id: questionId },
+    select: { poolId: true, _count: { select: { answers: true } } },
+  })
+  if (!question || question.poolId !== poolId) return { error: "Vraag niet gevonden" }
+
+  // Verwijder vraag + antwoorden (cascade)
+  await prisma.bonusQuestion.delete({ where: { id: questionId } })
+
+  revalidatePath(`/admin/pools/${poolId}/bonus`)
+  revalidatePath(`/pools/${poolId}/bonus`)
+  return { success: true, hadAnswers: question._count.answers > 0 }
+}
+
 // ─── Admin: vragen uit bibliotheek toevoegen ─────────────────────────────────
 
 export async function addQuestionsFromLibrary(
