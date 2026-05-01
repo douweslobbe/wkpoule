@@ -298,6 +298,12 @@ export async function saveBonusAnswer(formData: FormData) {
   const question = await prisma.bonusQuestion.findUnique({ where: { id: questionId } })
   if (!question) return { error: "Vraag niet gevonden" }
 
+  // Verify user is a member of the pool this question belongs to
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId: question.poolId } },
+  })
+  if (!membership) return { error: "Je bent geen lid van deze pool" }
+
   const deadline = question.deadline ?? TOURNAMENT_START
   if (new Date() > deadline) return { error: "De antwoordtermijn is verstreken" }
 
@@ -316,6 +322,13 @@ export async function saveAllBonusAnswers(formData: FormData) {
   if (!session?.user) redirect("/login")
 
   const poolId = formData.get("poolId") as string
+
+  // Verify user is a member of this pool
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership) return { error: "Je bent geen lid van deze pool" }
+
   const questions = await prisma.bonusQuestion.findMany({ where: { poolId } })
 
   const errors: string[] = []
@@ -347,6 +360,12 @@ export async function saveChampionPick(formData: FormData) {
   const teamId = formData.get("teamId") as string
 
   if (new Date() > TOURNAMENT_START) return { error: "De termijn voor de kampioensvooerspelling is verstreken" }
+
+  // Verify user is a member of this pool
+  const membership = await prisma.poolMembership.findUnique({
+    where: { userId_poolId: { userId: session.user.id, poolId } },
+  })
+  if (!membership) return { error: "Je bent geen lid van deze pool" }
 
   await prisma.championPick.upsert({
     where: { userId_poolId: { userId: session.user.id, poolId } },
@@ -1230,7 +1249,18 @@ export async function deletePoolMessage(formData: FormData) {
   const message = await prisma.poolMessage.findUnique({ where: { id: messageId } })
 
   if (!message) return { error: "Bericht niet gevonden" }
-  if (message.userId !== session.user.id && !session.user.isAdmin) return { error: "Geen toegang" }
+
+  const isGlobalAdmin = session.user.isAdmin
+  const isAuthor = message.userId === session.user.id
+  let isPoolAdmin = false
+  if (!isGlobalAdmin && !isAuthor) {
+    const membership = await prisma.poolMembership.findUnique({
+      where: { userId_poolId: { userId: session.user.id, poolId: message.poolId } },
+    })
+    isPoolAdmin = membership?.role === "ADMIN"
+  }
+
+  if (!isAuthor && !isGlobalAdmin && !isPoolAdmin) return { error: "Geen toegang" }
 
   await prisma.poolMessage.delete({ where: { id: messageId } })
   revalidatePath(`/pools/${message.poolId}/prikbord`)
