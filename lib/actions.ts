@@ -12,6 +12,14 @@ import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType } from "@prisma/client"
 import { matchToSurvivorRound, getFirstMatchOfRound, type SurvivorRound } from "./survivor"
+import {
+  FANTASY_DEADLINE,
+  SQUAD_SIZE,
+  MAX_TRANSFERS_PER_ROUND,
+  TRANSFER_ROUNDS,
+  validateSquad,
+  type FantasyRound,
+} from "./fantasy"
 
 // Toernooi start — deadline voor bonus vragen en kampioen pick
 const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z")
@@ -1443,5 +1451,173 @@ export async function resetHighscore() {
   })
 
   revalidatePath("/survivor")
+  return { success: true }
+}
+
+// ─── Fantasy WK ───────────────────────────────────────────────────────────────
+
+export async function createFantasyTeam(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  if (new Date() > FANTASY_DEADLINE) {
+    return { error: "De deadline voor de initiële selectie is verstreken" }
+  }
+
+  const nickname = (formData.get("nickname") as string)?.trim()
+  if (!nickname) return { error: "Geef je team een naam" }
+  if (nickname.length > 30) return { error: "Teamnaam mag maximaal 30 tekens zijn" }
+
+  const existing = await prisma.fantasyTeam.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (existing) return { error: "Je hebt al een Fantasy-team" }
+
+  const playerIds = (formData.getAll("playerIds") as string[]).filter(Boolean)
+  if (playerIds.length !== SQUAD_SIZE) {
+    return { error: `Selecteer precies ${SQUAD_SIZE} spelers (nu: ${playerIds.length})` }
+  }
+
+  // Spelers ophalen voor validatie
+  const players = await prisma.player.findMany({
+    where: { id: { in: playerIds }, isActive: true },
+    include: { team: { select: { code: true } } },
+  })
+
+  if (players.length !== SQUAD_SIZE) {
+    return { error: "Een of meer geselecteerde spelers zijn ongeldig" }
+  }
+
+  const validation = validateSquad(
+    players.map((p) => ({ position: p.position, teamCode: p.team.code })),
+    false
+  )
+  if (!validation.valid) {
+    return { error: validation.errors.join(", ") }
+  }
+
+  const team = await prisma.fantasyTeam.create({
+    data: {
+      userId: session.user.id,
+      nickname,
+      picks: {
+        create: playerIds.map((playerId) => ({
+          playerId,
+          addedInRound: "GROUP_1",
+        })),
+      },
+    },
+  })
+
+  revalidatePath("/fantasy")
+  return { success: true, teamId: team.id }
+}
+
+export async function updateFantasyNickname(nickname: string) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  const trimmed = nickname.trim()
+  if (!trimmed) return { error: "Teamnaam mag niet leeg zijn" }
+  if (trimmed.length > 30) return { error: "Teamnaam mag maximaal 30 tekens zijn" }
+
+  const team = await prisma.fantasyTeam.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!team) return { error: "Je hebt nog geen Fantasy-team" }
+
+  await prisma.fantasyTeam.update({
+    where: { id: team.id },
+    data: { nickname: trimmed },
+  })
+
+  revalidatePath("/fantasy")
+  return { success: true }
+}
+
+export async function makeFantasyTransfers(
+  round: FantasyRound,
+  transfers: Array<{ playerOutId: string; playerInId: string }>
+) {
+  const session = await auth()
+  if (!session?.user) return { error: "Niet ingelogd" }
+
+  if (!TRANSFER_ROUNDS.includes(round)) {
+    return { error: "Transfers zijn niet meer mogelijk in deze fase" }
+  }
+
+  if (transfers.length === 0) return { error: "Geen transfers opgegeven" }
+  if (transfers.length > MAX_TRANSFERS_PER_ROUND) {
+    return { error: `Maximaal ${MAX_TRANSFERS_PER_ROUND} transfers per ronde` }
+  }
+
+  const team = await prisma.fantasyTeam.findUnique({
+    where: { userId: session.user.id },
+    include: { picks: { include: { player: { include: { team: { select: { code: true } } } } } } },
+  })
+  if (!team) return { error: "Je hebt nog geen Fantasy-team" }
+
+  // Check hoeveel transfers al gebruikt in deze ronde
+  const usedTransfers = await prisma.fantasyTransfer.count({
+    where: { fantasyTeamId: team.id, round },
+  })
+  if (usedTransfers + transfers.length > MAX_TRANSFERS_PER_ROUND) {
+    return { error: `Je hebt al ${usedTransfers} transfer(s) gebruikt in deze ronde` }
+  }
+
+  // Valideer elke transfer
+  const currentPickIds = new Set(team.picks.map((p) => p.playerId))
+
+  for (const t of transfers) {
+    if (!currentPickIds.has(t.playerOutId)) {
+      return { error: "Speler die eruit gaat zit niet in je team" }
+    }
+    if (currentPickIds.has(t.playerInId)) {
+      return { error: "Speler die erin komt zit al in je team" }
+    }
+  }
+
+  // Simuleer nieuwe selectie
+  const newPickIds = new Set(currentPickIds)
+  for (const t of transfers) {
+    newPickIds.delete(t.playerOutId)
+    newPickIds.add(t.playerInId)
+  }
+
+  const newPlayers = await prisma.player.findMany({
+    where: { id: { in: Array.from(newPickIds) }, isActive: true },
+    include: { team: { select: { code: true } } },
+  })
+
+  const isKO = !["GROUP_1", "GROUP_2", "GROUP_3"].includes(round)
+  const validation = validateSquad(
+    newPlayers.map((p) => ({ position: p.position, teamCode: p.team.code })),
+    isKO
+  )
+  if (!validation.valid) {
+    return { error: validation.errors.join(", ") }
+  }
+
+  // Voer transfers door
+  await prisma.$transaction(async (tx) => {
+    for (const t of transfers) {
+      await tx.fantasyPick.deleteMany({
+        where: { fantasyTeamId: team.id, playerId: t.playerOutId },
+      })
+      await tx.fantasyPick.create({
+        data: { fantasyTeamId: team.id, playerId: t.playerInId, addedInRound: round },
+      })
+      await tx.fantasyTransfer.create({
+        data: {
+          fantasyTeamId: team.id,
+          round,
+          playerOutId: t.playerOutId,
+          playerInId: t.playerInId,
+        },
+      })
+    }
+  })
+
+  revalidatePath("/fantasy")
   return { success: true }
 }

@@ -66,9 +66,15 @@ export function GlobalNav({
       isActive: pathname === "/survivor" || pathname.startsWith("/survivor/"),
     },
     {
+      href: "/fantasy",
+      label: "⚽ Fantasy WK",
+      labelShort: "⚽ Fantasy",
+      isActive: pathname === "/fantasy" || pathname.startsWith("/fantasy/"),
+    },
+    {
       href: "/bracket",
       label: "🏟 Bracket",
-      labelShort: "🏟 Bracket",
+      labelShort: "🏟",
       isActive: pathname === "/bracket" || pathname.startsWith("/bracket/"),
     },
     {

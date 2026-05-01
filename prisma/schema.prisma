@@ -23,6 +23,7 @@ model User {
   achievements      Achievement[]
   survivorEntry     SurvivorEntry?
   pushSubscriptions PushSubscription[]
+  fantasyTeam       FantasyTeam?
 
   @@index([email])
 }
@@ -81,6 +82,7 @@ model Team {
   awayMatches   Match[]        @relation("AwayTeam")
   championPicks ChampionPick[]
   survivorPicks SurvivorPick[]
+  players       Player[]
 }
 
 model Match {
@@ -99,9 +101,10 @@ model Match {
   lastSyncedAt       DateTime?
   notificationSentAt DateTime?
 
-  homeTeam    Team?        @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam    Team?        @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  predictions Prediction[]
+  homeTeam      Team?               @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam      Team?               @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  predictions   Prediction[]
+  playerStats   FantasyPlayerStats[]
 
   @@index([stage])
   @@index([kickoff])
@@ -299,4 +302,103 @@ model LeaderboardEntry {
 
   @@unique([userId, poolId])
   @@index([poolId, totalPoints(sort: Desc)])
+}
+
+// ─── Fantasy WK ───────────────────────────────────────────────────────────────
+
+enum PlayerPosition {
+  GK
+  DEF
+  MID
+  FWD
+}
+
+model Player {
+  id          String         @id @default(cuid())
+  name        String
+  nameNl      String?
+  teamId      String
+  position    PlayerPosition
+  shirtNumber Int?
+  photoUrl    String?
+  isActive    Boolean        @default(true)
+  externalId  Int?           @unique
+
+  team  Team                 @relation(fields: [teamId], references: [id])
+  stats FantasyPlayerStats[]
+  picks FantasyPick[]
+
+  @@index([teamId])
+  @@index([position])
+}
+
+// Eén FantasyTeam per gebruiker (globaal, niet per pool)
+model FantasyTeam {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  nickname    String
+  totalPoints Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  picks     FantasyPick[]
+  transfers FantasyTransfer[]
+}
+
+// Huidige selectie: 15 spelers (2GK + 5DEF + 5MID + 3FWD)
+model FantasyPick {
+  id             String   @id @default(cuid())
+  fantasyTeamId  String
+  playerId       String
+  addedInRound   String   // GROUP_1 | GROUP_2 | GROUP_3 | ROUND_OF_32 | ROUND_OF_16 | QUARTER_FINAL
+
+  fantasyTeam FantasyTeam @relation(fields: [fantasyTeamId], references: [id], onDelete: Cascade)
+  player      Player      @relation(fields: [playerId], references: [id])
+
+  @@unique([fantasyTeamId, playerId])
+  @@index([fantasyTeamId])
+}
+
+// Transferhistorie per speelronde (max 2 per ronde)
+model FantasyTransfer {
+  id            String   @id @default(cuid())
+  fantasyTeamId String
+  round         String   // GROUP_1 | GROUP_2 | ...
+  playerOutId   String
+  playerInId    String
+  createdAt     DateTime @default(now())
+
+  fantasyTeam FantasyTeam @relation(fields: [fantasyTeamId], references: [id], onDelete: Cascade)
+
+  @@index([fantasyTeamId, round])
+}
+
+// Statistieken per speler per wedstrijd (gevuld door admin of API)
+model FantasyPlayerStats {
+  id                     String   @id @default(cuid())
+  playerId               String
+  matchId                String
+  minutesPlayed          Int      @default(0)
+  goals                  Int      @default(0)
+  assists                Int      @default(0)
+  cleanSheet             Boolean  @default(false)
+  goalsConceded          Int      @default(0)
+  shotsSaved             Int      @default(0)
+  penaltySaved           Int      @default(0)
+  penaltyMissed          Int      @default(0)
+  yellowCards            Int      @default(0)
+  redCards               Int      @default(0)
+  ownGoals               Int      @default(0)
+  bonusPoints            Int      @default(0)
+  totalPoints            Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id])
+  match  Match  @relation(fields: [matchId], references: [id])
+
+  @@unique([playerId, matchId])
+  @@index([matchId])
+  @@index([playerId])
 }

@@ -1,6 +1,7 @@
 import { PrismaClient, MatchStage, MatchStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { getDutchName } from "../lib/dutch-names"
+import { seedPlayers } from "./seed-players"
 
 const prisma = new PrismaClient()
 
@@ -179,6 +180,9 @@ async function main() {
     }
     console.log("✅ Wedstrijden gesynchroniseerd")
   }
+
+  // Fantasy WK spelers seeden
+  await seedPlayers(prisma)
 
   console.log("🎉 Seeding voltooid!")
 }
