@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getActiveSurvivorRound, getRoundDeadline, ROUND_LABELS } from "@/lib/survivor"
+import { FANTASY_DEADLINE, FANTASY_ROUND_LABELS, type FantasyRound } from "@/lib/fantasy"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Dashboard — WK Pool 2026" }
@@ -64,6 +65,19 @@ export default async function DashboardPage() {
   const hcStatus = survivorStatus("HARDCORE")
   const hsStatus = survivorStatus("HIGHSCORE")
   const survivorNeedsPick = !survivorDeadlinePassed && (hcStatus === "needs_pick" || hsStatus === "needs_pick")
+
+  // === WK MANAGER ===
+  const fantasyTeam = await prisma.fantasyTeam.findUnique({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      nickname: true,
+      totalPoints: true,
+      picks: { select: { playerId: true } },
+    },
+  })
+  const fantasyDeadlinePassed = new Date() > FANTASY_DEADLINE
+  const fantasyDaysLeft = Math.ceil((FANTASY_DEADLINE.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
   // === KOMENDE DEADLINES ===
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -248,7 +262,12 @@ export default async function DashboardPage() {
                     <div className="font-pixel" style={{ fontSize: "9px", color: "#FFD700" }}>
                       {myEntry?.totalPoints ?? 0}pt
                       {projectedTotal !== null && (
-                        <span style={{ color: "#4499ff", fontSize: "7px" }}> ~{projectedTotal}</span>
+                        <span
+                          title={`Prognose op basis van huidig tempo: ~${projectedTotal} punten aan het eind van het toernooi`}
+                          style={{ color: "#4499ff", fontSize: "7px", cursor: "help" }}
+                        >
+                          {" "}~{projectedTotal}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -346,6 +365,55 @@ export default async function DashboardPage() {
             </>
           )}
         </div>
+      </div>
+
+      {/* === WK MANAGER WIDGET === */}
+      <div className="pixel-card overflow-hidden">
+        <div className="px-4 py-3 flex items-center justify-between" style={{ background: "#0a1f0a", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "8px" }}>🎮 WK MANAGER</h2>
+          <Link href="/fantasy" className="font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>
+            Naar WK Manager →
+          </Link>
+        </div>
+
+        {!fantasyTeam ? (
+          <div className="px-4 py-4 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-3)", lineHeight: "1.8" }}>
+                Stel je selectie van 15 spelers samen!
+              </p>
+              {!fantasyDeadlinePassed && (
+                <p className="font-pixel mt-0.5" style={{ fontSize: "6px", color: fantasyDaysLeft <= 7 ? "#FFD700" : "#4a7a4a" }}>
+                  {fantasyDaysLeft <= 7
+                    ? `⚠ Nog ${fantasyDaysLeft} dag${fantasyDaysLeft === 1 ? "" : "en"} tot deadline`
+                    : `Deadline: 11 juni · nog ${fantasyDaysLeft} dagen`}
+                </p>
+              )}
+            </div>
+            {fantasyDeadlinePassed ? (
+              <span className="font-pixel" style={{ fontSize: "7px", color: "#ff4444" }}>🔒 Deadline verstreken</span>
+            ) : (
+              <Link href="/fantasy/select" className="font-pixel px-3 py-1.5 shrink-0"
+                style={{ background: "#0a5a2a", color: "white", border: "2px solid #000", boxShadow: "2px 2px 0 #000", fontSize: "7px" }}>
+                ▶ TEAM AANMAKEN
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="px-4 py-3 flex items-center gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="font-pixel truncate" style={{ fontSize: "9px", color: "#4af56a" }}>
+                {fantasyTeam.nickname}
+              </div>
+              <div className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+                {fantasyTeam.picks.length} spelers geselecteerd
+              </div>
+            </div>
+            <div className="font-pixel shrink-0 text-right">
+              <div style={{ fontSize: "13px", color: "#FFD700" }}>{fantasyTeam.totalPoints} pt</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* === KOMENDE DEADLINES === */}

@@ -74,10 +74,11 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
               </p>
             </div>
           ) : (
-            messages.map((msg) => {
+            messages.map((msg, idx) => {
               const isSystem = msg.isSystem
               const isMe = !isSystem && msg.userId === session.user.id
-              const canDelete = !isSystem && (isMe || session.user.isAdmin)
+              const canDelete = !isSystem && (isMe || session.user.isAdmin || membership.role === "ADMIN")
+              const isLast = idx === messages.length - 1
               const timeAgo = formatDistanceToNow(new Date(msg.createdAt), {
                 addSuffix: true,
                 locale: nl,
@@ -86,6 +87,7 @@ export default async function PrikbordPage({ params }: { params: Promise<{ poolI
               return (
                 <div
                   key={msg.id}
+                  {...(isLast ? { "data-last-message": "true" } : {})}
                   className="px-5 py-4"
                   style={{
                     borderBottom: "2px solid var(--c-border)",

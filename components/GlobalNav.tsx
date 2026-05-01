@@ -143,7 +143,7 @@ export function GlobalNav({
           {[
             { href: `/pools/${activePool.id}/predictions`, label: "⚽ Wedstrijden",
               isActive: pathname.includes("/predictions") },
-            { href: `/pools/${activePool.id}/bonus`,       label: "🏆 Plaatje",
+            { href: `/pools/${activePool.id}/bonus`,       label: "🏆 Prognose",
               isActive: pathname.includes("/bonus") || pathname.includes("/champion") },
             { href: `/pools/${activePool.id}/prikbord`,    label: "📌 Prikbord",
               isActive: pathname.includes("/prikbord"),

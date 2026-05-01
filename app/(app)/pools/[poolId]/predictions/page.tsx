@@ -56,6 +56,13 @@ export default async function PoolPredictionsPage({
     orderBy: { kickoff: "asc" },
   })
 
+  // Tel wedstrijden per fase (voor tab-indicator)
+  const matchCountsByStage = await prisma.match.groupBy({
+    by: ["stage"],
+    _count: { id: true },
+  })
+  const matchCountMap = Object.fromEntries(matchCountsByStage.map((s) => [s.stage, s._count.id]))
+
   // Predictions voor deze pool + fase
   const myPredictions = await prisma.prediction.findMany({
     where: { userId: session.user.id, poolId, matchId: { in: matches.map((m) => m.id) } },
@@ -171,8 +178,9 @@ export default async function PoolPredictionsPage({
           <Link
             key={s}
             href={`/pools/${poolId}/predictions?stage=${s}${viewUserId !== session.user.id ? `&view=${viewUserId}` : ""}`}
-            className={`px-2.5 py-2 text-xs font-bold shrink-0 ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"}`}
+            className={`px-2.5 py-2 text-xs font-bold shrink-0 ${stage === s ? "pixel-tab-active" : "pixel-tab-inactive"} ${!matchCountMap[s] ? "opacity-40" : ""}`}
             style={{ fontFamily: "var(--font-pixel), monospace", fontSize: "7px", whiteSpace: "nowrap" }}
+            title={!matchCountMap[s] ? "Wedstrijden worden later toegevoegd" : undefined}
           >
             {STAGE_LABELS[s]}
           </Link>
