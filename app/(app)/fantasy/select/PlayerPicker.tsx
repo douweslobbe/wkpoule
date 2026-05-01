@@ -126,9 +126,10 @@ export function PlayerPicker({ players }: { players: PlayerData[] }) {
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      {/* Linkerkant: selectie-overzicht */}
-      <div className="lg:w-64 shrink-0">
-        <div className="pixel-card overflow-hidden sticky top-4">
+      {/* Linkerkant: selectie-overzicht — op mobiel na de spelerslijst (order-2), op desktop links (order-none) */}
+      <div className="lg:w-64 shrink-0 order-2 lg:order-none">
+        {/* sticky alleen op desktop (lg+); op mobiel niet sticky want te groot voor viewport */}
+        <div className="pixel-card overflow-hidden lg:sticky lg:top-16">
           <div className="px-4 py-3" style={{ background: "#0a1f3d", borderBottom: "2px solid #000" }}>
             <h2 className="font-pixel text-white" style={{ fontSize: "8px" }}>JOUW TEAM</h2>
             <p className="mt-0.5 font-pixel" style={{ fontSize: "6px", color: "#4499ff" }}>
@@ -238,8 +239,8 @@ export function PlayerPicker({ players }: { players: PlayerData[] }) {
         </div>
       </div>
 
-      {/* Rechterkant: spelerslijst */}
-      <div className="flex-1">
+      {/* Rechterkant: spelerslijst — op mobiel eerst (order-1), op desktop rechts (order-none) */}
+      <div className="flex-1 order-1 lg:order-none">
         {/* Filter balk */}
         <div className="pixel-card overflow-hidden mb-4">
           <div className="p-3 flex flex-wrap gap-2">
