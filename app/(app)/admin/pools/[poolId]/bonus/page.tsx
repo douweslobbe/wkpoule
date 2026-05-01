@@ -101,6 +101,37 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
         </h1>
       </div>
 
+      {/* Banner: eigen antwoorden invullen */}
+      {canEdit && (
+        <div
+          className="flex items-center gap-3 justify-between flex-wrap mb-6 px-4 py-3"
+          style={{ background: "#0a1f3d", border: "2px solid #1a3a6a", boxShadow: "2px 2px 0 #000" }}
+        >
+          <div>
+            <p className="font-pixel" style={{ fontSize: "7px", color: "#4499ff" }}>
+              💡 Je eigen antwoorden invullen doe je via de deelnemerspagina
+            </p>
+            <p className="font-pixel mt-0.5" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+              Als admin beheer je hier de vragen — maar je voorspellingen staan op een aparte pagina
+            </p>
+          </div>
+          <Link
+            href={`/pools/${poolId}/bonus`}
+            className="font-pixel px-3 py-1.5 shrink-0 transition-all hover:opacity-80"
+            style={{
+              background: "#1a3a6a",
+              color: "#4499ff",
+              border: "2px solid #2a4a8a",
+              boxShadow: "1px 1px 0 #000",
+              fontSize: "7px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            🏆 MIJN ANTWOORDEN →
+          </Link>
+        </div>
+      )}
+
       {/* Pool instellingen */}
       <div className="pixel-card overflow-hidden mb-6">
         <div className="px-5 py-3" style={{ background: "#1a0d00", borderBottom: "3px solid #000" }}>

@@ -307,7 +307,7 @@ export async function saveBonusAnswer(formData: FormData) {
     update: { answer, pointsAwarded: null },
   })
 
-  revalidatePath("/pools")
+  revalidatePath(`/pools/${question.poolId}/bonus`)
   return { success: true }
 }
 
