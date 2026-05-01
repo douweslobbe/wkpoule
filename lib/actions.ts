@@ -362,10 +362,26 @@ export async function saveChampionPick(formData: FormData) {
 
 export async function setCorrectBonusAnswer(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+  if (!session?.user) return { error: "Niet ingelogd" }
 
   const questionId = formData.get("questionId") as string
   const correctAnswer = (formData.get("correctAnswer") as string)?.trim()
+
+  // Haal de vraag op om de poolId te weten
+  const question = await prisma.bonusQuestion.findUnique({
+    where: { id: questionId },
+    select: { poolId: true },
+  })
+  if (!question) return { error: "Vraag niet gevonden" }
+
+  // Globale admin mag altijd; pool-admin mag voor zijn eigen pool
+  const isGlobalAdmin = session.user.isAdmin
+  if (!isGlobalAdmin) {
+    const membership = await prisma.poolMembership.findUnique({
+      where: { userId_poolId: { userId: session.user.id, poolId: question.poolId } },
+    })
+    if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
+  }
 
   await prisma.bonusQuestion.update({
     where: { id: questionId },
@@ -373,6 +389,8 @@ export async function setCorrectBonusAnswer(formData: FormData) {
   })
 
   await recalcBonusQuestion(questionId)
+  revalidatePath(`/admin/pools/${question.poolId}/bonus`)
+  revalidatePath(`/pools/${question.poolId}/bonus`)
   revalidatePath("/admin")
   return { success: true }
 }
