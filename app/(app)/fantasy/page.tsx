@@ -7,7 +7,7 @@ import { FantasyTeamView } from "./FantasyTeamView"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Fantasy WK — WK Pool 2026",
+  title: "WK Manager — WK Pool 2026",
 }
 
 const POSITION_ORDER = ["GK", "DEF", "MID", "FWD"] as const
@@ -52,7 +52,7 @@ export default async function FantasyPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
         <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>
-          ⚽ FANTASY WK 2026
+          🎮 WK MANAGER 2026
         </h1>
         {canRegister && (
           <span className="font-pixel px-2 py-0.5" style={{

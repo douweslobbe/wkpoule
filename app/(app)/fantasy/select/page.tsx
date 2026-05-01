@@ -7,7 +7,7 @@ import { PlayerPicker } from "./PlayerPicker"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Team samenstellen — Fantasy WK 2026",
+  title: "Elftal samenstellen — WK Manager 2026",
 }
 
 export default async function FantasySelectPage() {
@@ -40,10 +40,10 @@ export default async function FantasySelectPage() {
     <div>
       <div className="flex items-center gap-3 mb-5 flex-wrap">
         <Link href="/fantasy" className="font-pixel" style={{ fontSize: "7px", color: "#7070a0" }}>
-          ◄ FANTASY WK
+          ◄ WK MANAGER
         </Link>
         <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>
-          🏟 TEAM SAMENSTELLEN
+          🎮 ELFTAL SAMENSTELLEN
         </h1>
       </div>
 

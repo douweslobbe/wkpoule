@@ -67,8 +67,8 @@ export function GlobalNav({
     },
     {
       href: "/fantasy",
-      label: "⚽ Fantasy WK",
-      labelShort: "⚽ Fantasy",
+      label: "🎮 WK Manager",
+      labelShort: "🎮 Manager",
       isActive: pathname === "/fantasy" || pathname.startsWith("/fantasy/"),
     },
     {

@@ -170,7 +170,7 @@ export default async function DashboardPage() {
         {[
           { href: "/arena",     icon: "🏟️", label: "DE ARENA",          sub: "Jouw WK pools",          color: "#FF6200" },
           { href: "/survivor",  icon: "⚔",  label: "WK SURVIVOR",        sub: "Overleven of sterven",   color: "#ff4444", urgent: survivorNeedsPick },
-          { href: "/fantasy",   icon: "⚽", label: "FANTASY WK",         sub: "Kies je selectie",        color: "#4af56a" },
+          { href: "/fantasy",   icon: "🎮", label: "WK MANAGER",          sub: "Stel je elftal samen",    color: "#4af56a" },
           { href: "/ranglijst", icon: "📊", label: "MEGALOMANE RANGLIJST",sub: "Iedereen vs iedereen",   color: "#4499ff" },
         ].map((item) => (
           <Link
