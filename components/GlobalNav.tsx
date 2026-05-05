@@ -45,6 +45,13 @@ export function GlobalNav({
   // Heeft enige pool een ongelezen prikbord?
   const anyUnread = pools.some((p) => unreadPools.has(p.id))
 
+  // Context-bewuste FAQ link
+  const faqHref =
+    pathname.startsWith("/survivor") ? "/faq#survivor" :
+    pathname.startsWith("/fantasy")  ? "/faq#manager"  :
+    pathname.startsWith("/pools/") || pathname.startsWith("/arena") ? "/faq#poule" :
+    "/faq"
+
   const mainTabs = [
     {
       href: "/dashboard",
@@ -78,7 +85,7 @@ export function GlobalNav({
       isActive: pathname === "/ranglijst" || pathname.startsWith("/ranglijst/"),
     },
     {
-      href: "/faq",
+      href: faqHref,
       label: "❓ FAQ",
       labelShort: "❓",
       isActive: pathname === "/faq" || pathname.startsWith("/faq/"),
