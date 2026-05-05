@@ -5,7 +5,7 @@ const configured =
 
 if (configured) {
   webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL ?? "admin@wkpool2026.nl"}`,
+    `mailto:${process.env.VAPID_EMAIL ?? "admin@wesl.nl"}`,
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
   )
