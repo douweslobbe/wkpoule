@@ -5,14 +5,23 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth
   const { pathname } = req.nextUrl
 
-  const publicPaths = ["/login", "/register"]
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p))
+  // Altijd toegankelijk (ook zonder inlog)
+  const publicPaths = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+  ]
+  const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))
 
+  // Niet ingelogd en geen publieke route → naar login
   if (!isLoggedIn && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  if (isLoggedIn && isPublic) {
+  // Ingelogd en op login/register → naar dashboard
+  const isAuthOnly = ["/login", "/register"].some((p) => pathname.startsWith(p))
+  if (isLoggedIn && isAuthOnly) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
