@@ -22,8 +22,9 @@ model User {
   poolMessages      PoolMessage[]
   achievements      Achievement[]
   survivorEntry     SurvivorEntry?
-  pushSubscriptions PushSubscription[]
-  fantasyTeam       FantasyTeam?
+  pushSubscriptions   PushSubscription[]
+  fantasyTeam         FantasyTeam?
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
 }
@@ -233,6 +234,22 @@ model PoolMessage {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([poolId, createdAt])
+}
+
+// ─── Wachtwoord reset ─────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
 }
 
 // ─── Push notificaties ────────────────────────────────────────────────────────
