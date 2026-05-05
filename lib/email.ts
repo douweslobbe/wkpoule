@@ -1,25 +1,12 @@
-import nodemailer from "nodemailer"
+import { Resend } from "resend"
 
+const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM_ADDRESS = "WK Pool 2026 <notifications@wesl.nl>"
-
-function createTransport() {
-  return nodemailer.createTransport({
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false, // STARTTLS
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  })
-}
 
 // ─── Wachtwoord reset ─────────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
-  const transporter = createTransport()
-
-  await transporter.sendMail({
+  await resend.emails.send({
     from: FROM_ADDRESS,
     to,
     subject: "Wachtwoord resetten — WK Pool 2026",
@@ -95,9 +82,7 @@ export async function sendDeadlineReminderEmail(
   deadlineLabel: string,
   poolUrl: string,
 ) {
-  const transporter = createTransport()
-
-  await transporter.sendMail({
+  await resend.emails.send({
     from: FROM_ADDRESS,
     to,
     subject: `⏰ Deadline herinnering: ${poolName} — WK Pool 2026`,
