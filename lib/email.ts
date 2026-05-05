@@ -73,6 +73,91 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
   })
 }
 
+// ─── Wedstrijd reminder ───────────────────────────────────────────────────────
+
+export async function sendMatchReminderEmail(
+  to: string,
+  name: string,
+  homeTeam: string,
+  awayTeam: string,
+  kickoff: Date,
+  poolNames: string[],
+  dashboardUrl: string,
+) {
+  const kickoffStr = kickoff.toLocaleString("nl-NL", {
+    timeZone: "Europe/Amsterdam",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+
+  const poolList = poolNames.map((p) => `<li style="margin:4px 0;color:#d1d5db;">${p}</li>`).join("")
+
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to,
+    subject: `⏰ Vergeten! ${homeTeam} - ${awayTeam} begint over 2 uur`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0d1117;font-family:monospace;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#111827;border:2px solid #1f2937;max-width:520px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#FF6200;padding:20px 28px;border-bottom:3px solid #000;">
+            <p style="margin:0;color:#fff;font-size:13px;font-weight:bold;letter-spacing:2px;">⚽ WK POOL 2026</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 28px;">
+            <p style="margin:0 0 8px;color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Hallo ${name},</p>
+            <h1 style="margin:0 0 8px;color:#FFD700;font-size:20px;font-weight:bold;">⏰ Nog geen voorspelling!</h1>
+            <p style="margin:0 0 20px;color:#d1d5db;font-size:15px;font-weight:bold;">${homeTeam} vs ${awayTeam}</p>
+            <p style="margin:0 0 20px;color:#9ca3af;font-size:12px;">Aftrap: <strong style="color:#fff;">${kickoffStr}</strong></p>
+
+            <p style="margin:0 0 8px;color:#d1d5db;font-size:13px;">Je hebt nog geen voorspelling ingediend in:</p>
+            <ul style="margin:0 0 24px;padding-left:20px;font-size:13px;">${poolList}</ul>
+
+            <table cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+              <tr>
+                <td style="background:#FF6200;border:2px solid #000;">
+                  <a href="${dashboardUrl}" style="display:block;padding:14px 28px;color:#fff;text-decoration:none;font-size:12px;font-weight:bold;letter-spacing:1px;">
+                    VOORSPELLING INVULLEN ▶
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;color:#6b7280;font-size:11px;">Na de aftrap kun je niet meer wijzigen.</p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:16px 28px;border-top:2px solid #1f2937;">
+            <p style="margin:0;color:#374151;font-size:10px;">
+              WK Pool 2026 · <a href="https://wkpool2026.wesl.nl" style="color:#374151;">wkpool2026.wesl.nl</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `.trim(),
+  })
+}
+
 // ─── Deadline reminder ────────────────────────────────────────────────────────
 
 export async function sendDeadlineReminderEmail(

@@ -99,8 +99,9 @@ model Match {
   status       MatchStatus @default(SCHEDULED)
   kickoff      DateTime
   venue        String?
-  lastSyncedAt       DateTime?
-  notificationSentAt DateTime?
+  lastSyncedAt        DateTime?
+  notificationSentAt  DateTime?
+  reminderEmailSentAt DateTime?
 
   homeTeam      Team?               @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam      Team?               @relation("AwayTeam", fields: [awayTeamId], references: [id])
