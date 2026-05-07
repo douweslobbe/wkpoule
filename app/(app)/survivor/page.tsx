@@ -70,6 +70,31 @@ export default async function SurvivorPage() {
     return myEntry.picks.find((p) => p.round === activeRound && p.mode === mode)?.teamId ?? null
   }
 
+  // Matches voor tegenstander-lookup
+  const allMatchesForOpponent = await prisma.match.findMany({
+    select: {
+      stage: true, matchday: true, homeTeamId: true, awayTeamId: true,
+      homeTeam: { select: { id: true, nameNl: true, name: true, code: true, flagUrl: true } },
+      awayTeam: { select: { id: true, nameNl: true, name: true, code: true, flagUrl: true } },
+    },
+  })
+
+  function getOpponent(teamId: string, round: string) {
+    const stageMap: Record<string, { stage: string; matchday?: number }> = {
+      GROUP_1: { stage: "GROUP", matchday: 1 },
+      GROUP_2: { stage: "GROUP", matchday: 2 },
+      GROUP_3: { stage: "GROUP", matchday: 3 },
+    }
+    const { stage, matchday } = stageMap[round] ?? { stage: round }
+    const match = allMatchesForOpponent.find((m) => {
+      if (m.stage !== stage) return false
+      if (matchday && m.matchday !== matchday) return false
+      return m.homeTeamId === teamId || m.awayTeamId === teamId
+    })
+    if (!match) return null
+    return match.homeTeamId === teamId ? match.awayTeam : match.homeTeam
+  }
+
   // All entries for standings
   const allEntries = await prisma.survivorEntry.findMany({
     include: {
@@ -369,7 +394,7 @@ export default async function SurvivorPage() {
                   <div>
                     {hcPick ? (
                       <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap">
                           {hcPick.team.flagUrl && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={hcPick.team.flagUrl} alt="" width={16} height={11} style={{ objectFit: "cover" }} />
@@ -377,6 +402,21 @@ export default async function SurvivorPage() {
                           <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>
                             {hcPick.team.code}
                           </span>
+                          {(() => {
+                            const opp = getOpponent(hcPick.teamId, hcPick.round)
+                            return opp ? (
+                              <>
+                                <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>vs</span>
+                                {opp.flagUrl && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={opp.flagUrl} alt="" width={14} height={10} style={{ objectFit: "cover", opacity: 0.7 }} />
+                                )}
+                                <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
+                                  {opp.code}
+                                </span>
+                              </>
+                            ) : null
+                          })()}
                         </div>
                         {!deadlinePassed && (
                           <span className="font-pixel" style={{ fontSize: "5px", color: "#4af56a" }}>✓ gekozen</span>
@@ -398,7 +438,7 @@ export default async function SurvivorPage() {
                   <div>
                     {hsPick ? (
                       <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap">
                           {hsPick.team.flagUrl && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={hsPick.team.flagUrl} alt="" width={16} height={11} style={{ objectFit: "cover" }} />
@@ -406,6 +446,21 @@ export default async function SurvivorPage() {
                           <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>
                             {hsPick.team.code}
                           </span>
+                          {(() => {
+                            const opp = getOpponent(hsPick.teamId, hsPick.round)
+                            return opp ? (
+                              <>
+                                <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>vs</span>
+                                {opp.flagUrl && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={opp.flagUrl} alt="" width={14} height={10} style={{ objectFit: "cover", opacity: 0.7 }} />
+                                )}
+                                <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
+                                  {opp.code}
+                                </span>
+                              </>
+                            ) : null
+                          })()}
                         </div>
                         {!deadlinePassed && (
                           <span className="font-pixel" style={{ fontSize: "5px", color: "#4af56a" }}>✓ gekozen</span>
@@ -452,7 +507,7 @@ export default async function SurvivorPage() {
                   </span>
 
                   {/* HC */}
-                  <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: "90px" }}>
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap" style={{ minWidth: "90px" }}>
                     <span className="font-pixel" style={{ fontSize: "5px", color: "#ff4444" }}>HC</span>
                     {hcPick ? (
                       <>
@@ -463,6 +518,21 @@ export default async function SurvivorPage() {
                         <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>
                           {hcPick.team.code}
                         </span>
+                        {(() => {
+                          const opp = getOpponent(hcPick.teamId, hcPick.round)
+                          return opp ? (
+                            <>
+                              <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>vs</span>
+                              {opp.flagUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={opp.flagUrl} alt="" width={14} height={10} style={{ objectFit: "cover", opacity: 0.7 }} />
+                              )}
+                              <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
+                                {opp.code}
+                              </span>
+                            </>
+                          ) : null
+                        })()}
                         <span className="font-pixel" style={{ fontSize: "6px" }}>
                           {RESULT_ICONS[hcPick.result]}
                         </span>
@@ -473,7 +543,7 @@ export default async function SurvivorPage() {
                   </div>
 
                   {/* HS */}
-                  <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: "110px" }}>
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap" style={{ minWidth: "110px" }}>
                     <span className="font-pixel" style={{ fontSize: "5px", color: "#FFD700" }}>HS</span>
                     {hsPick ? (
                       <>
@@ -484,6 +554,21 @@ export default async function SurvivorPage() {
                         <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-2)" }}>
                           {hsPick.team.code}
                         </span>
+                        {(() => {
+                          const opp = getOpponent(hsPick.teamId, hsPick.round)
+                          return opp ? (
+                            <>
+                              <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>vs</span>
+                              {opp.flagUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={opp.flagUrl} alt="" width={14} height={10} style={{ objectFit: "cover", opacity: 0.7 }} />
+                              )}
+                              <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
+                                {opp.code}
+                              </span>
+                            </>
+                          ) : null
+                        })()}
                         <span className="font-pixel" style={{ fontSize: "6px" }}>
                           {RESULT_ICONS[hsPick.result]}
                         </span>
