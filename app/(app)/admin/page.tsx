@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { SyncButton } from "./SyncButton"
 import { RecalcButton } from "./RecalcButton"
 import { TriggerRemindersButton } from "./TriggerRemindersButton"
+import { TriggerRecapButton } from "./TriggerRecapButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
 import { HardDeletePoolButton } from "./HardDeletePoolButton"
 
@@ -98,6 +99,16 @@ export default async function AdminPage() {
               HANDMATIG REMINDERS VERSTUREN (wedstrijden over ~2 uur zonder voorspelling):
             </p>
             <TriggerRemindersButton />
+          </div>
+
+          <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
+            <p className="font-pixel mb-1" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              SPEELDAGOVERZICHT POSTEN OP PRIKBORD:
+            </p>
+            <p className="font-pixel mb-3" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+              Post een systeem-bericht per pool met uitslagen, punten, stand-verschuivingen en statistieken. Duplicaten worden overgeslagen.
+            </p>
+            <TriggerRecapButton />
           </div>
 
           {/* Stage debug */}

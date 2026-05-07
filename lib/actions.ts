@@ -727,28 +727,21 @@ export async function syncMatches() {
 
   await rebuildLeaderboards()
 
-  // Matchday recap: voor elke dag waarop wedstrijden zijn afgerond
+  // Matchday recap: voor elke dag waarop wedstrijden vandaag zijn afgerond
   if (updated > 0) {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+    const todayEnd = new Date(todayStart)
+    todayEnd.setDate(todayEnd.getDate() + 1)
+
     const finishedToday = await prisma.match.findMany({
-      where: { status: "FINISHED" },
+      where: { status: "FINISHED", kickoff: { gte: todayStart, lt: todayEnd } },
       select: { kickoff: true },
     })
-    const uniqueDays = new Set(finishedToday.map((m) => m.kickoff.toISOString().slice(0, 10)))
-    for (const day of uniqueDays) {
-      // Alleen recap posten als er voor deze dag nog geen recap is
-      const dayDate = new Date(day)
-      const dayStart = new Date(dayDate)
-      const dayEnd = new Date(dayStart)
-      dayEnd.setDate(dayEnd.getDate() + 1)
-      const existingRecap = await prisma.poolMessage.findFirst({
-        where: {
-          kind: "MATCHDAY_RECAP",
-          createdAt: { gte: dayStart, lt: dayEnd },
-        },
-      })
-      if (!existingRecap) {
-        await postMatchdayRecap(dayDate)
-      }
+    const uniqueDaysToday = new Set(finishedToday.map((m) => m.kickoff.toISOString().slice(0, 10)))
+    for (const day of uniqueDaysToday) {
+      await postMatchdayRecap(new Date(day + "T12:00:00Z"))
     }
   }
   // Push notificaties: stuur herinneringen voor wedstrijden die binnenkort beginnen
@@ -1056,7 +1049,6 @@ async function detectLeaderTakeover(poolId: string, prevLeaderId: string | null,
 }
 
 export async function postMatchdayRecap(date: Date) {
-  // Welke wedstrijden zijn op deze dag afgerond?
   const dayStart = new Date(date)
   dayStart.setHours(0, 0, 0, 0)
   const dayEnd = new Date(dayStart)
@@ -1064,42 +1056,161 @@ export async function postMatchdayRecap(date: Date) {
 
   const matches = await prisma.match.findMany({
     where: { status: "FINISHED", kickoff: { gte: dayStart, lt: dayEnd } },
-    include: { homeTeam: true, awayTeam: true, predictions: true },
+    include: { homeTeam: true, awayTeam: true },
+    orderBy: { kickoff: "asc" },
   })
   if (matches.length === 0) return
 
   const matchIds = matches.map((m) => m.id)
+  const dayLabel = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })
+
+  const matchLines = matches.map(
+    (m) =>
+      `${m.homeTeam?.nameNl ?? m.homeTeam?.name ?? "?"} ${m.homeScore}–${m.awayScore} ${m.awayTeam?.nameNl ?? m.awayTeam?.name ?? "?"}`
+  )
+
   const pools = await prisma.pool.findMany({ include: { memberships: true } })
 
   for (const pool of pools) {
-    const memberIds = pool.memberships.map((m) => m.userId)
-
-    // Punten per speler op deze dag (alleen voor deze pool)
-    const dayPredictions = await prisma.prediction.findMany({
-      where: { userId: { in: memberIds }, poolId: pool.id, matchId: { in: matchIds }, pointsAwarded: { not: null } },
+    // Per-pool duplicate check
+    const existingRecap = await prisma.poolMessage.findFirst({
+      where: { poolId: pool.id, kind: "MATCHDAY_RECAP", createdAt: { gte: dayStart, lt: dayEnd } },
     })
+    if (existingRecap) continue
+
+    const memberIds = pool.memberships.map((m) => m.userId)
+    if (memberIds.length === 0) continue
+
+    // Voorspellingen voor deze speeldag
+    const dayPredictions = await prisma.prediction.findMany({
+      where: {
+        userId: { in: memberIds },
+        poolId: pool.id,
+        matchId: { in: matchIds },
+        pointsAwarded: { not: null },
+      },
+      include: { match: { select: { homeScore: true, awayScore: true } } },
+    })
+    if (dayPredictions.length === 0) continue
+
+    // Punten, exacte scores en joker-hits per speler
     const pointsByUser = new Map<string, number>()
+    const exactByUser = new Map<string, number>()
+    const jokerHitByUser = new Map<string, boolean>()
+
     for (const p of dayPredictions) {
       pointsByUser.set(p.userId, (pointsByUser.get(p.userId) ?? 0) + (p.pointsAwarded ?? 0))
+      const isExact = p.homeScore === p.match.homeScore && p.awayScore === p.match.awayScore
+      if (isExact) exactByUser.set(p.userId, (exactByUser.get(p.userId) ?? 0) + 1)
+      if (p.isJoker && (p.pointsAwarded ?? 0) > 0) jokerHitByUser.set(p.userId, true)
     }
     if (pointsByUser.size === 0) continue
 
     const ranked = [...pointsByUser.entries()].sort((a, b) => b[1] - a[1])
-    const topUserId = ranked[0][0]
-    const topPoints = ranked[0][1]
-    const topUser = await prisma.user.findUnique({ where: { id: topUserId }, select: { name: true } })
 
-    const dayLabel = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })
-    const matchSummary = matches
-      .map((m) => `${m.homeTeam?.nameNl ?? "?"} ${m.homeScore}-${m.awayScore} ${m.awayTeam?.nameNl ?? "?"}`)
-      .join(" · ")
+    // Leaderboard voor ranglijst-verschuivingen
+    const leaderboard = await prisma.leaderboardEntry.findMany({
+      where: { poolId: pool.id },
+      orderBy: { totalPoints: "desc" },
+    })
+    const prevLeaderboard = [...leaderboard]
+      .filter((e) => e.previousTotalPoints !== null)
+      .sort((a, b) => (b.previousTotalPoints ?? 0) - (a.previousTotalPoints ?? 0))
+    const currentRankMap = new Map(leaderboard.map((e, i) => [e.userId, i + 1]))
+    const prevRankMap = new Map(prevLeaderboard.map((e, i) => [e.userId, i + 1]))
 
-    await postSystemMessage(
-      pool.id,
-      `📊 Dagoverzicht ${dayLabel}\n${matchSummary}\n\n🏆 Topscorer van de dag: ${topUser?.name ?? "?"} met ${topPoints} punten`,
-      "MATCHDAY_RECAP"
-    )
+    // Gebruikersnamen
+    const users = await prisma.user.findMany({
+      where: { id: { in: memberIds } },
+      select: { id: true, name: true },
+    })
+    const nameMap = new Map(users.map((u) => [u.id, u.name]))
+
+    // Bericht opbouwen
+    const lines: string[] = []
+    lines.push(`📊 SPEELDAGOVERZICHT — ${dayLabel.toUpperCase()}`)
+    lines.push("")
+    lines.push(`⚽ UITSLAGEN (${matches.length} ${matches.length === 1 ? "wedstrijd" : "wedstrijden"}):`)
+    for (const l of matchLines) lines.push(`  ${l}`)
+
+    // Punten vandaag
+    lines.push("")
+    lines.push("🏅 PUNTEN VANDAAG:")
+    for (let i = 0; i < ranked.length; i++) {
+      const [uid, pts] = ranked[i]
+      const name = nameMap.get(uid) ?? "?"
+      const exacts = exactByUser.get(uid) ?? 0
+      const joker = jokerHitByUser.get(uid) ? " 🃏" : ""
+      const exactStr = exacts > 0 ? ` (${exacts}× 🎯)` : ""
+      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
+      lines.push(`  ${medal} ${name}  +${pts} pts${exactStr}${joker}`)
+    }
+
+    // Ranglijst-verschuivingen
+    const changes = leaderboard
+      .map((e, i) => {
+        const prevRank = prevRankMap.get(e.userId)
+        const currRank = i + 1
+        if (prevRank === undefined || prevRank === currRank) return null
+        return { userId: e.userId, change: prevRank - currRank, currRank }
+      })
+      .filter((c): c is { userId: string; change: number; currRank: number } => c !== null)
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+
+    lines.push("")
+    lines.push("📈 STAND NA VANDAAG:")
+    if (changes.length > 0) {
+      // Toon veranderingen (max 6) + stabiele top als aanvulling
+      const shown = new Set<string>()
+      for (const c of changes.slice(0, 6)) {
+        const name = nameMap.get(c.userId) ?? "?"
+        const totalPts = leaderboard.find((e) => e.userId === c.userId)?.totalPoints ?? 0
+        const arrow = c.change > 0 ? `↑${c.change}` : `↓${Math.abs(c.change)}`
+        lines.push(`  ${arrow} #${c.currRank} ${name}  ${totalPts} pts`)
+        shown.add(c.userId)
+      }
+      // Vul aan met stabiele top-3 die nog niet getoond zijn
+      for (const e of leaderboard.slice(0, 3)) {
+        if (shown.has(e.userId)) continue
+        const name = nameMap.get(e.userId) ?? "?"
+        const rank = currentRankMap.get(e.userId) ?? 0
+        lines.push(`  = #${rank} ${name}  ${e.totalPoints} pts`)
+      }
+    } else {
+      // Geen veranderingen: toon gewoon de volledige stand
+      for (const e of leaderboard) {
+        const name = nameMap.get(e.userId) ?? "?"
+        const rank = currentRankMap.get(e.userId) ?? 0
+        const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`
+        lines.push(`  ${medal} ${name}  ${e.totalPoints} pts`)
+      }
+    }
+
+    await postSystemMessage(pool.id, lines.join("\n"), "MATCHDAY_RECAP")
   }
+}
+
+export async function triggerManualRecap() {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  // Zoek alle datums in de afgelopen 14 dagen met FINISHED wedstrijden
+  const since = new Date()
+  since.setDate(since.getDate() - 14)
+
+  const finishedMatches = await prisma.match.findMany({
+    where: { status: "FINISHED", kickoff: { gte: since } },
+    select: { kickoff: true },
+    orderBy: { kickoff: "asc" },
+  })
+
+  const uniqueDays = [...new Set(finishedMatches.map((m) => m.kickoff.toISOString().slice(0, 10)))]
+  for (const day of uniqueDays) {
+    await postMatchdayRecap(new Date(day + "T12:00:00Z"))
+  }
+
+  revalidatePath("/admin")
+  return { ok: true, days: uniqueDays.length }
 }
 
 async function rebuildLeaderboards() {
