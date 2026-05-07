@@ -73,6 +73,87 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
   })
 }
 
+// ─── Welkomstmail ─────────────────────────────────────────────────────────────
+
+export async function sendWelcomeEmail(to: string, name: string) {
+  const baseUrl = process.env.NEXTAUTH_URL ?? "https://wkpool2026.wesl.nl"
+
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to,
+    subject: "Welkom bij WK Pool 2026! ⚽",
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0d1117;font-family:monospace;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#111827;border:2px solid #1f2937;max-width:520px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#FF6200;padding:20px 28px;border-bottom:3px solid #000;">
+            <p style="margin:0;color:#fff;font-size:13px;font-weight:bold;letter-spacing:2px;">⚽ WK POOL 2026</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 28px;">
+            <p style="margin:0 0 8px;color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Hallo ${name}!</p>
+            <h1 style="margin:0 0 16px;color:#FFD700;font-size:20px;font-weight:bold;">Welkom bij het WK 2026 🎉</h1>
+            <p style="margin:0 0 20px;color:#d1d5db;font-size:13px;line-height:1.8;">
+              Je account is aangemaakt. Doe mee met een pool, voorspel wedstrijden en versla al je vrienden!
+            </p>
+
+            <table cellpadding="0" cellspacing="0" style="margin:0 0 8px;width:100%;">
+              <tr><td style="padding:6px 0;border-bottom:1px solid #1f2937;">
+                <span style="color:#9ca3af;font-size:11px;">⚽ Poule</span>
+                <span style="float:right;color:#d1d5db;font-size:11px;">Voorspel uitslagen &amp; win punten</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-bottom:1px solid #1f2937;">
+                <span style="color:#9ca3af;font-size:11px;">⚔ Survivor</span>
+                <span style="float:right;color:#d1d5db;font-size:11px;">Overleefd alle rondes?</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;">
+                <span style="color:#9ca3af;font-size:11px;">🎮 WK Manager</span>
+                <span style="float:right;color:#d1d5db;font-size:11px;">Stel je fantasy-elftal samen</span>
+              </td></tr>
+            </table>
+
+            <br/>
+
+            <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+              <tr>
+                <td style="background:#FF6200;border:2px solid #000;">
+                  <a href="${baseUrl}/dashboard" style="display:block;padding:14px 28px;color:#fff;text-decoration:none;font-size:12px;font-weight:bold;letter-spacing:1px;">
+                    NAAR HET DASHBOARD ▶
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:16px 28px;border-top:2px solid #1f2937;">
+            <p style="margin:0;color:#374151;font-size:10px;">
+              WK Pool 2026 · <a href="https://wkpool2026.wesl.nl" style="color:#374151;">wkpool2026.wesl.nl</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `.trim(),
+  })
+}
+
 // ─── Wedstrijd reminder ───────────────────────────────────────────────────────
 
 export async function sendMatchReminderEmail(

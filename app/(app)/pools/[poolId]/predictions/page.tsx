@@ -6,6 +6,7 @@ import { MatchStage } from "@prisma/client"
 import { JOKER_QUOTA, jokersAllowedInStage } from "@/lib/jokers"
 import { UserBadges } from "@/components/UserBadges"
 import { CompactMatchRow } from "@/components/CompactMatchRow"
+import { DeadlineCountdown } from "@/components/DeadlineCountdown"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Voorspellingen — WK Pool 2026" }
@@ -186,6 +187,19 @@ export default async function PoolPredictionsPage({
           </Link>
         ))}
       </div>
+
+      {/* Deadline countdown — alleen voor eigen picks */}
+      {viewUserId === session.user.id && (
+        <DeadlineCountdown
+          matches={matches.map((m) => ({
+            id: m.id,
+            homeTeam: m.homeTeam?.nameNl ?? m.homeTeam?.name ?? "?",
+            awayTeam: m.awayTeam?.nameNl ?? m.awayTeam?.name ?? "?",
+            kickoff: m.kickoff.toISOString(),
+            hasPrediction: myPredMap.has(m.id),
+          }))}
+        />
+      )}
 
       {/* Joker-quota banner */}
       {viewUserId === session.user.id && jokerAllowedHere && totalMatches > 0 && (

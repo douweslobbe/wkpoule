@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { SyncButton } from "./SyncButton"
 import { RecalcButton } from "./RecalcButton"
+import { TriggerRemindersButton } from "./TriggerRemindersButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
 import { HardDeletePoolButton } from "./HardDeletePoolButton"
 
@@ -91,6 +92,13 @@ export default async function AdminPage() {
             Sync haalt teams en wedstrijden op van football-data.org (cooldown 60s).
             Herberekening herberekent alle punten op basis van bekende uitslagen.
           </p>
+
+          <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
+            <p className="font-pixel mb-3" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              HANDMATIG REMINDERS VERSTUREN (wedstrijden over ~2 uur zonder voorspelling):
+            </p>
+            <TriggerRemindersButton />
+          </div>
 
           {/* Stage debug */}
           <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
