@@ -37,12 +37,6 @@ model Pool {
   createdAt   DateTime @default(now())
   createdById String
 
-  // Max bonusvragen per pool (instelbaar door admin)
-  maxQuestionsTotal Int @default(25)
-  maxQuestionsOpen  Int @default(10)
-  maxQuestionsEst   Int @default(5)
-  maxQuestionsStmt  Int @default(10)
-
   memberships    PoolMembership[]
   bonusQuestions BonusQuestion[]
   championPicks  ChampionPick[]

@@ -435,29 +435,6 @@ export async function addBonusQuestion(formData: FormData) {
 
   if (!question) return { error: "Vul een vraag in" }
 
-  // Controleer limieten
-  const pool = await prisma.pool.findUnique({ where: { id: poolId }, select: { maxQuestionsTotal: true, maxQuestionsOpen: true, maxQuestionsEst: true, maxQuestionsStmt: true } })
-  if (pool) {
-    const counts = await prisma.bonusQuestion.groupBy({
-      by: ["type"],
-      where: { poolId },
-      _count: { id: true },
-    })
-    const countByType = new Map(counts.map((c) => [c.type, c._count.id]))
-    const totalCount = counts.reduce((s, c) => s + c._count.id, 0)
-
-    if (totalCount >= pool.maxQuestionsTotal) {
-      return { error: `Maximum aantal vragen bereikt (${pool.maxQuestionsTotal})` }
-    }
-
-    const typeLimit = type === "OPEN" ? pool.maxQuestionsOpen : type === "ESTIMATION" ? pool.maxQuestionsEst : pool.maxQuestionsStmt
-    const typeCount = countByType.get(type) ?? 0
-    if (typeCount >= typeLimit) {
-      const typeLabel = type === "OPEN" ? "openvragen" : type === "ESTIMATION" ? "benaderingsvragen" : "stellingen"
-      return { error: `Maximum aantal ${typeLabel} bereikt (${typeLimit})` }
-    }
-  }
-
   const last = await prisma.bonusQuestion.findFirst({
     where: { poolId },
     orderBy: { orderIndex: "desc" },
@@ -482,6 +459,8 @@ export async function addBonusQuestion(formData: FormData) {
   revalidatePath(`/pools/${poolId}/bonus`)
   return { success: true }
 }
+
+
 
 // ─── Admin: bonusvraag verwijderen (tot toernooideadline) ────────────────────
 
@@ -540,35 +519,7 @@ export async function addQuestionsFromLibrary(
   })
   if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
 
-  // Controleer limieten: filter vragen die nog binnen de limiet passen
-  const pool = await prisma.pool.findUnique({
-    where: { id: poolId },
-    select: { maxQuestionsTotal: true, maxQuestionsOpen: true, maxQuestionsEst: true, maxQuestionsStmt: true },
-  })
-  let allowedQuestions = questions
-  if (pool) {
-    const counts = await prisma.bonusQuestion.groupBy({
-      by: ["type"],
-      where: { poolId },
-      _count: { id: true },
-    })
-    const countByType = new Map(counts.map((c) => [c.type, c._count.id]))
-    const totalCount = counts.reduce((s, c) => s + c._count.id, 0)
-    let remaining = pool.maxQuestionsTotal - totalCount
-    allowedQuestions = []
-    for (const q of questions) {
-      if (remaining <= 0) break
-      const typeLimit = q.type === "OPEN" ? pool.maxQuestionsOpen : q.type === "ESTIMATION" ? pool.maxQuestionsEst : pool.maxQuestionsStmt
-      const typeCount = countByType.get(q.type) ?? 0
-      if (typeCount < typeLimit) {
-        allowedQuestions.push(q)
-        countByType.set(q.type, typeCount + 1)
-        remaining--
-      }
-    }
-  }
-
-  if (allowedQuestions.length === 0) return { success: true, skipped: questions.length }
+  if (questions.length === 0) return { success: true }
 
   const last = await prisma.bonusQuestion.findFirst({
     where: { poolId },
@@ -577,7 +528,7 @@ export async function addQuestionsFromLibrary(
   let nextIndex = (last?.orderIndex ?? 0) + 1
 
   await prisma.bonusQuestion.createMany({
-    data: allowedQuestions.map((q, i) => ({
+    data: questions.map((q, i) => ({
       poolId,
       type: q.type,
       category: q.category,
@@ -611,40 +562,6 @@ export async function updatePoolDescription(formData: FormData) {
   await prisma.pool.update({ where: { id: poolId }, data: { description } })
   revalidatePath(`/pools/${poolId}`)
   revalidatePath(`/admin/pools/${poolId}/bonus`)
-  return { success: true }
-}
-
-// ─── Admin: bonusvragen limiet instellen ──────────────────────────────────────
-
-export async function updatePoolQuestionLimits(formData: FormData) {
-  const session = await auth()
-  if (!session?.user) return { error: "Niet ingelogd" }
-
-  const poolId = formData.get("poolId") as string
-  const membership = await prisma.poolMembership.findUnique({
-    where: { userId_poolId: { userId: session.user.id, poolId } },
-  })
-  if (!membership || membership.role !== "ADMIN") return { error: "Geen toegang" }
-
-  const total = parseInt(formData.get("maxQuestionsTotal") as string, 10)
-  const open  = parseInt(formData.get("maxQuestionsOpen") as string, 10)
-  const est   = parseInt(formData.get("maxQuestionsEst") as string, 10)
-  const stmt  = parseInt(formData.get("maxQuestionsStmt") as string, 10)
-
-  if ([total, open, est, stmt].some(isNaN) || total < 0 || open < 0 || est < 0 || stmt < 0) {
-    return { error: "Ongeldige waarden" }
-  }
-  if (open + est + stmt > total) {
-    return { error: "Som van de typen mag het totaal niet overschrijden" }
-  }
-
-  await prisma.pool.update({
-    where: { id: poolId },
-    data: { maxQuestionsTotal: total, maxQuestionsOpen: open, maxQuestionsEst: est, maxQuestionsStmt: stmt },
-  })
-
-  revalidatePath(`/admin/pools/${poolId}/bonus`)
-  revalidatePath(`/pools/${poolId}/bonus`)
   return { success: true }
 }
 
