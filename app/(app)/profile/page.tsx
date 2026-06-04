@@ -16,7 +16,8 @@ export default async function ProfilePage() {
   if (!session?.user) redirect("/login")
 
   // Voorlopige cijfers — voorproefje van wat hier ooit komt
-  const [memberships, allAchievements, jokerCount, totalPredictions, exactCount] = await Promise.all([
+  const [dbUser, memberships, allAchievements, jokerCount, totalPredictions, exactCount] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true } }),
     prisma.poolMembership.findMany({
       where: { userId: session.user.id },
       include: { pool: { select: { id: true, name: true } } },
@@ -35,6 +36,10 @@ export default async function ProfilePage() {
   // Unieke achievement types (cross-pool)
   const uniqueAchievementTypes = Array.from(new Set(allAchievements.map((a) => a.type)))
   const previewAchievements = uniqueAchievementTypes.map((type) => ({ type }))
+
+  // Naam/e-mail uit de DB (vers na een naamswijziging — de sessie-token loopt achter)
+  const displayName = dbUser?.name ?? session.user.name ?? ""
+  const displayEmail = dbUser?.email ?? session.user.email ?? ""
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -59,14 +64,14 @@ export default async function ProfilePage() {
             fontSize: "20px",
           }}
         >
-          {session.user.name?.charAt(0).toUpperCase() ?? "?"}
+          {displayName.charAt(0).toUpperCase() || "?"}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-pixel" style={{ fontSize: "11px", color: "var(--c-text)", lineHeight: "1.6" }}>
-            {session.user.name?.toUpperCase()}
+            {displayName.toUpperCase()}
           </div>
           <div className="font-pixel mt-1" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
-            {session.user.email}
+            {displayEmail}
           </div>
           <div className="mt-2">
             <UserBadges achievements={previewAchievements} jokerCount={jokerCount} size="md" max={10} />
@@ -85,7 +90,7 @@ export default async function ProfilePage() {
             <h3 className="font-pixel mb-4" style={{ fontSize: "8px", color: "var(--c-text-2)" }}>
               👤 NAAM WIJZIGEN
             </h3>
-            <UpdateNameForm currentName={session.user.name ?? ""} />
+            <UpdateNameForm currentName={displayName} />
           </div>
           {/* Wachtwoord */}
           <div className="p-5">

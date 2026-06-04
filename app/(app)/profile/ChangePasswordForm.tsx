@@ -21,7 +21,8 @@ export function ChangePasswordForm() {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget // vastleggen: in de async callback is e.currentTarget null
+    const formData = new FormData(form)
     setError(null)
     setSuccess(false)
     startTransition(async () => {
@@ -29,7 +30,7 @@ export function ChangePasswordForm() {
       if ("error" in res) setError(res.error ?? null)
       else {
         setSuccess(true)
-        e.currentTarget?.reset()
+        form.reset()
       }
     })
   }

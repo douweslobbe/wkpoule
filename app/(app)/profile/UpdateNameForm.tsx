@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition, useState } from "react"
+import { useRouter } from "next/navigation"
 import { updateName } from "@/lib/actions"
 
 const inputStyle = {
@@ -15,6 +16,7 @@ const inputStyle = {
 }
 
 export function UpdateNameForm({ currentName }: { currentName: string }) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -25,7 +27,10 @@ export function UpdateNameForm({ currentName }: { currentName: string }) {
     startTransition(async () => {
       const res = await updateName(formData)
       if ("error" in res) setError(res.error ?? null)
-      else setSuccess(true)
+      else {
+        setSuccess(true)
+        router.refresh()
+      }
     })
   }
 
@@ -63,7 +68,7 @@ export function UpdateNameForm({ currentName }: { currentName: string }) {
         {isPending ? "OPSLAAN..." : "NAAM OPSLAAN"}
       </button>
       {error && <p className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>⚠ {error}</p>}
-      {success && <p className="font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>✓ Naam bijgewerkt! Herlaad de pagina om het te zien.</p>}
+      {success && <p className="font-pixel" style={{ fontSize: "6px", color: "#4af56a" }}>✓ Naam bijgewerkt! In de menubalk verschijnt &apos;ie na je volgende login.</p>}
     </form>
   )
 }
