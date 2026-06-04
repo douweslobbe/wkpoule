@@ -137,10 +137,10 @@ export default async function SurvivorPage() {
           </div>
           <div className="p-5 space-y-3">
             <p className="font-pixel" style={{ fontSize: "8px", color: "var(--c-text-2)", lineHeight: "2" }}>
-              Elke speelronde kies je één team. Wint dat team? Dan overleef je. Verliest of gelijkspelen?{" "}
-              <span style={{ color: "#ff4444" }}>Dan val je af (HARDCORE)</span> of verlies je punten{" "}
-              <span style={{ color: "#FFD700" }}>(HIGHSCORE)</span>.
-              Elk team mag je maar één keer per cyclus inzetten.
+              Elke speelronde kies je één team. Je speelt twee modi tegelijk:{" "}
+              <span style={{ color: "#ff4444" }}>HARDCORE</span> — overleef zolang je team blijft
+              doorkomen — en <span style={{ color: "#FFD700" }}>HIGHSCORE</span> — verzamel doelsaldo.
+              Elk team mag je per cyclus maar één keer inzetten, dus kies slim en plan vooruit.
             </p>
             <div className="flex gap-4 flex-wrap">
               <div className="flex-1 min-w-[140px] p-3" style={{ background: "#1a0000", border: "2px solid #660000" }}>
