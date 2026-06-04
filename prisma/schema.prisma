@@ -90,6 +90,7 @@ model Match {
   awayTeamId   String?
   homeScore    Int?
   awayScore    Int?
+  winner       String?     // HOME_TEAM | AWAY_TEAM | DRAW (incl. beslissing op strafschoppen)
   status       MatchStatus @default(SCHEDULED)
   kickoff      DateTime
   venue        String?

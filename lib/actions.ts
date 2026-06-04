@@ -567,10 +567,26 @@ export async function updatePoolDescription(formData: FormData) {
 
 // ─── Admin: sync wedstrijden ──────────────────────────────────────────────────
 
-export async function syncMatches() {
-  const session = await auth()
-  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+type SyncResult = { ok: boolean; error?: string; synced: number; updated: number }
 
+export async function syncMatches(): Promise<SyncResult> {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { ok: false, error: "Geen toegang", synced: 0, updated: 0 }
+  return runMatchSync()
+}
+
+// Beveiligde ingang voor de geautomatiseerde cron-job (zonder sessie).
+// Vereist het CRON_SECRET; zonder geldig secret nooit uit te voeren.
+export async function syncMatchesViaCron(secret: string): Promise<SyncResult> {
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return { ok: false, error: "Unauthorized", synced: 0, updated: 0 }
+  }
+  return runMatchSync()
+}
+
+// Kernlogica van de synchronisatie. Privé (dus géén server action) en
+// gedeeld door zowel de admin-knop als de cron-job.
+async function runMatchSync(): Promise<SyncResult> {
   const { fetchMatches, fetchTeams, mapStage, mapStatus } = await import("./football-data")
 
   // Sync teams
@@ -616,6 +632,7 @@ export async function syncMatches() {
         awayTeamId: awayTeam?.id ?? null,
         homeScore: m.score.fullTime.home,
         awayScore: m.score.fullTime.away,
+        winner: m.score.winner ?? null,
         status,
         kickoff: new Date(m.utcDate),
         venue: m.venue,
@@ -628,6 +645,7 @@ export async function syncMatches() {
         awayTeamId: awayTeam?.id ?? null,
         homeScore: m.score.fullTime.home,
         awayScore: m.score.fullTime.away,
+        winner: m.score.winner ?? null,
         status,
         kickoff: new Date(m.utcDate),
         venue: m.venue,
@@ -666,7 +684,7 @@ export async function syncMatches() {
 
   revalidatePath("/admin")
 
-  return { success: true, synced, updated }
+  return { ok: true, synced, updated }
 }
 
 // ─── Puntentelling ───────────────────────────────────────────────────────────
@@ -713,6 +731,7 @@ async function scoreSurvivorPicksForMatch(match: {
   awayTeamId: string | null
   homeScore: number | null
   awayScore: number | null
+  winner: string | null
   stage: string
   matchday: number | null
 }) {
@@ -736,15 +755,19 @@ async function scoreSurvivorPicksForMatch(match: {
     const oppGoals = isHome ? match.awayScore! : match.homeScore!
     const goalDiff = teamGoals - oppGoals
 
-    // Group stage: must WIN. Knockout: draw = survived (goes to extra time / penalties).
-    const result =
-      match.stage === "GROUP"
-        ? goalDiff > 0
-          ? "SURVIVED"
-          : "ELIMINATED"
-        : goalDiff >= 0
-        ? "SURVIVED"
-        : "ELIMINATED"
+    // Groepsfase: je moet WINNEN. Knock-out: de doorgaande ploeg overleeft —
+    // ook na strafschoppen. We gebruiken match.winner (incl. penalty's) en
+    // vallen alleen terug op het doelsaldo als de winnaar (nog) onbekend is.
+    let result: "SURVIVED" | "ELIMINATED"
+    if (match.stage === "GROUP") {
+      result = goalDiff > 0 ? "SURVIVED" : "ELIMINATED"
+    } else if (match.winner === "HOME_TEAM" || match.winner === "AWAY_TEAM") {
+      const teamWon = match.winner === (isHome ? "HOME_TEAM" : "AWAY_TEAM")
+      result = teamWon ? "SURVIVED" : "ELIMINATED"
+    } else {
+      // Winnaar onbekend → gelijkspel telt (voorlopig) als overleefd
+      result = goalDiff >= 0 ? "SURVIVED" : "ELIMINATED"
+    }
 
     await prisma.survivorPick.update({
       where: { id: pick.id },
@@ -837,11 +860,16 @@ export async function recalcAllScores() {
     await recalcBonusQuestion(q.id)
   }
 
-  // Champion picks
+  // Champion picks — gebruik match.winner zodat een finale op strafschoppen
+  // (gelijkspel na verlenging) ook een kampioen oplevert.
   const finalMatch = await prisma.match.findFirst({ where: { stage: "FINAL", status: "FINISHED" } })
   if (finalMatch && finalMatch.homeScore !== null && finalMatch.awayScore !== null) {
     const winnerId =
-      finalMatch.homeScore > finalMatch.awayScore
+      finalMatch.winner === "HOME_TEAM"
+        ? finalMatch.homeTeamId
+        : finalMatch.winner === "AWAY_TEAM"
+        ? finalMatch.awayTeamId
+        : finalMatch.homeScore > finalMatch.awayScore
         ? finalMatch.homeTeamId
         : finalMatch.awayScore > finalMatch.homeScore
         ? finalMatch.awayTeamId

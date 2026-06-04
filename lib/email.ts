@@ -154,32 +154,63 @@ export async function sendWelcomeEmail(to: string, name: string) {
   })
 }
 
-// ─── Wedstrijd reminder ───────────────────────────────────────────────────────
+// ─── Wedstrijd reminder (digest) ──────────────────────────────────────────────
 
-export async function sendMatchReminderEmail(
-  to: string,
-  name: string,
-  homeTeam: string,
-  awayTeam: string,
-  kickoff: Date,
-  poolNames: string[],
-  dashboardUrl: string,
-) {
-  const kickoffStr = kickoff.toLocaleString("nl-NL", {
+export type ReminderMatch = {
+  homeTeam: string
+  awayTeam: string
+  kickoff: Date
+  poolNames: string[]
+}
+
+function fmtKickoff(d: Date) {
+  return d.toLocaleString("nl-NL", {
     timeZone: "Europe/Amsterdam",
-    weekday: "long",
+    weekday: "short",
     day: "numeric",
-    month: "long",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   })
+}
 
-  const poolList = poolNames.map((p) => `<li style="margin:4px 0;color:#d1d5db;">${p}</li>`).join("")
+/**
+ * Eén digest-mail per gebruiker met álle wedstrijden in het venster waarvoor
+ * nog geen voorspelling is ingevuld. Bespaart fors op het aantal verzonden
+ * mails (Resend-quota) t.o.v. één mail per wedstrijd.
+ */
+export async function sendMatchRemindersDigestEmail(
+  to: string,
+  name: string,
+  matches: ReminderMatch[],
+  dashboardUrl: string,
+) {
+  if (matches.length === 0) return
+
+  const rows = matches
+    .map(
+      (m) => `
+      <tr><td style="padding:10px 0;border-bottom:1px solid #1f2937;">
+        <p style="margin:0;color:#fff;font-size:14px;font-weight:bold;">${m.homeTeam} vs ${m.awayTeam}</p>
+        <p style="margin:4px 0 0;color:#9ca3af;font-size:11px;">Aftrap: <strong style="color:#d1d5db;">${fmtKickoff(m.kickoff)}</strong></p>
+        <p style="margin:2px 0 0;color:#6b7280;font-size:11px;">Mist in: ${m.poolNames.join(", ")}</p>
+      </td></tr>`,
+    )
+    .join("")
+
+  const count = matches.length
+  const subject =
+    count === 1
+      ? `⏰ Vergeten! ${matches[0].homeTeam} - ${matches[0].awayTeam} begint binnenkort`
+      : `⏰ ${count} wedstrijden zonder voorspelling beginnen binnenkort`
+
+  const heading =
+    count === 1 ? "⏰ Nog geen voorspelling!" : `⏰ ${count} wedstrijden zonder voorspelling`
 
   await resend.emails.send({
     from: FROM_ADDRESS,
     to,
-    subject: `⏰ Vergeten! ${homeTeam} - ${awayTeam} begint over 2 uur`,
+    subject,
     html: `
 <!DOCTYPE html>
 <html>
@@ -200,18 +231,15 @@ export async function sendMatchReminderEmail(
         <tr>
           <td style="padding:32px 28px;">
             <p style="margin:0 0 8px;color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Hallo ${name},</p>
-            <h1 style="margin:0 0 8px;color:#FFD700;font-size:20px;font-weight:bold;">⏰ Nog geen voorspelling!</h1>
-            <p style="margin:0 0 20px;color:#d1d5db;font-size:15px;font-weight:bold;">${homeTeam} vs ${awayTeam}</p>
-            <p style="margin:0 0 20px;color:#9ca3af;font-size:12px;">Aftrap: <strong style="color:#fff;">${kickoffStr}</strong></p>
+            <h1 style="margin:0 0 16px;color:#FFD700;font-size:20px;font-weight:bold;">${heading}</h1>
 
-            <p style="margin:0 0 8px;color:#d1d5db;font-size:13px;">Je hebt nog geen voorspelling ingediend in:</p>
-            <ul style="margin:0 0 24px;padding-left:20px;font-size:13px;">${poolList}</ul>
+            <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;">${rows}</table>
 
             <table cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
               <tr>
                 <td style="background:#FF6200;border:2px solid #000;">
                   <a href="${dashboardUrl}" style="display:block;padding:14px 28px;color:#fff;text-decoration:none;font-size:12px;font-weight:bold;letter-spacing:1px;">
-                    VOORSPELLING INVULLEN ▶
+                    VOORSPELLINGEN INVULLEN ▶
                   </a>
                 </td>
               </tr>
