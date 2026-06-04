@@ -173,22 +173,27 @@ export default function FaqPage() {
             Elke speelronde kies je een land. De keuze wordt beoordeeld op basis van het resultaat
             van dat land in die ronde:
           </p>
-          <H>HARDCORE</H>
-          <Row label="Land wint al zijn wedstrijden"         value="✓ Overleefd" />
-          <Row label="Land verliest of speelt gelijk"         value="💀 Uitgeschakeld" />
+          <H>HARDCORE — OVERLEEF OF VAL AF</H>
+          <Row label="Groepsfase: land wint"        value="✓ Overleefd" />
+          <Row label="Groepsfase: gelijk of verlies" value="💀 Uitgeschakeld" />
+          <Row label="Knock-out: land gaat door"    value="✓ Overleefd" />
+          <Row label="Knock-out: land ligt eruit"   value="💀 Uitgeschakeld" />
           <p>
-            Je mag elk land <span style={{ color: "#FFD700" }}>maar één keer</span> kiezen tijdens
-            het hele toernooi. Plan vooruit!
+            In de groepsfase moet je land <span style={{ color: "#FFD700" }}>winnen</span>; in de
+            knock-out telt of je land <span style={{ color: "#FFD700" }}>doorgaat</span> — ook een
+            zege na verlenging of strafschoppen overleeft. Eén foute pick en je bent uit. Elk land
+            mag je <span style={{ color: "#FFD700" }}>maar één keer</span> kiezen. Plan vooruit!
           </p>
 
-          <H>HIGHSCORE</H>
-          <Row label="Land wint"          value="Punten × ronde-multiplier" />
-          <Row label="Gelijkspel"         value="Helft van de punten" />
-          <Row label="Verlies"            value="0 punten" />
+          <H>HIGHSCORE — VERZAMEL DOELSALDO</H>
+          <Row label="Land wint 3–0"      value="+3 punten" />
+          <Row label="Gelijkspel"         value="0 punten" />
+          <Row label="Land verliest 1–2"  value="−1 punt" />
           <p>
-            De multiplier loopt op per ronde — een goede keuze in de finale is meer waard dan in de
-            groepsfase. Je hebt één keer een <span style={{ color: "#FFD700" }}>reset</span> om je
-            teller opnieuw te beginnen.
+            Je score is het <span style={{ color: "#FFD700" }}>doelpuntenverschil</span> van je
+            gekozen land, opgeteld over alle rondes. Je valt nooit af — je speelt altijd door.
+            Eén keer kun je een <span style={{ color: "#FFD700" }}>reset</span> gebruiken om al je
+            eerder gekozen landen weer beschikbaar te maken (je puntentotaal loopt gewoon door).
           </p>
         </FaqSection>
 
