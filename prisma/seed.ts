@@ -1,7 +1,6 @@
 import { PrismaClient, MatchStage, MatchStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { getDutchName } from "../lib/dutch-names"
-// import { seedPlayers } from "./seed-players" // bewust uitgeschakeld — zie onder
 
 const prisma = new PrismaClient()
 
@@ -183,10 +182,8 @@ async function main() {
     console.log("✅ Wedstrijden gesynchroniseerd")
   }
 
-  // Fantasy WK spelers: NIET meer hardcoded seeden.
-  // De officiële selecties worden opgehaald via de admin-actie "Sync selecties"
-  // (football-data /teams/{id}). De oude seedPlayers-fallback overschreef anders
-  // de echte data bij elke deploy en is daarom uitgeschakeld (zie seed-players.ts).
+  // Fantasy WK spelers worden NIET in de seed gezet. De officiële selecties
+  // haal je op via de admin-actie "Sync selecties" (football-data /teams/{id}).
 
   console.log("🎉 Seeding voltooid!")
 }
