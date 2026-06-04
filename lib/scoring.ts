@@ -1,5 +1,3 @@
-import { MatchStage } from "@prisma/client"
-
 type Toto = "H" | "D" | "A"
 
 function toto(home: number, away: number): Toto {
@@ -21,38 +19,15 @@ export function scoreGroupMatch(
   return pts
 }
 
-export const KNOCKOUT_BASE_POINTS: Record<MatchStage, number> = {
-  GROUP: 0,
-  ROUND_OF_32: 4,
-  ROUND_OF_16: 6,
-  QUARTER_FINAL: 8,
-  SEMI_FINAL: 10,
-  THIRD_PLACE: 10,
-  FINAL: 12,
-}
-
+// Knock-outfase: alle punten tellen dubbel t.o.v. de groepsfase.
+// Juiste uitslag +6, juiste thuis-/uitscore +2 elk, exact goed +4 bonus
+// (max 14 i.p.v. 7). Zo blijven er tot de finale flinke verschuivingen
+// mogelijk en doet iedereen tot het eind mee.
 export function scoreKnockoutMatch(
   pred: { homeScore: number; awayScore: number },
-  actual: { homeScore: number; awayScore: number },
-  stage: MatchStage,
-  homeTeamCorrect: boolean,
-  awayTeamCorrect: boolean
+  actual: { homeScore: number; awayScore: number }
 ): number {
-  let pts = 0
-  const base = KNOCKOUT_BASE_POINTS[stage]
-  if (homeTeamCorrect) pts += base
-  if (awayTeamCorrect) pts += base
-
-  const correctToto = toto(pred.homeScore, pred.awayScore) === toto(actual.homeScore, actual.awayScore)
-  if (correctToto) pts += 3
-  if (pred.homeScore === actual.homeScore) pts += 1
-  if (pred.awayScore === actual.awayScore) pts += 1
-
-  // Bonus: both teams correct + correct toto + exact score
-  const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore
-  if (homeTeamCorrect && awayTeamCorrect && correctToto && exactScore) pts += 4
-
-  return pts
+  return 2 * scoreGroupMatch(pred, actual)
 }
 
 export const CHAMPION_POINTS = 15

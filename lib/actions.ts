@@ -706,10 +706,7 @@ async function recalcMatch(externalId: number) {
     } else {
       pts = scoreKnockoutMatch(
         { homeScore: pred.homeScore, awayScore: pred.awayScore },
-        { homeScore: match.homeScore, awayScore: match.awayScore },
-        match.stage,
-        true,
-        true
+        { homeScore: match.homeScore, awayScore: match.awayScore }
       )
     }
 

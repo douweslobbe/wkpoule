@@ -201,6 +201,22 @@ export default async function PoolPredictionsPage({
         />
       )}
 
+      {/* Knock-out: dubbele punten banner */}
+      {stage !== "GROUP" && totalMatches > 0 && (
+        <div className="pixel-card overflow-hidden mb-4 flex items-center gap-3 px-4 py-3" style={{ background: "#1a0d00", borderLeft: "4px solid #FF6200" }}>
+          <span style={{ fontSize: "18px" }}>🔥</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-pixel" style={{ fontSize: "8px", color: "#FF6200", lineHeight: "1.8" }}>
+              KNOCK-OUT — ALLES TELT DUBBEL
+            </div>
+            <div className="font-pixel mt-1" style={{ fontSize: "7px", color: "var(--c-text-3)", lineHeight: "1.9" }}>
+              Elke voorspelling in de {STAGE_LABELS[stage].toLowerCase()} is dubbele punten waard (max 14 per wedstrijd). Nu kun je nog flink stijgen!
+            </div>
+          </div>
+          <span className="font-pixel shrink-0" style={{ fontSize: "18px", color: "#FFD700" }}>2×</span>
+        </div>
+      )}
+
       {/* Joker-quota banner */}
       {viewUserId === session.user.id && jokerAllowedHere && totalMatches > 0 && (
         <div className="pixel-card overflow-hidden mb-4 flex items-center gap-3 px-4 py-3" style={{ background: "#1a1200", borderLeft: "4px solid #FFD700" }}>

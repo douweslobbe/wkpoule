@@ -63,22 +63,15 @@ export default function FaqPage() {
           <Row label="Juiste uitscore"                value="+1 pt" />
           <Row label="Exact goed (alles klopt)"       value="+2 bonus = 7 pt" />
 
-          <H>KNOCK-OUTFASE — BASISPUNTEN PER RONDE</H>
-          <Row label="Ronde van 32"            value="4 pt per team dat doorgaat" />
-          <Row label="Achtste finale"          value="6 pt per team" />
-          <Row label="Kwartfinale"             value="8 pt per team" />
-          <Row label="Halve finale"            value="10 pt per team" />
-          <Row label="Derde-plaatswedstrijd"   value="10 pt per team" />
-          <Row label="Finale"                  value="12 pt per team" />
-
+          <H>KNOCK-OUTFASE — ALLES TELT DUBBEL · MAX 14 PUNTEN</H>
           <p>
-            Per knock-outwedstrijd kun je punten verdienen voor zowel het thuis- als uitteam dat doorgaat.
-            Bovenop de basispunten tellen:
+            Vanaf de Ronde van 32 telt <span style={{ color: "#FFD700" }}>elke voorspelling dubbel</span>.
+            Zo blijven er tot de finale grote verschuivingen mogelijk en blijft iedereen meedoen tot het eind.
           </p>
-          <Row label="Juiste uitslag (W/G/V)"                    value="+3 pt" />
-          <Row label="Juiste thuisscore"                          value="+1 pt" />
-          <Row label="Juiste uitscore"                            value="+1 pt" />
-          <Row label="Beide teams + uitslag + exact — alles goed" value="+4 bonus" />
+          <Row label="Juiste uitslag (W/G/V)"        value="+6 pt" />
+          <Row label="Juiste thuisscore"              value="+2 pt" />
+          <Row label="Juiste uitscore"                value="+2 pt" />
+          <Row label="Exact goed (alles klopt)"       value="+4 bonus = 14 pt" />
         </FaqSection>
 
         <FaqSection tab="poule" title="🏆 BONUSVRAGEN">
