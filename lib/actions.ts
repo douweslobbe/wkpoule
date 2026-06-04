@@ -12,6 +12,7 @@ import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType } from "@prisma/client"
 import { matchToSurvivorRound, getFirstMatchOfRound, type SurvivorRound } from "./survivor"
+import { runMatchReminderEmails } from "./reminders"
 import {
   FANTASY_DEADLINE,
   SQUAD_SIZE,
@@ -679,8 +680,17 @@ async function runMatchSync(): Promise<SyncResult> {
       await postMatchdayRecap(new Date(day + "T12:00:00Z"))
     }
   }
-  // Push notificaties: stuur herinneringen voor wedstrijden die binnenkort beginnen
+  // Push-notificaties: herinneringen voor wedstrijden die binnen ~90 min beginnen
   await sendMatchReminders()
+
+  // E-mail reminders (digest, ~2 uur voor aftrap). Door dit hier mee te nemen
+  // volstaat één cron-job (/api/cron/sync) voor zowel sync als reminders.
+  // Idempotent via reminderEmailSentAt, dus veilig bij elke run.
+  try {
+    await runMatchReminderEmails()
+  } catch (err) {
+    console.error("[sync] e-mailreminders fout:", err)
+  }
 
   revalidatePath("/admin")
 
