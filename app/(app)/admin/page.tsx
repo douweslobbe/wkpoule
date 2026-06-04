@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { SyncButton } from "./SyncButton"
 import { RecalcButton } from "./RecalcButton"
+import { SyncSquadsButton } from "./SyncSquadsButton"
 import { TriggerRemindersButton } from "./TriggerRemindersButton"
 import { TriggerRecapButton } from "./TriggerRecapButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
@@ -26,11 +27,13 @@ export default async function AdminPage() {
   const session = await auth()
   if (!session?.user?.isAdmin) redirect("/dashboard")
 
-  const [matchCount, teamCount, userCount, poolCount] = await Promise.all([
+  const [matchCount, teamCount, userCount, poolCount, activePlayerCount, squadSyncedTeams] = await Promise.all([
     prisma.match.count(),
     prisma.team.count(),
     prisma.user.count(),
     prisma.pool.count(),
+    prisma.player.count({ where: { isActive: true } }),
+    prisma.team.count({ where: { squadSyncedAt: { not: null } } }),
   ])
 
   const stageGroups = await prisma.match.groupBy({
@@ -99,6 +102,18 @@ export default async function AdminPage() {
               HANDMATIG REMINDERS VERSTUREN (wedstrijden over ~2 uur zonder voorspelling):
             </p>
             <TriggerRemindersButton />
+          </div>
+
+          <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
+            <p className="font-pixel mb-1" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              WK MANAGER — SELECTIES SYNCEN (van football-data):
+            </p>
+            <p className="font-pixel mb-3" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>
+              Haalt de officiële selecties per land op en zet oude/verkeerde spelers op inactief.
+              Verwerkt 8 landen per batch met ~60s pauze (rate limit). Nu: {activePlayerCount} actieve spelers
+              · {squadSyncedTeams}/{teamCount} landen gesynct.
+            </p>
+            <SyncSquadsButton />
           </div>
 
           <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>

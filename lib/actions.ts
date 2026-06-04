@@ -10,7 +10,7 @@ import { DEFAULT_BONUS_QUESTIONS } from "./default-bonus-questions"
 import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_POINTS, BONUS_POINTS } from "./scoring"
 import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
-import { MatchStage, MatchStatus, BonusQuestionType } from "@prisma/client"
+import { MatchStage, MatchStatus, BonusQuestionType, PlayerPosition } from "@prisma/client"
 import { matchToSurvivorRound, getFirstMatchOfRound, type SurvivorRound } from "./survivor"
 import { runMatchReminderEmails } from "./reminders"
 import {
@@ -695,6 +695,136 @@ async function runMatchSync(): Promise<SyncResult> {
   revalidatePath("/admin")
 
   return { ok: true, synced, updated }
+}
+
+// ─── Selectie-sync (WK Manager spelers) ───────────────────────────────────────
+
+// football-data posities → onze PlayerPosition
+function mapFdPosition(pos: string | null): PlayerPosition {
+  const p = (pos ?? "").toLowerCase()
+  if (p.includes("keeper")) return "GK"
+  if (p.includes("back") || p.includes("defence") || p.includes("defender")) return "DEF"
+  if (p.includes("midfield")) return "MID"
+  if (
+    p.includes("forward") || p.includes("offence") || p.includes("offensive") ||
+    p.includes("winger") || p.includes("striker") || p.includes("attack")
+  ) return "FWD"
+  return "MID" // veilige fallback
+}
+
+export type SquadSyncResult = {
+  ok: boolean
+  error?: string
+  processedTeams: number // landen verwerkt in deze batch
+  totalTeams: number // totaal aantal landen met externalId
+  syncedTeams: number // landen waarvan de selectie al opgehaald is
+  playersUpserted: number
+  finished: boolean
+}
+
+// Batchgewijze sync van selecties. Verwerkt per aanroep maximaal BATCH landen
+// (i.v.m. de football-data rate limit van 10 calls/min). De client roept dit
+// herhaaldelijk aan met ~60s pauze tot finished=true.
+const SQUAD_BATCH = 8
+
+export async function syncSquads(reset = false): Promise<SquadSyncResult> {
+  const session = await auth()
+  if (!session?.user?.isAdmin) {
+    return { ok: false, error: "Geen toegang", processedTeams: 0, totalTeams: 0, syncedTeams: 0, playersUpserted: 0, finished: false }
+  }
+
+  // Opnieuw beginnen: alle squadSyncedAt wissen zodat alles ververst wordt
+  if (reset) {
+    await prisma.team.updateMany({ data: { squadSyncedAt: null } })
+  }
+
+  const { fetchTeamSquad } = await import("./football-data")
+
+  const totalTeams = await prisma.team.count({ where: { externalId: { not: null } } })
+  const teams = await prisma.team.findMany({
+    where: { externalId: { not: null }, squadSyncedAt: null },
+    orderBy: { nameNl: "asc" },
+    take: SQUAD_BATCH,
+  })
+
+  if (teams.length === 0) {
+    return { ok: true, processedTeams: 0, totalTeams, syncedTeams: totalTeams, playersUpserted: 0, finished: true }
+  }
+
+  let processed = 0
+  let upserted = 0
+
+  for (const team of teams) {
+    let squad
+    try {
+      squad = await fetchTeamSquad(team.externalId!)
+    } catch (e) {
+      const msg = String((e as Error).message ?? e)
+      // Rate limit → stop deze batch, client probeert het zo opnieuw
+      if (msg.includes("Rate limit") || msg.includes("429")) break
+      // Abonnement geeft squad-data niet vrij → meld duidelijk en stop
+      if (msg.includes("403") || msg.toLowerCase().includes("restricted") || msg.toLowerCase().includes("forbidden")) {
+        const syncedNow = await prisma.team.count({ where: { squadSyncedAt: { not: null } } })
+        return {
+          ok: false,
+          error: "Squad-data niet beschikbaar op dit football-data abonnement (403). Upgrade nodig of een andere bron gebruiken.",
+          processedTeams: processed, totalTeams, syncedTeams: syncedNow, playersUpserted: upserted, finished: false,
+        }
+      }
+      // Andere fout: dit land overslaan (niet markeren → volgende keer opnieuw)
+      console.error(`[syncSquads] ${team.code}: ${msg}`)
+      continue
+    }
+
+    const seenExternalIds: number[] = []
+    for (const pl of squad) {
+      if (!pl.id || !pl.name) continue
+      seenExternalIds.push(pl.id)
+      await prisma.player.upsert({
+        where: { externalId: pl.id },
+        create: {
+          externalId: pl.id,
+          name: pl.name,
+          teamId: team.id,
+          position: mapFdPosition(pl.position),
+          shirtNumber: pl.shirtNumber ?? null,
+          isActive: true,
+        },
+        update: {
+          name: pl.name,
+          teamId: team.id,
+          position: mapFdPosition(pl.position),
+          shirtNumber: pl.shirtNumber ?? null,
+          isActive: true,
+        },
+      })
+      upserted++
+    }
+
+    // Alleen opschonen als er daadwerkelijk een selectie binnenkwam: zet oude
+    // spelers (incl. de handmatige seed met externalId=null) en vertrokken
+    // spelers op inactief.
+    if (seenExternalIds.length > 0) {
+      await prisma.player.updateMany({
+        where: {
+          teamId: team.id,
+          isActive: true,
+          OR: [{ externalId: null }, { externalId: { notIn: seenExternalIds } }],
+        },
+        data: { isActive: false },
+      })
+    }
+
+    // Markeer als gesynct (ook bij lege selectie, zodat we doorgaan; later
+    // opnieuw te verversen via reset)
+    await prisma.team.update({ where: { id: team.id }, data: { squadSyncedAt: new Date() } })
+    processed++
+  }
+
+  const syncedTeams = await prisma.team.count({ where: { squadSyncedAt: { not: null } } })
+  revalidatePath("/admin")
+  revalidatePath("/fantasy/select")
+  return { ok: true, processedTeams: processed, totalTeams, syncedTeams, playersUpserted: upserted, finished: syncedTeams >= totalTeams }
 }
 
 // ─── Puntentelling ───────────────────────────────────────────────────────────

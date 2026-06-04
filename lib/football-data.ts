@@ -56,6 +56,21 @@ export async function fetchMatches(): Promise<FDMatch[]> {
   return data.matches
 }
 
+export type FDSquadPlayer = {
+  id: number
+  name: string
+  position: string | null
+  shirtNumber: number | null
+  dateOfBirth: string | null
+  nationality: string | null
+}
+
+/** Haalt de selectie (squad) van één team op. Vereist /teams/{id}. */
+export async function fetchTeamSquad(teamExternalId: number): Promise<FDSquadPlayer[]> {
+  const data = await fdFetch<{ squad?: FDSquadPlayer[] }>(`/teams/${teamExternalId}`)
+  return data.squad ?? []
+}
+
 export function mapStage(fdStage: string): string {
   const map: Record<string, string> = {
     // Groepsfase

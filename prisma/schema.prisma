@@ -73,6 +73,8 @@ model Team {
   flagUrl    String?
   externalId Int?    @unique
 
+  squadSyncedAt DateTime? // laatste keer dat de selectie van football-data is opgehaald
+
   homeMatches   Match[]        @relation("HomeTeam")
   awayMatches   Match[]        @relation("AwayTeam")
   championPicks ChampionPick[]
