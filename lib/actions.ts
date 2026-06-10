@@ -226,11 +226,16 @@ export async function savePrediction(formData: FormData) {
   const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
   if (new Date() > deadline) return { error: "De voorspeltermijn is verstreken" }
 
-  await prisma.prediction.upsert({
-    where: { userId_matchId_poolId: { userId: session.user.id, matchId, poolId } },
-    create: { userId: session.user.id, matchId, poolId, homeScore, awayScore },
-    update: { homeScore, awayScore, pointsAwarded: null },
-  })
+  try {
+    await prisma.prediction.upsert({
+      where: { userId_matchId_poolId: { userId: session.user.id, matchId, poolId } },
+      create: { userId: session.user.id, matchId, poolId, homeScore, awayScore },
+      update: { homeScore, awayScore, pointsAwarded: null },
+    })
+  } catch (err) {
+    console.error("[savePrediction] opslaan mislukt:", err)
+    return { error: "Opslaan lukte niet door een technisch probleem. Neem contact op met Douwe (de beheerder)." }
+  }
 
   revalidatePath(`/pools/${poolId}/predictions`)
   return { success: true }
