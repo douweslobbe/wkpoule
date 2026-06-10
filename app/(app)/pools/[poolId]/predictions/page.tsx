@@ -33,7 +33,9 @@ export default async function PoolPredictionsPage({
   searchParams: Promise<{ stage?: string; view?: string }>
 }) {
   const { poolId } = await params
-  const sp = await searchParams
+  // searchParams kan bij een server-action-revalidatie leeg/undefined zijn;
+  // vang dat af zodat .stage uitlezen niet crasht.
+  const sp = (await searchParams) ?? {}
   const session = await auth()
   if (!session?.user) redirect("/login")
 
@@ -42,8 +44,10 @@ export default async function PoolPredictionsPage({
   })
   if (!membership) notFound()
 
-  const stage = (sp.stage as MatchStage) ?? "GROUP"
-  const viewUserId = sp.view ?? session.user.id
+  // Stage altijd valideren tegen de bekende fases (anders crasht STAGE_LABELS[stage])
+  const rawStage = typeof sp.stage === "string" ? sp.stage : undefined
+  const stage: MatchStage = STAGE_ORDER.includes(rawStage as MatchStage) ? (rawStage as MatchStage) : "GROUP"
+  const viewUserId = typeof sp.view === "string" ? sp.view : session.user.id
 
   const poolMembers = await prisma.poolMembership.findMany({
     where: { poolId },

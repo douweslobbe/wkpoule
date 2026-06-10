@@ -11,7 +11,7 @@ export default async function PredictionsRedirectPage({
 }: {
   searchParams: Promise<{ stage?: string; pool?: string; view?: string }>
 }) {
-  const sp = await searchParams
+  const sp = (await searchParams) ?? {}
   const session = await auth()
   if (!session?.user) redirect("/login")
 
