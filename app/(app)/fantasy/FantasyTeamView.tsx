@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { POSITION_LIMITS } from "@/lib/fantasy"
+import { POSITION_LIMITS, FANTASY_ROUND_LABELS, type FantasyRound } from "@/lib/fantasy"
 
 type PlayerPosition = "GK" | "DEF" | "MID" | "FWD"
 
@@ -56,10 +56,12 @@ export function FantasyTeamView({
   team,
   beforeDeadline,
   hasTransferWindow,
+  playerNames = {},
 }: {
   team: FantasyTeamData
   beforeDeadline: boolean
   hasTransferWindow: boolean
+  playerNames?: Record<string, string>
 }) {
   const [activeTab, setActiveTab] = useState<"team" | "transfers">("team")
 
@@ -203,16 +205,16 @@ export function FantasyTeamView({
             team.transfers.map((t) => (
               <div
                 key={t.id}
-                className="px-5 py-2.5 flex items-center gap-2"
+                className="px-5 py-2.5 flex items-center gap-2 flex-wrap"
                 style={{ borderBottom: "1px solid var(--c-border)", fontSize: "7px" }}
               >
-                <span className="font-pixel" style={{ color: "var(--c-text-4)", minWidth: "80px" }}>
-                  {t.round.replace("_", " ")}
+                <span className="font-pixel" style={{ color: "var(--c-text-4)", minWidth: "90px" }}>
+                  {FANTASY_ROUND_LABELS[t.round as FantasyRound] ?? t.round.replace(/_/g, " ")}
                 </span>
-                <span style={{ color: "#ff4444" }}>↑ OUT</span>
-                <span style={{ color: "var(--c-text-3)" }}>{t.playerOutId.slice(0, 8)}…</span>
-                <span style={{ color: "#4af56a" }}>↓ IN</span>
-                <span style={{ color: "var(--c-text-3)" }}>{t.playerInId.slice(0, 8)}…</span>
+                <span style={{ color: "#ff4444" }}>↑</span>
+                <span style={{ color: "var(--c-text-3)" }}>{playerNames[t.playerOutId] ?? "?"}</span>
+                <span style={{ color: "#4af56a" }}>↓</span>
+                <span style={{ color: "var(--c-text-2)" }}>{playerNames[t.playerInId] ?? "?"}</span>
               </div>
             ))
           )}

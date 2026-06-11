@@ -39,6 +39,17 @@ export default async function FantasyPage() {
   // Na de deadline: is er een transfervenster open?
   const transferRound = !canRegister && fantasyTeam ? await getCurrentTransferRound() : null
 
+  // Spelersnamen voor de transfergeschiedenis
+  const transferPlayerIds = [
+    ...new Set((fantasyTeam?.transfers ?? []).flatMap((t) => [t.playerOutId, t.playerInId])),
+  ]
+  const transferPlayers = transferPlayerIds.length > 0
+    ? await prisma.player.findMany({ where: { id: { in: transferPlayerIds } }, select: { id: true, name: true, nameNl: true } })
+    : []
+  const playerNames: Record<string, string> = Object.fromEntries(
+    transferPlayers.map((p) => [p.id, p.nameNl ?? p.name]),
+  )
+
   // Leaderboard (top 10)
   const allTeams = await prisma.fantasyTeam.findMany({
     orderBy: { totalPoints: "desc" },
@@ -117,6 +128,7 @@ export default async function FantasyPage() {
           team={fantasyTeam}
           beforeDeadline={canRegister}
           hasTransferWindow={!!transferRound}
+          playerNames={playerNames}
         />
       )}
 
