@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { FANTASY_DEADLINE, FANTASY_ROUND_LABELS, POSITION_LIMITS, type FantasyRound } from "@/lib/fantasy"
+import { getCurrentTransferRound } from "@/lib/fantasy-server"
 import { FantasyTeamView } from "./FantasyTeamView"
 import type { Metadata } from "next"
 
@@ -34,6 +35,9 @@ export default async function FantasyPage() {
       transfers: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   })
+
+  // Na de deadline: is er een transfervenster open?
+  const transferRound = !canRegister && fantasyTeam ? await getCurrentTransferRound() : null
 
   // Leaderboard (top 10)
   const allTeams = await prisma.fantasyTeam.findMany({
@@ -111,7 +115,8 @@ export default async function FantasyPage() {
       {fantasyTeam && (
         <FantasyTeamView
           team={fantasyTeam}
-          canTransfer={canRegister}
+          beforeDeadline={canRegister}
+          hasTransferWindow={!!transferRound}
         />
       )}
 

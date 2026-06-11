@@ -11,7 +11,7 @@ import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_
 import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType, PlayerPosition } from "@prisma/client"
-import { matchToSurvivorRound, getFirstMatchOfRound, type SurvivorRound } from "./survivor"
+import { matchToSurvivorRound, getFirstMatchOfRound, getRoundDeadline, type SurvivorRound } from "./survivor"
 import { runMatchReminderEmails } from "./reminders"
 import {
   FANTASY_DEADLINE,
@@ -1800,6 +1800,16 @@ export async function makeFantasyTransfers(
   if (!TRANSFER_ROUNDS.includes(round)) {
     return { error: "Transfers zijn niet meer mogelijk in deze fase" }
   }
+
+  // Tot de eerste wedstrijd pas je je team onbeperkt aan (geen transfers)
+  if (new Date() < FANTASY_DEADLINE) {
+    return { error: "Transfers gaan pas open zodra het toernooi begint — tot dan kun je je team vrij aanpassen." }
+  }
+
+  // Transfers voor een ronde sluiten bij de eerste wedstrijd van die ronde
+  const roundDeadline = await getRoundDeadline(round as SurvivorRound)
+  if (!roundDeadline) return { error: "Deze ronde is nog niet ingepland." }
+  if (new Date() >= roundDeadline) return { error: "De transferdeadline voor deze ronde is verstreken." }
 
   if (transfers.length === 0) return { error: "Geen transfers opgegeven" }
   if (transfers.length > MAX_TRANSFERS_PER_ROUND) {

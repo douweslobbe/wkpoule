@@ -54,10 +54,12 @@ const POS_COLORS: Record<PlayerPosition, string> = {
 
 export function FantasyTeamView({
   team,
-  canTransfer,
+  beforeDeadline,
+  hasTransferWindow,
 }: {
   team: FantasyTeamData
-  canTransfer: boolean
+  beforeDeadline: boolean
+  hasTransferWindow: boolean
 }) {
   const [activeTab, setActiveTab] = useState<"team" | "transfers">("team")
 
@@ -79,21 +81,23 @@ export function FantasyTeamView({
               {team.totalPoints} punten totaal
             </p>
           </div>
-          {canTransfer && (
+          {beforeDeadline ? (
             <a
               href="/fantasy/select"
               className="font-pixel px-3 py-1 transition-all hover:opacity-80"
-              style={{
-                background: "#1a5a2a",
-                color: "white",
-                border: "2px solid #000",
-                boxShadow: "1px 1px 0 #000",
-                fontSize: "7px",
-              }}
+              style={{ background: "#1a5a2a", color: "white", border: "2px solid #000", boxShadow: "1px 1px 0 #000", fontSize: "7px" }}
             >
               ✏ TEAM AANPASSEN
             </a>
-          )}
+          ) : hasTransferWindow ? (
+            <a
+              href="/fantasy/transfers"
+              className="font-pixel px-3 py-1 transition-all hover:opacity-80"
+              style={{ background: "#1a5a2a", color: "white", border: "2px solid #000", boxShadow: "1px 1px 0 #000", fontSize: "7px" }}
+            >
+              ⇄ TRANSFERS
+            </a>
+          ) : null}
         </div>
       </div>
 

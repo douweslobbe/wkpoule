@@ -259,7 +259,7 @@ export default function FaqPage() {
             <span style={{ color: "#FFD700" }}>2 transfers per ronde</span>.
           </p>
           <H>TRANSFERVENSTERS</H>
-          <Row label="Vóór groepsfase speelronde 1" value="Initiële selectie (geen transfers)" />
+          <Row label="Tot de eerste wedstrijd" value="Onbeperkt aanpassen" />
           <Row label="Vóór speelronde 2 t/m KF"    value="Max 2 transfers per ronde" />
           <Row label="Vanaf halve finale"           value="Geen transfers meer mogelijk" />
           <p style={{ color: "var(--c-text-3)", fontSize: "8px" }}>

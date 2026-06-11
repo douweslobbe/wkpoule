@@ -24,9 +24,10 @@ export const FANTASY_ROUND_LABELS: Record<FantasyRound, string> = {
   FINAL: "Finale",
 }
 
-// Transfer-ronden: initiële selectie + wijzigingen per ronde (t/m kwartfinales)
+// Rondes met een transfervenster (2 per ronde). GROUP_1 is de initiële
+// selectie (onbeperkt aanpassen tot de eerste wedstrijd), dus géén transfers.
+// Vanaf de halve finale liggen de teams vast.
 export const TRANSFER_ROUNDS: FantasyRound[] = [
-  "GROUP_1",
   "GROUP_2",
   "GROUP_3",
   "ROUND_OF_32",
