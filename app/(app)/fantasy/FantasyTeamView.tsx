@@ -81,7 +81,7 @@ export function FantasyTeamView({
           </div>
           {canTransfer && (
             <a
-              href="/fantasy/transfers"
+              href="/fantasy/select"
               className="font-pixel px-3 py-1 transition-all hover:opacity-80"
               style={{
                 background: "#1a5a2a",
@@ -91,7 +91,7 @@ export function FantasyTeamView({
                 fontSize: "7px",
               }}
             >
-              ⇄ TRANSFERS
+              ✏ TEAM AANPASSEN
             </a>
           )}
         </div>

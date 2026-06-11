@@ -19,11 +19,12 @@ export default async function FantasySelectPage() {
     redirect("/fantasy")
   }
 
-  // Controleer of gebruiker al een team heeft
+  // Bestaand team ophalen — vóór de deadline mag je het onbeperkt aanpassen
   const existing = await prisma.fantasyTeam.findUnique({
     where: { userId: session.user.id },
+    include: { picks: { select: { playerId: true } } },
   })
-  if (existing) redirect("/fantasy")
+  const isEdit = !!existing
 
   // Alle actieve spelers met team-info
   const players = await prisma.player.findMany({
@@ -43,11 +44,16 @@ export default async function FantasySelectPage() {
           ◄ WK MANAGER
         </Link>
         <h1 className="font-pixel text-white" style={{ fontSize: "10px" }}>
-          🎮 ELFTAL SAMENSTELLEN
+          🎮 {isEdit ? "ELFTAL AANPASSEN" : "ELFTAL SAMENSTELLEN"}
         </h1>
       </div>
 
-      <PlayerPicker players={players} />
+      <PlayerPicker
+        players={players}
+        initialPlayerIds={existing?.picks.map((p) => p.playerId) ?? []}
+        initialNickname={existing?.nickname ?? ""}
+        isEdit={isEdit}
+      />
     </div>
   )
 }

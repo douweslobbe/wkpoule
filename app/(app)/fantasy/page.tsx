@@ -82,7 +82,7 @@ export default async function FantasyPage() {
               <>
                 <p className="font-pixel mb-4" style={{ fontSize: "7px", color: "var(--c-text-3)", lineHeight: "1.8" }}>
                   Stel je selectie samen vóór <strong>11 juni 2026 22:00</strong>.
-                  Per speelronde kun je daarna 2 transfers doorvoeren t/m de kwartfinales.
+                  Tot de eerste wedstrijd kun je je team <strong style={{ color: "#4af56a" }}>onbeperkt aanpassen</strong>.
                 </p>
                 <Link
                   href="/fantasy/select"

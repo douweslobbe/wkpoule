@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { createFantasyTeam } from "@/lib/actions"
+import { saveFantasyTeam } from "@/lib/actions"
 import { SQUAD_SIZE, POSITION_LIMITS, MAX_PER_COUNTRY_GROUP } from "@/lib/fantasy"
 
 type PlayerPosition = "GK" | "DEF" | "MID" | "FWD"
@@ -28,14 +28,24 @@ const POS_LABELS: Record<PlayerPosition, string> = { GK: "Keeper", DEF: "Verdedi
 const POS_LABELS_PLURAL: Record<PlayerPosition, string> = { GK: "Keepers", DEF: "Verdedigers", MID: "Middenvelders", FWD: "Aanvallers" }
 const POS_COLORS: Record<PlayerPosition, string> = { GK: "#FFD700", DEF: "#4499ff", MID: "#4af56a", FWD: "#ff6644" }
 
-export function PlayerPicker({ players }: { players: PlayerData[] }) {
+export function PlayerPicker({
+  players,
+  initialPlayerIds = [],
+  initialNickname = "",
+  isEdit = false,
+}: {
+  players: PlayerData[]
+  initialPlayerIds?: string[]
+  initialNickname?: string
+  isEdit?: boolean
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(new Set(initialPlayerIds))
   const [filterPos, setFilterPos] = useState<PlayerPosition | "ALL">("ALL")
   const [filterTeam, setFilterTeam] = useState<string>("ALL")
   const [search, setSearch] = useState("")
-  const [nickname, setNickname] = useState("")
+  const [nickname, setNickname] = useState(initialNickname)
   const [error, setError] = useState<string | null>(null)
 
   // Geselecteerde spelers als objecten
@@ -115,7 +125,7 @@ export function PlayerPicker({ players }: { players: PlayerData[] }) {
       fd.append("nickname", nickname)
       selected.forEach((id) => fd.append("playerIds", id))
 
-      const result = await createFantasyTeam(fd)
+      const result = await saveFantasyTeam(fd)
       if (result?.error) {
         setError(result.error)
       } else {
@@ -233,7 +243,7 @@ export function PlayerPicker({ players }: { players: PlayerData[] }) {
                 fontSize: "8px",
               }}
             >
-              {isPending ? "OPSLAAN..." : isComplete ? "✓ TEAM OPSLAAN" : `NOG ${SQUAD_SIZE - selected.size} SPELERS`}
+              {isPending ? "OPSLAAN..." : isComplete ? (isEdit ? "✓ WIJZIGINGEN OPSLAAN" : "✓ TEAM OPSLAAN") : `NOG ${SQUAD_SIZE - selected.size} SPELERS`}
             </button>
           </div>
         </div>

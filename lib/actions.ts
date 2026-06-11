@@ -1702,22 +1702,20 @@ export async function resetHighscore() {
 
 // ─── Fantasy WK ───────────────────────────────────────────────────────────────
 
-export async function createFantasyTeam(formData: FormData) {
+// Maakt het Fantasy-team aan of vervangt de volledige selectie. Tot de
+// FANTASY_DEADLINE (eerste wedstrijd) mag dit ONBEPERKT — zo kun je je team
+// vrij blijven aanpassen tot het toernooi begint.
+export async function saveFantasyTeam(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: "Niet ingelogd" }
 
   if (new Date() > FANTASY_DEADLINE) {
-    return { error: "De deadline voor de initiële selectie is verstreken" }
+    return { error: "De deadline is verstreken — je team is vergrendeld." }
   }
 
   const nickname = (formData.get("nickname") as string)?.trim()
   if (!nickname) return { error: "Geef je team een naam" }
   if (nickname.length > 30) return { error: "Teamnaam mag maximaal 30 tekens zijn" }
-
-  const existing = await prisma.fantasyTeam.findUnique({
-    where: { userId: session.user.id },
-  })
-  if (existing) return { error: "Je hebt al een Fantasy-team" }
 
   const playerIds = (formData.getAll("playerIds") as string[]).filter(Boolean)
   if (playerIds.length !== SQUAD_SIZE) {
@@ -1742,21 +1740,32 @@ export async function createFantasyTeam(formData: FormData) {
     return { error: validation.errors.join(", ") }
   }
 
-  const team = await prisma.fantasyTeam.create({
-    data: {
-      userId: session.user.id,
-      nickname,
-      picks: {
-        create: playerIds.map((playerId) => ({
-          playerId,
-          addedInRound: "GROUP_1",
-        })),
-      },
-    },
+  const existing = await prisma.fantasyTeam.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true },
   })
 
+  if (existing) {
+    // Volledige selectie vervangen (onbeperkt vóór de deadline)
+    await prisma.$transaction([
+      prisma.fantasyPick.deleteMany({ where: { fantasyTeamId: existing.id } }),
+      prisma.fantasyTeam.update({ where: { id: existing.id }, data: { nickname } }),
+      prisma.fantasyPick.createMany({
+        data: playerIds.map((playerId) => ({ fantasyTeamId: existing.id, playerId, addedInRound: "GROUP_1" })),
+      }),
+    ])
+  } else {
+    await prisma.fantasyTeam.create({
+      data: {
+        userId: session.user.id,
+        nickname,
+        picks: { create: playerIds.map((playerId) => ({ playerId, addedInRound: "GROUP_1" })) },
+      },
+    })
+  }
+
   revalidatePath("/fantasy")
-  return { success: true, teamId: team.id }
+  return { success: true }
 }
 
 export async function updateFantasyNickname(nickname: string) {
