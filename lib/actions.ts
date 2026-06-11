@@ -1414,6 +1414,28 @@ export async function adminResetPassword(formData: FormData) {
   return { success: true }
 }
 
+// ─── Admin: gebruiker verwijderen ─────────────────────────────────────────────
+
+export async function adminDeleteUser(userId: string) {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+  if (userId === session.user.id) return { error: "Je kunt je eigen account niet verwijderen" }
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+  if (!user) return { error: "Gebruiker niet gevonden" }
+
+  // De meeste relaties cascaden bij user.delete. LeaderboardEntry heeft alleen
+  // een userId-veld (geen FK naar User), dus die ruimen we expliciet op.
+  await prisma.$transaction([
+    prisma.leaderboardEntry.deleteMany({ where: { userId } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ])
+
+  revalidatePath("/admin")
+  revalidatePath("/dashboard")
+  return { success: true }
+}
+
 // ─── Prikbord ────────────────────────────────────────────────────────────────
 
 export async function postPoolMessage(formData: FormData) {

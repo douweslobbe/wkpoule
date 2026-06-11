@@ -9,6 +9,7 @@ import { TriggerRemindersButton } from "./TriggerRemindersButton"
 import { TriggerRecapButton } from "./TriggerRecapButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
 import { HardDeletePoolButton } from "./HardDeletePoolButton"
+import { DeleteUserButton } from "./DeleteUserButton"
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -211,7 +212,10 @@ export default async function AdminPage() {
       {/* Gebruikers + wachtwoord reset */}
       <div className="pixel-card overflow-hidden mb-5">
         <div className="px-5 py-3" style={{ background: "#0a3d1f", borderBottom: "3px solid #000" }}>
-          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>👤 GEBRUIKERS & WACHTWOORD RESET</h2>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>👤 GEBRUIKERS — RESET & VERWIJDEREN</h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "6px", color: "#4a7a4a" }}>
+            Verwijderen wist alle data van de gebruiker — ze kunnen zich daarna opnieuw registreren.
+          </p>
         </div>
         <div>
           {users.map((user) => (
@@ -232,6 +236,9 @@ export default async function AdminPage() {
                 <div style={{ color: "var(--c-text-4)", fontSize: "8px" }}>{user.email}</div>
               </div>
               <ResetPasswordForm userId={user.id} />
+              {user.id !== session.user.id && (
+                <DeleteUserButton userId={user.id} userName={user.name} />
+              )}
             </div>
           ))}
         </div>
