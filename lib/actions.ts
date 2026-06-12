@@ -11,7 +11,7 @@ import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_
 import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType, PlayerPosition } from "@prisma/client"
-import { matchToSurvivorRound, getFirstMatchOfRound, getRoundDeadline, type SurvivorRound } from "./survivor"
+import { matchToSurvivorRound, getFirstMatchOfRound, getRoundDeadline, getTeamIdsInRound, type SurvivorRound } from "./survivor"
 import { runMatchReminderEmails } from "./reminders"
 import {
   FANTASY_DEADLINE,
@@ -1607,6 +1607,57 @@ export async function makeSurvivorPick(mode: "HARDCORE" | "HIGHSCORE", teamId: s
   })
 
   revalidatePath("/survivor")
+  return { success: true }
+}
+
+// Admin: handmatig een Survivor-pick zetten voor een gebruiker (coulance bij
+// een net gemiste deadline). Slaat de deadline-check over; overige spelregels
+// (team speelt in de ronde, niet al gebruikt, nog niet verwerkt) gelden wel.
+export async function adminSetSurvivorPick(
+  userId: string,
+  mode: "HARDCORE" | "HIGHSCORE",
+  round: string,
+  teamId: string,
+) {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  const entry = await prisma.survivorEntry.findUnique({ where: { userId } })
+  if (!entry) return { error: "Deze gebruiker doet niet mee aan WK Survivor" }
+
+  if (mode === "HARDCORE" && !entry.hardcoreAlive) {
+    return { error: "Gebruiker is uitgeschakeld in HARDCORE — geen pick mogelijk" }
+  }
+
+  // Team moet daadwerkelijk in deze ronde spelen
+  const teamIds = await getTeamIdsInRound(round as SurvivorRound)
+  if (!teamIds.has(teamId)) return { error: "Dit team speelt niet in deze ronde" }
+
+  const cycle = mode === "HIGHSCORE" && entry.resetUsed ? 1 : 0
+
+  const existingPick = await prisma.survivorPick.findUnique({
+    where: { entryId_round_mode: { entryId: entry.id, round, mode } },
+  })
+  if (existingPick && existingPick.result !== "PENDING") {
+    return { error: "De uitslag van deze pick is al verwerkt — niet meer te wijzigen" }
+  }
+
+  // Team niet al gebruikt in deze cyclus (afgezien van de huidige pick)
+  if (!existingPick || existingPick.teamId !== teamId) {
+    const alreadyUsed = await prisma.survivorPick.findFirst({
+      where: { userId, mode, teamId, cycle, NOT: existingPick ? { id: existingPick.id } : undefined },
+    })
+    if (alreadyUsed) return { error: "Gebruiker heeft dit team al gebruikt in deze cyclus" }
+  }
+
+  await prisma.survivorPick.upsert({
+    where: { entryId_round_mode: { entryId: entry.id, round, mode } },
+    create: { entryId: entry.id, userId, mode, teamId, round, cycle },
+    update: { teamId, cycle, result: "PENDING", goalDiff: null },
+  })
+
+  revalidatePath("/survivor")
+  revalidatePath("/admin")
   return { success: true }
 }
 

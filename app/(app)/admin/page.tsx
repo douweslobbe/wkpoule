@@ -10,6 +10,8 @@ import { TriggerRecapButton } from "./TriggerRecapButton"
 import { ResetPasswordForm } from "./ResetPasswordForm"
 import { HardDeletePoolButton } from "./HardDeletePoolButton"
 import { DeleteUserButton } from "./DeleteUserButton"
+import { AdminSurvivorPickForm } from "./AdminSurvivorPickForm"
+import { getActiveSurvivorRound, getTeamIdsInRound, ROUND_LABELS } from "@/lib/survivor"
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -65,6 +67,22 @@ export default async function AdminPage() {
     select: { id: true, name: true, email: true, isAdmin: true },
     orderBy: { name: "asc" },
   })
+
+  // WK Survivor — handmatige pick (coulance)
+  const survivorRound = await getActiveSurvivorRound()
+  const survivorTeamIds = survivorRound ? [...(await getTeamIdsInRound(survivorRound))] : []
+  const survivorTeams = survivorTeamIds.length > 0
+    ? (await prisma.team.findMany({
+        where: { id: { in: survivorTeamIds } },
+        select: { id: true, nameNl: true, name: true, code: true },
+        orderBy: { nameNl: "asc" },
+      })).map((t) => ({ id: t.id, label: t.nameNl ?? t.name, code: t.code }))
+    : []
+  const survivorUsers = (await prisma.survivorEntry.findMany({
+    include: { user: { select: { id: true, name: true } } },
+  }))
+    .map((e) => ({ id: e.user.id, name: e.user.name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return (
     <div>
@@ -154,6 +172,30 @@ export default async function AdminPage() {
               </p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* WK Survivor — handmatige pick */}
+      <div className="pixel-card overflow-hidden mb-5">
+        <div className="px-5 py-3" style={{ background: "#1a0000", borderBottom: "3px solid #000" }}>
+          <h2 className="font-pixel text-white" style={{ fontSize: "9px" }}>⚔ WK SURVIVOR — HANDMATIGE PICK</h2>
+          <p className="mt-1 font-pixel" style={{ fontSize: "7px", color: "#ff8888" }}>
+            Coulance: zet een pick voor een gebruiker die de deadline net miste
+          </p>
+        </div>
+        <div className="p-5">
+          {survivorRound ? (
+            <AdminSurvivorPickForm
+              round={survivorRound}
+              roundLabel={ROUND_LABELS[survivorRound]}
+              users={survivorUsers}
+              teams={survivorTeams}
+            />
+          ) : (
+            <p className="font-pixel" style={{ fontSize: "7px", color: "var(--c-text-4)" }}>
+              Er is op dit moment geen actieve Survivor-ronde.
+            </p>
+          )}
         </div>
       </div>
 
