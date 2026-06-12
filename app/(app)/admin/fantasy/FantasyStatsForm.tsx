@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { saveFantasyPlayerStats } from "@/lib/actions"
+import { saveFantasyPlayerStats, autofillFantasyStatsFromApi } from "@/lib/actions"
 
 type StatRow = {
   minutesPlayed: number
@@ -55,7 +55,30 @@ export function FantasyStatsForm({
     return r
   })
   const [isPending, startTransition] = useTransition()
+  const [isFilling, startFill] = useTransition()
   const [msg, setMsg] = useState("")
+  const [fillMsg, setFillMsg] = useState("")
+
+  function autofill() {
+    setFillMsg("")
+    startFill(async () => {
+      const res = await autofillFantasyStatsFromApi(matchId)
+      if ("error" in res && res.error) {
+        setFillMsg("❌ " + res.error)
+        return
+      }
+      if ("prefill" in res) {
+        setRows((prev) => {
+          const next = { ...prev }
+          for (const [pid, vals] of Object.entries(res.prefill)) {
+            if (next[pid]) next[pid] = { ...next[pid], ...vals }
+          }
+          return next
+        })
+        setFillMsg(`✓ ${res.matched}/${res.total} spelers ingevuld — controleer en sla op (reddingen/penalty's zitten erbij; eigen goals + bonus voer je zelf in)`)
+      }
+    })
+  }
 
   function setField(playerId: string, key: keyof StatRow, raw: string) {
     const value = Math.max(key === "bonusPoints" ? -50 : 0, parseInt(raw || "0", 10) || 0)
@@ -89,6 +112,18 @@ export function FantasyStatsForm({
         Alleen spelers die in minstens één team zitten. Tegendoelpunten en clean sheet worden automatisch uit de
         uitslag afgeleid. Laat een speler op 0 minuten staan als hij niet speelde.
       </p>
+
+      <div className="mb-3 flex items-center gap-3 flex-wrap">
+        <button
+          onClick={autofill}
+          disabled={isFilling}
+          className="font-pixel px-3 py-2"
+          style={{ fontSize: "7px", background: isFilling ? "#1a1a2a" : "#2a0a4a", color: "#d7aaff", border: "2px solid #4a1a6a", cursor: isFilling ? "not-allowed" : "pointer" }}
+        >
+          {isFilling ? "OPHALEN..." : "🔄 AUTO-INVULLEN (API-FOOTBALL)"}
+        </button>
+        {fillMsg && <span className="font-pixel" style={{ fontSize: "6px", color: fillMsg.startsWith("✓") ? "#4af56a" : "#ff6666", lineHeight: "1.7" }}>{fillMsg}</span>}
+      </div>
 
       <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
         <table className="font-pixel" style={{ fontSize: "7px", borderCollapse: "collapse", minWidth: "560px" }}>

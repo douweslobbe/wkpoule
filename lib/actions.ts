@@ -2108,3 +2108,98 @@ export async function saveFantasyPlayerStats(matchId: string, entries: FantasySt
   revalidatePath("/fantasy")
   return { success: true }
 }
+
+// Admin: haalt spelersstatistieken op bij API-Football en levert ze terug om
+// het invoerscherm voor te vullen (opslaan doet de admin daarna zelf).
+type StatPrefill = {
+  minutesPlayed: number; goals: number; assists: number; shotsSaved: number
+  penaltySaved: number; penaltyMissed: number; yellowCards: number; redCards: number
+}
+type AutofillResult =
+  | { error: string }
+  | { ok: true; prefill: Record<string, StatPrefill>; matched: number; total: number }
+
+export async function autofillFantasyStatsFromApi(matchId: string): Promise<AutofillResult> {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: {
+      kickoff: true, homeScore: true, awayScore: true,
+      homeTeamId: true, awayTeamId: true,
+      homeTeam: { select: { name: true } },
+      awayTeam: { select: { name: true } },
+    },
+  })
+  if (!match) return { error: "Wedstrijd niet gevonden" }
+  if (match.homeScore === null || match.awayScore === null) return { error: "Wedstrijd heeft nog geen uitslag" }
+  if (!match.homeTeam || !match.awayTeam) return { error: "Teams onbekend voor deze wedstrijd" }
+
+  const { findFixtureId, fetchFixturePlayerStats, normalizeName } = await import("./api-football")
+
+  const prefill: Record<string, StatPrefill> = {}
+  let matched = 0
+  let total = 0
+
+  try {
+    const fixtureId = await findFixtureId(
+      match.kickoff.toISOString(), match.homeTeam.name, match.awayTeam.name,
+      match.homeScore, match.awayScore,
+    )
+    if (!fixtureId) return { error: "Geen overeenkomende wedstrijd gevonden in API-Football" }
+
+    const apiStats = await fetchFixturePlayerStats(fixtureId)
+
+    // Onze ooit-gekozen spelers van de twee teams (zelfde set als het invoerscherm)
+    const teamIds = [match.homeTeamId, match.awayTeamId].filter(Boolean) as string[]
+    const candidateIds = new Set<string>()
+    ;(await prisma.fantasyPick.findMany({ select: { playerId: true } })).forEach((p) => candidateIds.add(p.playerId))
+    ;(await prisma.fantasyTransfer.findMany({ select: { playerOutId: true, playerInId: true } })).forEach((t) => {
+      candidateIds.add(t.playerOutId)
+      candidateIds.add(t.playerInId)
+    })
+    const ourPlayers = await prisma.player.findMany({
+      where: { id: { in: [...candidateIds] }, teamId: { in: teamIds } },
+      select: { id: true, name: true, nameNl: true },
+    })
+    total = ourPlayers.length
+
+    // Index API-spelers op volledige naam + achternaam
+    const byFull = new Map<string, (typeof apiStats)[number]>()
+    const byLast = new Map<string, (typeof apiStats)[number][]>()
+    for (const s of apiStats) {
+      byFull.set(normalizeName(s.name), s)
+      const parts = s.name.trim().split(/\s+/)
+      const last = normalizeName(parts[parts.length - 1])
+      const arr = byLast.get(last) ?? []
+      arr.push(s)
+      byLast.set(last, arr)
+    }
+
+    for (const p of ourPlayers) {
+      const candidates = [p.name, p.nameNl].filter(Boolean) as string[]
+      let s = candidates.map((n) => byFull.get(normalizeName(n))).find(Boolean)
+      if (!s) {
+        for (const n of candidates) {
+          const parts = n.trim().split(/\s+/)
+          const last = normalizeName(parts[parts.length - 1])
+          const arr = byLast.get(last)
+          if (arr && arr.length === 1) { s = arr[0]; break }
+        }
+      }
+      if (s) {
+        prefill[p.id] = {
+          minutesPlayed: s.minutes, goals: s.goals, assists: s.assists, shotsSaved: s.saves,
+          penaltySaved: s.penaltySaved, penaltyMissed: s.penaltyMissed, yellowCards: s.yellow, redCards: s.red,
+        }
+        matched++
+      }
+    }
+  } catch (err) {
+    console.error("[autofillFantasyStats]", err)
+    return { error: `API-Football: ${(err as Error).message}` }
+  }
+
+  return { ok: true as const, prefill, matched, total }
+}
