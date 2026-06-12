@@ -1978,7 +1978,8 @@ async function recalcFantasyTeams() {
   })
   const matchRound = new Map<string, string>()
   for (const m of finishedMatches) {
-    const r = matchToSurvivorRound({ stage: m.stage, matchday: m.matchday })
+    // De derde-plaatswedstrijd telt voor WK Manager mee in de finale-ronde
+    const r = m.stage === "THIRD_PLACE" ? "FINAL" : matchToSurvivorRound({ stage: m.stage, matchday: m.matchday })
     if (r) matchRound.set(m.id, r)
   }
   const matchIds = [...matchRound.keys()]
