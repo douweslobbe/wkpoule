@@ -23,7 +23,7 @@ import {
 } from "./fantasy"
 
 // Toernooi start — deadline voor bonus vragen en kampioen pick
-const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z")
+const TOURNAMENT_START = new Date("2026-06-12T19:00:00Z")
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -471,7 +471,7 @@ export async function addBonusQuestion(formData: FormData) {
 // ─── Admin: bonusvraag verwijderen (tot toernooideadline) ────────────────────
 
 // Toernooideadline: 11 juni 2026, 22:00 CEST = 20:00 UTC
-const BONUS_EDIT_DEADLINE = new Date("2026-06-11T20:00:00Z")
+const BONUS_EDIT_DEADLINE = new Date("2026-06-12T19:00:00Z")
 
 export async function deleteBonusQuestion(questionId: string, poolId: string) {
   const session = await auth()

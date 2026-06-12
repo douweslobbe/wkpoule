@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { ChampionForm } from "./ChampionForm"
 import { PixelFlag } from "@/components/PixelFlag"
 
-const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z")
+const TOURNAMENT_START = new Date("2026-06-12T19:00:00Z")
 
 export default async function ChampionPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -47,7 +47,7 @@ export default async function ChampionPage({ params }: { params: Promise<{ poolI
           <span style={{ color: "#FFD700", fontWeight: "bold" }}>15 punten</span> voor de juiste kampioen · Deadline:{" "}
           <span style={{ color: "#FF6200", fontWeight: "bold" }}>
             {TOURNAMENT_START.toLocaleString("nl-NL", {
-              weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+              timeZone: "Europe/Amsterdam", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
             })}
           </span>
         </p>
