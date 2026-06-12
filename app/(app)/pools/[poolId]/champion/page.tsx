@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { ChampionForm } from "./ChampionForm"
 import { PixelFlag } from "@/components/PixelFlag"
 
-const TOURNAMENT_START = new Date("2026-06-12T19:00:00Z")
+const TOURNAMENT_START = new Date("2026-06-12T21:59:00Z")
 
 export default async function ChampionPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
