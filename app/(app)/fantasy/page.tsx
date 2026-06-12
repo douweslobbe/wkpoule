@@ -150,9 +150,10 @@ export default async function FantasyPage() {
         ) : (
           <div>
             {allTeams.map((t, i) => (
-              <div
+              <Link
                 key={t.id}
-                className="px-5 py-3 flex items-center gap-3"
+                href={`/fantasy/team/${t.userId}`}
+                className="px-5 py-3 flex items-center gap-3 transition-all hover:opacity-80"
                 style={{
                   borderBottom: "1px solid var(--c-border)",
                   background: t.userId === session.user.id ? "rgba(74, 245, 106, 0.05)" : undefined,
@@ -177,7 +178,8 @@ export default async function FantasyPage() {
                 <span className="font-pixel" style={{ fontSize: "9px", color: "#FFD700" }}>
                   {t.totalPoints} pt
                 </span>
-              </div>
+                <span className="font-pixel shrink-0" style={{ fontSize: "8px", color: "#4499ff" }}>›</span>
+              </Link>
             ))}
           </div>
         )}
