@@ -14,7 +14,7 @@ async function af<T>(path: string): Promise<T> {
 
   const res = await fetch(`${BASE}${path}`, {
     headers: { "x-apisports-key": key },
-    next: { revalidate: 300 },
+    cache: "no-store", // admin-actie: altijd verse data (geen stale plan-/statusfout)
   })
   if (!res.ok) throw new Error(`API-Football fout: HTTP ${res.status}`)
 
