@@ -145,6 +145,19 @@ export default async function AdminPage() {
             <TriggerRecapButton />
           </div>
 
+          <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
+            <p className="font-pixel mb-3" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>
+              WK MANAGER — SPELERSSTATISTIEKEN INVOEREN (punten per speeldag):
+            </p>
+            <Link
+              href="/admin/fantasy"
+              className="font-pixel inline-block px-4 py-2"
+              style={{ fontSize: "8px", background: "#0a1f3d", color: "#4499ff", border: "2px solid #1a3a6a" }}
+            >
+              🎮 STATISTIEKEN BEHEREN →
+            </Link>
+          </div>
+
           {/* Stage debug */}
           <div className="mt-4 pt-4" style={{ borderTop: "2px solid var(--c-border)" }}>
             <p className="font-pixel mb-2" style={{ fontSize: "7px", color: "var(--c-text-3)" }}>

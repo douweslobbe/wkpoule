@@ -19,6 +19,7 @@ import {
   MAX_TRANSFERS_PER_ROUND,
   TRANSFER_ROUNDS,
   validateSquad,
+  calculateFantasyPoints,
   type FantasyRound,
 } from "./fantasy"
 
@@ -1956,6 +1957,153 @@ export async function makeFantasyTransfers(
     }
   })
 
+  revalidatePath("/fantasy")
+  return { success: true }
+}
+
+// ─── WK Manager: puntentelling ────────────────────────────────────────────────
+
+const FANTASY_ROUND_INDEX: Record<string, number> = {
+  GROUP_1: 0, GROUP_2: 1, GROUP_3: 2,
+  ROUND_OF_32: 3, ROUND_OF_16: 4, QUARTER_FINAL: 5, SEMI_FINAL: 6, FINAL: 7,
+}
+
+// Herberekent alle teamtotalen met eerlijke per-ronde-attributie: een speler
+// levert alleen punten op voor wedstrijden in de rondes waarin hij in de
+// selectie zat (gereconstrueerd uit de huidige picks + transferhistorie).
+async function recalcFantasyTeams() {
+  const finishedMatches = await prisma.match.findMany({
+    where: { status: "FINISHED" },
+    select: { id: true, stage: true, matchday: true },
+  })
+  const matchRound = new Map<string, string>()
+  for (const m of finishedMatches) {
+    const r = matchToSurvivorRound({ stage: m.stage, matchday: m.matchday })
+    if (r) matchRound.set(m.id, r)
+  }
+  const matchIds = [...matchRound.keys()]
+  if (matchIds.length === 0) return
+
+  const stats = await prisma.fantasyPlayerStats.findMany({
+    where: { matchId: { in: matchIds } },
+    select: { playerId: true, matchId: true, totalPoints: true },
+  })
+  const pointsByMatch = new Map<string, Map<string, number>>()
+  for (const s of stats) {
+    let m = pointsByMatch.get(s.matchId)
+    if (!m) { m = new Map(); pointsByMatch.set(s.matchId, m) }
+    m.set(s.playerId, s.totalPoints)
+  }
+
+  const teams = await prisma.fantasyTeam.findMany({
+    include: {
+      picks: { select: { playerId: true } },
+      transfers: { select: { round: true, playerOutId: true, playerInId: true } },
+    },
+  })
+
+  for (const team of teams) {
+    const currentSquad = new Set(team.picks.map((p) => p.playerId))
+    let total = 0
+    for (const [matchId, round] of matchRound) {
+      const matchPoints = pointsByMatch.get(matchId)
+      if (!matchPoints || matchPoints.size === 0) continue
+      // Selectie zoals die was in deze ronde: draai transfers van latere rondes terug
+      const ri = FANTASY_ROUND_INDEX[round] ?? 99
+      const squad = new Set(currentSquad)
+      for (const t of team.transfers) {
+        if ((FANTASY_ROUND_INDEX[t.round] ?? 99) > ri) {
+          squad.delete(t.playerInId)
+          squad.add(t.playerOutId)
+        }
+      }
+      for (const playerId of squad) {
+        total += matchPoints.get(playerId) ?? 0
+      }
+    }
+    await prisma.fantasyTeam.update({ where: { id: team.id }, data: { totalPoints: total } })
+  }
+}
+
+type FantasyStatEntry = {
+  playerId: string
+  minutesPlayed: number
+  goals: number
+  assists: number
+  shotsSaved: number
+  penaltySaved: number
+  penaltyMissed: number
+  yellowCards: number
+  redCards: number
+  ownGoals: number
+  bonusPoints: number
+}
+
+// Admin: spelersstatistieken voor één wedstrijd opslaan. Tegendoelpunten en
+// clean sheet worden afgeleid uit de uitslag. Daarna worden alle teamtotalen
+// herberekend.
+export async function saveFantasyPlayerStats(matchId: string, entries: FantasyStatEntry[]) {
+  const session = await auth()
+  if (!session?.user?.isAdmin) return { error: "Geen toegang" }
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: { id: true, homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true },
+  })
+  if (!match) return { error: "Wedstrijd niet gevonden" }
+  if (match.homeScore === null || match.awayScore === null) return { error: "Wedstrijd heeft nog geen uitslag" }
+
+  const players = await prisma.player.findMany({
+    where: { id: { in: entries.map((e) => e.playerId) } },
+    select: { id: true, position: true, teamId: true },
+  })
+  const playerMap = new Map(players.map((p) => [p.id, p]))
+
+  for (const e of entries) {
+    const p = playerMap.get(e.playerId)
+    if (!p) continue
+    const conceded = p.teamId === match.homeTeamId ? match.awayScore! : match.homeScore!
+    const cleanSheet = conceded === 0
+    const totalPoints = calculateFantasyPoints({
+      position: p.position,
+      minutesPlayed: e.minutesPlayed,
+      goals: e.goals,
+      assists: e.assists,
+      cleanSheet,
+      goalsConceded: conceded,
+      shotsSaved: e.shotsSaved,
+      penaltySaved: e.penaltySaved,
+      penaltyMissed: e.penaltyMissed,
+      yellowCards: e.yellowCards,
+      redCards: e.redCards,
+      ownGoals: e.ownGoals,
+      bonusPoints: e.bonusPoints,
+    })
+    const data = {
+      minutesPlayed: e.minutesPlayed,
+      goals: e.goals,
+      assists: e.assists,
+      cleanSheet,
+      goalsConceded: conceded,
+      shotsSaved: e.shotsSaved,
+      penaltySaved: e.penaltySaved,
+      penaltyMissed: e.penaltyMissed,
+      yellowCards: e.yellowCards,
+      redCards: e.redCards,
+      ownGoals: e.ownGoals,
+      bonusPoints: e.bonusPoints,
+      totalPoints,
+    }
+    await prisma.fantasyPlayerStats.upsert({
+      where: { playerId_matchId: { playerId: e.playerId, matchId } },
+      create: { playerId: e.playerId, matchId, ...data },
+      update: data,
+    })
+  }
+
+  await recalcFantasyTeams()
+  revalidatePath("/admin/fantasy")
+  revalidatePath(`/admin/fantasy/${matchId}`)
   revalidatePath("/fantasy")
   return { success: true }
 }
