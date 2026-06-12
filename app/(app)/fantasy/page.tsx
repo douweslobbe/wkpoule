@@ -3,7 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { FANTASY_DEADLINE, FANTASY_ROUND_LABELS, POSITION_LIMITS, type FantasyRound } from "@/lib/fantasy"
-import { getCurrentTransferRound } from "@/lib/fantasy-server"
+import { getCurrentTransferRound, getSquadPlayerPoints } from "@/lib/fantasy-server"
 import { FantasyTeamView } from "./FantasyTeamView"
 import type { Metadata } from "next"
 
@@ -38,6 +38,11 @@ export default async function FantasyPage() {
 
   // Na de deadline: is er een transfervenster open?
   const transferRound = !canRegister && fantasyTeam ? await getCurrentTransferRound() : null
+
+  // Punten per speler (vanaf de ronde dat hij in de selectie kwam)
+  const playerPoints = fantasyTeam
+    ? await getSquadPlayerPoints(fantasyTeam.picks.map((p) => ({ playerId: p.playerId, addedInRound: p.addedInRound })))
+    : {}
 
   // Spelersnamen voor de transfergeschiedenis
   const transferPlayerIds = [
@@ -129,6 +134,7 @@ export default async function FantasyPage() {
           beforeDeadline={canRegister}
           hasTransferWindow={!!transferRound}
           playerNames={playerNames}
+          playerPoints={playerPoints}
         />
       )}
 

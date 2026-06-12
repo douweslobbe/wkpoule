@@ -57,11 +57,13 @@ export function FantasyTeamView({
   beforeDeadline,
   hasTransferWindow,
   playerNames = {},
+  playerPoints = {},
 }: {
   team: FantasyTeamData
   beforeDeadline: boolean
   hasTransferWindow: boolean
   playerNames?: Record<string, string>
+  playerPoints?: Record<string, number>
 }) {
   const [activeTab, setActiveTab] = useState<"team" | "transfers">("team")
 
@@ -172,6 +174,19 @@ export function FantasyTeamView({
                       #{pick.player.shirtNumber}
                     </span>
                   )}
+
+                  {/* Punten */}
+                  <span
+                    className="font-pixel shrink-0"
+                    style={{
+                      fontSize: "8px",
+                      minWidth: "26px",
+                      textAlign: "right",
+                      color: (playerPoints[pick.player.id] ?? 0) > 0 ? "#FFD700" : "var(--c-text-5)",
+                    }}
+                  >
+                    {playerPoints[pick.player.id] ?? 0} pt
+                  </span>
 
                   {/* Positie badge */}
                   <span

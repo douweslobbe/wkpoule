@@ -4,7 +4,7 @@ import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { FANTASY_DEADLINE, FANTASY_ROUND_LABELS, POSITION_LIMITS, type FantasyRound } from "@/lib/fantasy"
-import { getCurrentTransferRound } from "@/lib/fantasy-server"
+import { getCurrentTransferRound, getSquadPlayerPoints } from "@/lib/fantasy-server"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Team bekijken — WK Manager 2026" }
@@ -80,6 +80,13 @@ export default async function FantasyTeamPage({ params }: { params: Promise<{ us
     }
   }
 
+  // Punten per speler (huidige picks gebruiken hun addedInRound; teruggedraaide
+  // transfer-spelers vallen terug op vanaf het begin)
+  const pickRoundById = new Map(team.picks.map((p) => [p.playerId, p.addedInRound]))
+  const playerPoints = await getSquadPlayerPoints(
+    displayPlayers.map((pl) => ({ playerId: pl.id, addedInRound: pickRoundById.get(pl.id) ?? "GROUP_1" })),
+  )
+
   const byPos = POS_ORDER.reduce((acc, pos) => {
     acc[pos] = displayPlayers.filter((p) => p.position === pos)
     return acc
@@ -120,6 +127,7 @@ export default async function FantasyTeamPage({ params }: { params: Promise<{ us
                 {pl.shirtNumber && (
                   <span className="font-pixel shrink-0" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>#{pl.shirtNumber}</span>
                 )}
+                <span className="font-pixel shrink-0" style={{ fontSize: "8px", minWidth: "26px", textAlign: "right", color: (playerPoints[pl.id] ?? 0) > 0 ? "#FFD700" : "var(--c-text-5)" }}>{playerPoints[pl.id] ?? 0} pt</span>
                 <span className="font-pixel shrink-0 px-1.5 py-0.5" style={{ fontSize: "6px", color: POS_COLORS[pos], border: `1px solid ${POS_COLORS[pos]}44` }}>{pos}</span>
               </div>
             ))}
