@@ -2165,21 +2165,34 @@ export async function autofillFantasyStatsFromApi(matchId: string): Promise<Auto
     })
     total = ourPlayers.length
 
-    // Index API-spelers op volledige naam + achternaam
+    // Volgorde-onafhankelijke tokensleutel: "Son Heung-Min" == "Heung-Min Son"
+    const tokenKey = (n: string) => n.split(/[\s\-.]+/).map(normalizeName).filter(Boolean).sort().join("|")
+
+    // Index API-spelers op volledige naam, tokenset en achternaam
     const byFull = new Map<string, (typeof apiStats)[number]>()
+    const byTokens = new Map<string, (typeof apiStats)[number][]>()
     const byLast = new Map<string, (typeof apiStats)[number][]>()
     for (const s of apiStats) {
       byFull.set(normalizeName(s.name), s)
+      const tk = tokenKey(s.name)
+      ;(byTokens.get(tk) ?? byTokens.set(tk, []).get(tk)!).push(s)
       const parts = s.name.trim().split(/\s+/)
       const last = normalizeName(parts[parts.length - 1])
-      const arr = byLast.get(last) ?? []
-      arr.push(s)
-      byLast.set(last, arr)
+      ;(byLast.get(last) ?? byLast.set(last, []).get(last)!).push(s)
     }
 
     for (const p of ourPlayers) {
       const candidates = [p.name, p.nameNl].filter(Boolean) as string[]
+      // 1) volledige naam
       let s = candidates.map((n) => byFull.get(normalizeName(n))).find(Boolean)
+      // 2) zelfde tokenset (volgorde-onafhankelijk), uniek
+      if (!s) {
+        for (const n of candidates) {
+          const arr = byTokens.get(tokenKey(n))
+          if (arr && arr.length === 1) { s = arr[0]; break }
+        }
+      }
+      // 3) zelfde achternaam, uniek
       if (!s) {
         for (const n of candidates) {
           const parts = n.trim().split(/\s+/)

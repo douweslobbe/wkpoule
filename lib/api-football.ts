@@ -62,16 +62,23 @@ export async function findFixtureId(
 
   // 1) beide teamnamen matchen
   let hit = fixtures.find((f) => teamMatch(h, f.teams.home.name) && teamMatch(a, f.teams.away.name))
-  // 2) val terug op gelijke uitslag + één team dat matcht
-  if (!hit) {
-    hit = fixtures.find(
-      (f) =>
-        f.goals.home === homeScore &&
-        f.goals.away === awayScore &&
-        (teamMatch(h, f.teams.home.name) || teamMatch(a, f.teams.away.name)),
-    )
-  }
-  return hit?.fixture.id ?? null
+  if (hit) return hit.fixture.id
+
+  // 2) exacte uitslag (juiste oriëntatie) + minstens één team dat matcht
+  hit = fixtures.find(
+    (f) =>
+      f.goals.home === homeScore &&
+      f.goals.away === awayScore &&
+      (teamMatch(h, f.teams.home.name) || teamMatch(a, f.teams.away.name)),
+  )
+  if (hit) return hit.fixture.id
+
+  // 3) exacte uitslag die uniek is op deze dag → gebruik die (teamnamen wijken
+  //    af tussen de bronnen, bv. "Korea Republic" vs "South Korea")
+  const scoreHits = fixtures.filter((f) => f.goals.home === homeScore && f.goals.away === awayScore)
+  if (scoreHits.length === 1) return scoreHits[0].fixture.id
+
+  return null
 }
 
 export type AFPlayerStat = {
