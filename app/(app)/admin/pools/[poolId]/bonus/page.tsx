@@ -64,7 +64,7 @@ export default async function AdminBonusPage({ params }: { params: Promise<{ poo
   }
 
   const isGlobalAdmin = session.user.isAdmin
-  const BONUS_EDIT_DEADLINE = new Date("2026-06-12T21:59:00Z")
+  const BONUS_EDIT_DEADLINE = new Date("2026-06-13T19:00:00Z")
   const canEdit = new Date() < BONUS_EDIT_DEADLINE
   const daysUntilDeadline = Math.ceil((BONUS_EDIT_DEADLINE.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
