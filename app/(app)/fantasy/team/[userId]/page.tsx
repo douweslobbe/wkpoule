@@ -123,7 +123,10 @@ export default async function FantasyTeamPage({ params }: { params: Promise<{ us
                 ) : (
                   <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "var(--c-text-4)", minWidth: "20px" }}>{pl.team.code}</span>
                 )}
-                <span className="flex-1" style={{ fontSize: "8px", color: "var(--c-text)" }}>{pl.nameNl ?? pl.name}</span>
+                <Link href={`/fantasy/player/${pl.id}`} className="flex-1 transition-opacity hover:opacity-80" style={{ fontSize: "8px", color: "var(--c-text)", textDecoration: "none" }}>
+                  {pl.nameNl ?? pl.name}
+                  <span style={{ color: "#4499ff", fontSize: "7px", marginLeft: 4 }}>›</span>
+                </Link>
                 {pl.shirtNumber && (
                   <span className="font-pixel shrink-0" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>#{pl.shirtNumber}</span>
                 )}

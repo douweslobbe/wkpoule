@@ -163,10 +163,15 @@ export function FantasyTeamView({
                     </span>
                   )}
 
-                  {/* Naam */}
-                  <span className="flex-1" style={{ fontSize: "8px", color: "var(--c-text)" }}>
+                  {/* Naam (klikbaar → per-wedstrijd uitsplitsing) */}
+                  <a
+                    href={`/fantasy/player/${pick.player.id}`}
+                    className="flex-1 transition-opacity hover:opacity-80"
+                    style={{ fontSize: "8px", color: "var(--c-text)", textDecoration: "none" }}
+                  >
                     {pick.player.nameNl ?? pick.player.name}
-                  </span>
+                    <span style={{ color: "#4499ff", fontSize: "7px", marginLeft: 4 }}>›</span>
+                  </a>
 
                   {/* Shirt nummer */}
                   {pick.player.shirtNumber && (
