@@ -46,9 +46,13 @@ export default async function DashboardPage() {
   function survivorStatus(mode: "HARDCORE" | "HIGHSCORE") {
     if (!survivorEntry) return "not_enrolled"
     const cycle = mode === "HIGHSCORE" && survivorEntry.resetUsed ? 1 : 0
-    const eliminated = survivorEntry.picks.some(
-      (p) => p.mode === mode && p.cycle === cycle && p.result === "ELIMINATED"
-    )
+    // Alleen HARDCORE kent uitschakeling. In HIGHSCORE blijf je altijd in het
+    // spel — punten kunnen in de min, maar je ligt er nooit uit.
+    const eliminated =
+      mode === "HARDCORE" &&
+      survivorEntry.picks.some(
+        (p) => p.mode === mode && p.cycle === cycle && p.result === "ELIMINATED"
+      )
     if (eliminated) return "eliminated"
     const hasPick = activeRound
       ? survivorEntry.picks.some((p) => p.round === activeRound && p.mode === mode)
