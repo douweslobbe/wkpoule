@@ -466,9 +466,13 @@ export default async function SurvivorPage() {
                           <span className="font-pixel" style={{ fontSize: "5px", color: "#4af56a" }}>✓ gekozen</span>
                         )}
                         {deadlinePassed && (
-                          <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
-                            {RESULT_ICONS[hsPick.result]} {hsPick.result === "PENDING" ? "bezig" : hsPick.goalDiff !== null ? `${hsPick.goalDiff > 0 ? "+" : ""}${hsPick.goalDiff}` : ""}
-                          </span>
+                          hsPick.goalDiff === null ? (
+                            <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>⏳ bezig</span>
+                          ) : (
+                            <span className="font-pixel" style={{ fontSize: "5px", color: hsPick.goalDiff > 0 ? "#4af56a" : hsPick.goalDiff < 0 ? "#ff4444" : "var(--c-text-3)" }}>
+                              📊 {hsPick.goalDiff > 0 ? "+" : ""}{hsPick.goalDiff} pt
+                            </span>
+                          )
                         )}
                       </div>
                     ) : (
@@ -569,10 +573,9 @@ export default async function SurvivorPage() {
                             </>
                           ) : null
                         })()}
-                        <span className="font-pixel" style={{ fontSize: "6px" }}>
-                          {RESULT_ICONS[hsPick.result]}
-                        </span>
-                        {hsPick.goalDiff !== null && (
+                        {hsPick.goalDiff === null ? (
+                          <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>⏳</span>
+                        ) : (
                           <span
                             className="font-pixel"
                             style={{
@@ -580,7 +583,7 @@ export default async function SurvivorPage() {
                               color: hsPick.goalDiff > 0 ? "#4af56a" : hsPick.goalDiff < 0 ? "#ff4444" : "var(--c-text-3)",
                             }}
                           >
-                            ({hsPick.goalDiff > 0 ? "+" : ""}{hsPick.goalDiff})
+                            {hsPick.goalDiff > 0 ? "+" : ""}{hsPick.goalDiff} pt
                           </span>
                         )}
                         {hsPick.cycle === 1 && (
