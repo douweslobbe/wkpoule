@@ -80,23 +80,29 @@ export default async function SurvivorPage() {
   const allMatchesForOpponent = await prisma.match.findMany({
     select: {
       stage: true, matchday: true, homeTeamId: true, awayTeamId: true,
+      homeScore: true, awayScore: true,
       homeTeam: { select: { id: true, nameNl: true, name: true, code: true, flagUrl: true } },
       awayTeam: { select: { id: true, nameNl: true, name: true, code: true, flagUrl: true } },
     },
   })
 
-  function getOpponent(teamId: string, round: string) {
-    const stageMap: Record<string, { stage: string; matchday?: number }> = {
-      GROUP_1: { stage: "GROUP", matchday: 1 },
-      GROUP_2: { stage: "GROUP", matchday: 2 },
-      GROUP_3: { stage: "GROUP", matchday: 3 },
-    }
-    const { stage, matchday } = stageMap[round] ?? { stage: round }
-    const match = allMatchesForOpponent.find((m) => {
+  const ROUND_STAGE_MAP: Record<string, { stage: string; matchday?: number }> = {
+    GROUP_1: { stage: "GROUP", matchday: 1 },
+    GROUP_2: { stage: "GROUP", matchday: 2 },
+    GROUP_3: { stage: "GROUP", matchday: 3 },
+  }
+
+  function getMatchForTeam(teamId: string, round: string) {
+    const { stage, matchday } = ROUND_STAGE_MAP[round] ?? { stage: round }
+    return allMatchesForOpponent.find((m) => {
       if (m.stage !== stage) return false
       if (matchday && m.matchday !== matchday) return false
       return m.homeTeamId === teamId || m.awayTeamId === teamId
-    })
+    }) ?? null
+  }
+
+  function getOpponent(teamId: string, round: string) {
+    const match = getMatchForTeam(teamId, round)
     if (!match) return null
     return match.homeTeamId === teamId ? match.awayTeam : match.homeTeam
   }
@@ -128,6 +134,60 @@ export default async function SurvivorPage() {
   const highscoreStandings = [...allEntries].sort(
     (a, b) => b.highscoreTotal - a.highscoreTotal || a.user.name.localeCompare(b.user.name),
   )
+
+  // Door welke wedstrijd is een HARDCORE-deelnemer uitgeschakeld? Of viel hij
+  // uit omdat er na de deadline geen pick gemaakt was?
+  type ElimDetail =
+    | { kind: "no_pick" }
+    | { kind: "lost"; opp: { code: string; flagUrl: string | null } | null; teamCode: string; teamGoals: number; oppGoals: number }
+    | { kind: "lost_pending"; teamCode: string }
+  type ElimEntry = {
+    hardcoreAlive: boolean
+    hardcoreElimRound: string | null
+    picks: { round: string; mode: string; teamId: string; team: { code: string } }[]
+  }
+  function getElimDetail(entry: ElimEntry): ElimDetail | null {
+    if (entry.hardcoreAlive || !entry.hardcoreElimRound) return null
+    const round = entry.hardcoreElimRound
+    const hcPick = entry.picks.find((p) => p.round === round && p.mode === "HARDCORE")
+    if (!hcPick) return { kind: "no_pick" }
+    const match = getMatchForTeam(hcPick.teamId, round)
+    if (!match || match.homeScore === null || match.awayScore === null) {
+      return { kind: "lost_pending", teamCode: hcPick.team.code }
+    }
+    const isHome = match.homeTeamId === hcPick.teamId
+    const opp = isHome ? match.awayTeam : match.homeTeam
+    return {
+      kind: "lost",
+      opp: opp ? { code: opp.code, flagUrl: opp.flagUrl } : null,
+      teamCode: hcPick.team.code,
+      teamGoals: isHome ? match.homeScore : match.awayScore,
+      oppGoals: isHome ? match.awayScore : match.homeScore,
+    }
+  }
+
+  // Compacte weergave van de eliminatie-reden (voor de stand)
+  function elimReasonNode(entry: ElimEntry) {
+    const d = getElimDetail(entry)
+    if (!d) return null
+    if (d.kind === "no_pick") {
+      return <span className="font-pixel" style={{ fontSize: "5px", color: "#cc7755" }}>geen pick gedaan</span>
+    }
+    if (d.kind === "lost_pending") {
+      return <span className="font-pixel" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>met {d.teamCode}</span>
+    }
+    return (
+      <span className="font-pixel inline-flex items-center gap-1" style={{ fontSize: "5px", color: "var(--c-text-4)" }}>
+        door
+        {d.opp?.flagUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={d.opp.flagUrl} alt="" width={12} height={9} style={{ objectFit: "cover", opacity: 0.8 }} />
+        )}
+        <span>{d.opp?.code ?? "?"}</span>
+        <span style={{ color: "#ff6666" }}>{d.teamGoals}-{d.oppGoals}</span>
+      </span>
+    )
+  }
 
   // Render-helper voor de pick-cel in de standen (team + tegenstander + resultaat)
   type StandingPick = {
@@ -238,6 +298,7 @@ export default async function SurvivorPage() {
                       in {ROUND_LABELS[myEntry.hardcoreElimRound as keyof typeof ROUND_LABELS] ?? myEntry.hardcoreElimRound}
                     </div>
                   )}
+                  <div className="mt-0.5">{elimReasonNode(myEntry)}</div>
                 </div>
               )}
             </div>
@@ -347,13 +408,16 @@ export default async function SurvivorPage() {
                 <span className="font-bold truncate flex-1 min-w-0" style={{ fontSize: "8px", color: isMe ? "#4af56a" : "var(--c-text)" }}>
                   {entry.user.name}{isMe && <span style={{ color: "#4af56a", fontSize: "5px" }}> ◄</span>}
                 </span>
-                <div className="shrink-0" style={{ minWidth: "66px" }}>
+                <div className="shrink-0" style={{ minWidth: "92px" }}>
                   {entry.hardcoreAlive ? (
                     <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>✓ ALIVE</span>
                   ) : (
-                    <span className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>
-                      💀 {entry.hardcoreElimRound ? (ROUND_LABELS[entry.hardcoreElimRound as keyof typeof ROUND_LABELS] ?? entry.hardcoreElimRound) : "uit"}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-pixel" style={{ fontSize: "6px", color: "#ff4444" }}>
+                        💀 {entry.hardcoreElimRound ? (ROUND_LABELS[entry.hardcoreElimRound as keyof typeof ROUND_LABELS] ?? entry.hardcoreElimRound) : "uit"}
+                      </span>
+                      {elimReasonNode(entry)}
+                    </div>
                   )}
                 </div>
                 <div className="shrink-0" style={{ minWidth: "78px" }}>{pickCell(hcPick, "HARDCORE", entry.hardcoreAlive)}</div>

@@ -4,7 +4,7 @@ import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { FANTASY_DEADLINE, FANTASY_ROUND_LABELS, POSITION_LIMITS, type FantasyRound } from "@/lib/fantasy"
-import { getCurrentTransferRound, getSquadPlayerPoints } from "@/lib/fantasy-server"
+import { getCurrentTransferRound, getSquadPlayerPoints, getFantasyRoundBreakdown } from "@/lib/fantasy-server"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Team bekijken — WK Manager 2026" }
@@ -87,6 +87,9 @@ export default async function FantasyTeamPage({ params }: { params: Promise<{ us
     displayPlayers.map((pl) => ({ playerId: pl.id, addedInRound: pickRoundById.get(pl.id) ?? "GROUP_1" })),
   )
 
+  // Punten per speelronde (mét scorende spelers)
+  const roundBreakdown = await getFantasyRoundBreakdown(team.id)
+
   const byPos = POS_ORDER.reduce((acc, pos) => {
     acc[pos] = displayPlayers.filter((p) => p.position === pos)
     return acc
@@ -137,6 +140,35 @@ export default async function FantasyTeamPage({ params }: { params: Promise<{ us
           </div>
         ))}
       </div>
+
+      {roundBreakdown.length > 0 && (
+        <div className="pixel-card overflow-hidden mb-4">
+          <div className="px-5 py-3" style={{ background: "#0a2a0a", borderBottom: "3px solid #000" }}>
+            <div className="font-pixel text-white" style={{ fontSize: "9px" }}>📅 PUNTEN PER SPEELRONDE</div>
+            <div className="font-pixel mt-1" style={{ fontSize: "6px", color: "#4af56a" }}>De selectie zoals die in elke ronde stond</div>
+          </div>
+          {roundBreakdown.map((r) => (
+            <div key={r.round} style={{ borderBottom: "1px solid var(--c-border)" }}>
+              <div className="px-5 py-2 flex items-center justify-between" style={{ background: "var(--c-surface-deep)" }}>
+                <span className="font-pixel" style={{ fontSize: "7px", color: "#4af56a" }}>{FANTASY_ROUND_LABELS[r.round]}</span>
+                <span className="font-pixel" style={{ fontSize: "8px", color: r.points > 0 ? "#FFD700" : "var(--c-text-5)" }}>{r.points} pt</span>
+              </div>
+              {r.players.length === 0 ? (
+                <div className="px-5 py-2 font-pixel" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>Geen punten deze ronde</div>
+              ) : (
+                r.players.map((p) => (
+                  <div key={p.playerId} className="px-5 py-1.5 flex items-center gap-2">
+                    <span className="font-pixel flex-1 truncate" style={{ fontSize: "7px", color: "var(--c-text-2)" }}>
+                      {p.name} <span style={{ color: "var(--c-text-5)" }}>· {p.teamCode}</span>
+                    </span>
+                    <span className="font-pixel shrink-0" style={{ fontSize: "7px", color: "#FFD700" }}>{p.points} pt</span>
+                  </div>
+                ))
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

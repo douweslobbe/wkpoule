@@ -11,7 +11,7 @@ import { scoreGroupMatch, scoreKnockoutMatch, scoreEstimationQuestion, CHAMPION_
 import { JOKER_QUOTA, jokersAllowedInStage, STAGE_LABELS_NL } from "./jokers"
 import { ACHIEVEMENT_DEFS } from "./achievements"
 import { MatchStage, MatchStatus, BonusQuestionType, PlayerPosition } from "@prisma/client"
-import { matchToSurvivorRound, getFirstMatchOfRound, getRoundDeadline, getTeamIdsInRound, type SurvivorRound } from "./survivor"
+import { SURVIVOR_ROUNDS, matchToSurvivorRound, getFirstMatchOfRound, getRoundDeadline, getTeamIdsInRound, type SurvivorRound } from "./survivor"
 import { runMatchReminderEmails } from "./reminders"
 import {
   FANTASY_DEADLINE,
@@ -627,6 +627,13 @@ async function runMatchSync(): Promise<SyncResult> {
     const existing = await prisma.match.findUnique({ where: { externalId: m.id } })
     const wasFinished = existing?.status === "FINISHED"
     const nowFinished = status === "FINISHED"
+    // Uitslag of winnaar gewijzigd t.o.v. wat we al hadden? (football-data
+    // corrigeert soms een score ná afloop — bv. 5-0 → 4-0.)
+    const scoreChanged =
+      !!existing &&
+      (existing.homeScore !== m.score.fullTime.home ||
+        existing.awayScore !== m.score.fullTime.away ||
+        existing.winner !== (m.score.winner ?? null))
 
     await prisma.match.upsert({
       where: { externalId: m.id },
@@ -660,12 +667,18 @@ async function runMatchSync(): Promise<SyncResult> {
       },
     })
 
-    if (!wasFinished && nowFinished) {
+    // Herbereken de voorspellingspunten zodra een wedstrijd is afgerond, óf
+    // wanneer een al-afgeronde wedstrijd een gecorrigeerde uitslag krijgt.
+    if (nowFinished && (!wasFinished || scoreChanged)) {
       await recalcMatch(m.id)
-      updated++
+      if (!wasFinished) updated++
     }
     synced++
   }
+
+  // WK Survivor volledig herbouwen uit de actuele uitslagen (idempotent):
+  // corrigeert ook gewijzigde scores en schakelt no-pick deelnemers uit.
+  await rebuildSurvivor()
 
   await rebuildLeaderboards()
 
@@ -864,79 +877,102 @@ async function recalcMatch(externalId: number) {
       data: { pointsAwarded: pts },
     })
   }
-
-  // WK Survivor scoring
-  await scoreSurvivorPicksForMatch(match)
 }
 
-async function scoreSurvivorPicksForMatch(match: {
-  homeTeamId: string | null
-  awayTeamId: string | null
-  homeScore: number | null
-  awayScore: number | null
-  winner: string | null
-  stage: string
-  matchday: number | null
-}) {
-  const round = matchToSurvivorRound({ stage: match.stage, matchday: match.matchday })
-  if (!round) return
-  if (match.homeScore === null || match.awayScore === null) return
-  if (!match.homeTeamId || !match.awayTeamId) return
+// Volledige, idempotente herbouw van de WK Survivor-stand. Veilig om vaker te
+// draaien: leidt alles af uit de actuele uitslagen + picks, en herstelt dus ook
+// gecorrigeerde scores en eerder onterechte uitschakelingen.
+//
+//  • per pick: result + goalDiff opnieuw bepaald uit de huidige uitslag
+//  • HARDCORE: leeft tot de eerste ronde waarin de pick verliest, óf — nieuw —
+//    waarin na de deadline géén pick is gemaakt (no-pick = uitgeschakeld)
+//  • HIGHSCORE: doelsaldo-totaal opnieuw opgeteld (valt nooit af)
+async function rebuildSurvivor() {
+  const now = new Date()
 
-  const picks = await prisma.survivorPick.findMany({
-    where: {
-      round,
-      teamId: { in: [match.homeTeamId, match.awayTeamId] },
-      result: "PENDING",
+  // (ronde:teamId) → uitslaginfo van de bijbehorende afgeronde wedstrijd
+  type MatchInfo = { result: "SURVIVED" | "ELIMINATED"; goalDiff: number }
+  const byRoundTeam = new Map<string, MatchInfo>()
+  const finished = await prisma.match.findMany({
+    where: { status: "FINISHED" },
+    select: {
+      homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true,
+      winner: true, stage: true, matchday: true,
     },
-    include: { entry: true },
   })
-
-  for (const pick of picks) {
-    const isHome = pick.teamId === match.homeTeamId
-    const teamGoals = isHome ? match.homeScore! : match.awayScore!
-    const oppGoals = isHome ? match.awayScore! : match.homeScore!
-    const goalDiff = teamGoals - oppGoals
-
-    // Groepsfase: je moet WINNEN. Knock-out: de doorgaande ploeg overleeft —
-    // ook na strafschoppen. We gebruiken match.winner (incl. penalty's) en
-    // vallen alleen terug op het doelsaldo als de winnaar (nog) onbekend is.
-    let result: "SURVIVED" | "ELIMINATED"
-    if (match.stage === "GROUP") {
-      result = goalDiff > 0 ? "SURVIVED" : "ELIMINATED"
-    } else if (match.winner === "HOME_TEAM" || match.winner === "AWAY_TEAM") {
-      const teamWon = match.winner === (isHome ? "HOME_TEAM" : "AWAY_TEAM")
-      result = teamWon ? "SURVIVED" : "ELIMINATED"
-    } else {
-      // Winnaar onbekend → gelijkspel telt (voorlopig) als overleefd
-      result = goalDiff >= 0 ? "SURVIVED" : "ELIMINATED"
-    }
-
-    await prisma.survivorPick.update({
-      where: { id: pick.id },
-      data: { result, goalDiff },
-    })
-
-    // HARDCORE elimination
-    if (pick.mode === "HARDCORE" && result === "ELIMINATED" && pick.entry.hardcoreAlive) {
-      await prisma.survivorEntry.update({
-        where: { id: pick.entryId },
-        data: { hardcoreAlive: false, hardcoreElimRound: round },
-      })
+  for (const m of finished) {
+    const round = matchToSurvivorRound({ stage: m.stage, matchday: m.matchday })
+    if (!round) continue
+    if (m.homeScore === null || m.awayScore === null) continue
+    if (!m.homeTeamId || !m.awayTeamId) continue
+    for (const teamId of [m.homeTeamId, m.awayTeamId]) {
+      const isHome = teamId === m.homeTeamId
+      const goalDiff = (isHome ? m.homeScore : m.awayScore) - (isHome ? m.awayScore : m.homeScore)
+      let result: "SURVIVED" | "ELIMINATED"
+      if (m.stage === "GROUP") {
+        result = goalDiff > 0 ? "SURVIVED" : "ELIMINATED"
+      } else if (m.winner === "HOME_TEAM" || m.winner === "AWAY_TEAM") {
+        const won = m.winner === (isHome ? "HOME_TEAM" : "AWAY_TEAM")
+        result = won ? "SURVIVED" : "ELIMINATED"
+      } else {
+        // Winnaar (nog) onbekend → gelijkspel telt voorlopig als overleefd
+        result = goalDiff >= 0 ? "SURVIVED" : "ELIMINATED"
+      }
+      byRoundTeam.set(`${round}:${teamId}`, { result, goalDiff })
     }
   }
 
-  // Rebuild highscore totals for all affected entries
-  const entryIds = [...new Set(picks.map((p) => p.entryId))]
-  for (const entryId of entryIds) {
-    const hsPicks = await prisma.survivorPick.findMany({
-      where: { entryId, mode: "HIGHSCORE", goalDiff: { not: null } },
-    })
-    const total = hsPicks.reduce((s, p) => s + (p.goalDiff ?? 0), 0)
-    await prisma.survivorEntry.update({
-      where: { id: entryId },
-      data: { highscoreTotal: total },
-    })
+  // Deadlines per ronde (voor no-pick eliminatie)
+  const deadlines = new Map<string, Date | null>()
+  for (const round of SURVIVOR_ROUNDS) {
+    deadlines.set(round, await getRoundDeadline(round))
+  }
+
+  const entries = await prisma.survivorEntry.findMany({ include: { picks: true } })
+
+  for (const entry of entries) {
+    // 1) Per pick: result + goalDiff opnieuw zetten uit de actuele uitslagen
+    for (const pick of entry.picks) {
+      const info = byRoundTeam.get(`${pick.round}:${pick.teamId}`)
+      const result = info ? info.result : "PENDING"
+      const goalDiff = info ? info.goalDiff : null
+      if (pick.result !== result || pick.goalDiff !== goalDiff) {
+        await prisma.survivorPick.update({ where: { id: pick.id }, data: { result, goalDiff } })
+      }
+    }
+
+    // 2) HARDCORE: rondes op volgorde tot de eerste uitschakeling
+    let alive = true
+    let elimRound: string | null = null
+    for (const round of SURVIVOR_ROUNDS) {
+      const dl = deadlines.get(round) ?? null
+      if (!dl || dl > now) break // toekomstige ronde (deadline nog niet verstreken) → stoppen
+      const pick = entry.picks.find((p) => p.round === round && p.mode === "HARDCORE")
+      if (!pick) { alive = false; elimRound = round; break } // geen pick na de deadline → uit
+      const info = byRoundTeam.get(`${round}:${pick.teamId}`)
+      if (!info) break // wedstrijd nog niet afgerond → voorlopig in leven
+      if (info.result === "ELIMINATED") { alive = false; elimRound = round; break }
+      // overleefd → door naar de volgende ronde
+    }
+
+    // 3) HIGHSCORE: doelsaldo-totaal over alle highscore-picks
+    const hsTotal = entry.picks
+      .filter((p) => p.mode === "HIGHSCORE")
+      .reduce((s, p) => {
+        const info = byRoundTeam.get(`${p.round}:${p.teamId}`)
+        return s + (info ? info.goalDiff : 0)
+      }, 0)
+
+    if (
+      entry.hardcoreAlive !== alive ||
+      entry.hardcoreElimRound !== elimRound ||
+      entry.highscoreTotal !== hsTotal
+    ) {
+      await prisma.survivorEntry.update({
+        where: { id: entry.id },
+        data: { hardcoreAlive: alive, hardcoreElimRound: elimRound, highscoreTotal: hsTotal },
+      })
+    }
   }
 }
 
@@ -1028,6 +1064,9 @@ export async function recalcAllScores() {
       }
     }
   }
+
+  // WK Survivor volledig herbouwen uit de actuele uitslagen
+  await rebuildSurvivor()
 
   await rebuildLeaderboards()
   revalidatePath("/admin")
