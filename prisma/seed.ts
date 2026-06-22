@@ -52,14 +52,20 @@ async function fetchFromFootballData(path: string) {
     console.warn("⚠️  FOOTBALL_DATA_API_KEY niet ingesteld — wedstrijden worden overgeslagen")
     return null
   }
-  const res = await fetch(`https://api.football-data.org/v4${path}`, {
-    headers: { "X-Auth-Token": key },
-  })
-  if (!res.ok) {
-    console.error(`football-data.org fout: ${res.status}`)
+  try {
+    const res = await fetch(`https://api.football-data.org/v4${path}`, {
+      headers: { "X-Auth-Token": key },
+    })
+    if (!res.ok) {
+      console.error(`football-data.org fout: ${res.status}`)
+      return null
+    }
+    return await res.json()
+  } catch (e) {
+    // Netwerk-/timeoutfout mag de seed (en dus de deploy) nooit laten klappen.
+    console.warn(`⚠️  football-data.org onbereikbaar — overslaan (${(e as Error).message})`)
     return null
   }
-  return res.json()
 }
 
 async function main() {
@@ -82,6 +88,17 @@ async function main() {
     console.log(`✅ Admin aangemaakt: ${adminEmail} / ${adminPassword}`)
   } else {
     console.log(`ℹ️  Admin bestaat al: ${adminEmail}`)
+  }
+
+  // Op een al gevulde database (productie) slaan we de football-data sync over:
+  // de live cron-sync houdt teams en wedstrijden bij, en we willen een deploy
+  // nooit laten klappen als football-data tijdens het opstarten onbereikbaar is.
+  const teamCount = await prisma.team.count()
+  const matchCount = await prisma.match.count()
+  if (teamCount > 0 && matchCount > 0) {
+    console.log(`ℹ️  Database al gevuld (${teamCount} teams, ${matchCount} wedstrijden) — football-data sync overgeslagen`)
+    console.log("🎉 Seeding voltooid!")
+    return
   }
 
   // Teams laden van football-data.org (of hardcoded fallback)
