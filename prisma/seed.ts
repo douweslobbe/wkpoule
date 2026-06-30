@@ -164,6 +164,14 @@ async function main() {
         ? await prisma.team.findUnique({ where: { externalId: m.awayTeam.id } })
         : null
 
+      // Echte uitslag op het veld: football-data telt strafschoppen mee in
+      // fullTime, dus die trekken we er weer af (winnaar zit los in winner).
+      const pen = m.score?.penalties
+      const ftHome = m.score?.fullTime?.home
+      const ftAway = m.score?.fullTime?.away
+      const homeScore = ftHome != null ? ftHome - (pen?.home ?? 0) : null
+      const awayScore = ftAway != null ? ftAway - (pen?.away ?? 0) : null
+
       await prisma.match.upsert({
         where: { externalId: m.id },
         create: {
@@ -173,8 +181,8 @@ async function main() {
           matchday: m.matchday,
           homeTeamId: homeTeam?.id ?? null,
           awayTeamId: awayTeam?.id ?? null,
-          homeScore: m.score?.fullTime?.home ?? null,
-          awayScore: m.score?.fullTime?.away ?? null,
+          homeScore,
+          awayScore,
           winner: m.score?.winner ?? null,
           status,
           kickoff: new Date(m.utcDate),
@@ -186,8 +194,8 @@ async function main() {
           groupName: m.group,
           homeTeamId: homeTeam?.id ?? null,
           awayTeamId: awayTeam?.id ?? null,
-          homeScore: m.score?.fullTime?.home ?? null,
-          awayScore: m.score?.fullTime?.away ?? null,
+          homeScore,
+          awayScore,
           winner: m.score?.winner ?? null,
           status,
           kickoff: new Date(m.utcDate),

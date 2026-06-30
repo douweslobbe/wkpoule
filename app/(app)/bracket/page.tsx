@@ -34,6 +34,7 @@ type MatchWithTeams = {
   awayTeamId: string | null
   homeScore: number | null
   awayScore: number | null
+  winner: string | null
   status: MatchStatus
   kickoff: Date
   homeTeam: { id: string; name: string; nameNl: string | null; code: string; flagUrl: string | null } | null
@@ -399,8 +400,24 @@ export default async function BracketPage({
                       {stageMatches.map((match) => {
                         const finished = match.status === "FINISHED"
                         const live = match.status === "LIVE"
-                        const homeWon = finished && match.homeScore !== null && match.awayScore !== null && match.homeScore > match.awayScore
-                        const awayWon = finished && match.homeScore !== null && match.awayScore !== null && match.awayScore > match.homeScore
+                        // Knock-outs kunnen op strafschoppen beslist worden: dan is de
+                        // uitslag op het veld gelijk, maar bepaalt match.winner wie door is.
+                        const homeWon = finished && (
+                          match.winner ? match.winner === "HOME_TEAM"
+                          : match.homeScore !== null && match.awayScore !== null && match.homeScore > match.awayScore
+                        )
+                        const awayWon = finished && (
+                          match.winner ? match.winner === "AWAY_TEAM"
+                          : match.homeScore !== null && match.awayScore !== null && match.awayScore > match.homeScore
+                        )
+                        // Beslist na strafschoppen: gelijke stand op het veld, maar wél een winnaar
+                        const decidedOnPens = finished
+                          && match.homeScore !== null && match.awayScore !== null
+                          && match.homeScore === match.awayScore
+                          && (match.winner === "HOME_TEAM" || match.winner === "AWAY_TEAM")
+                        const pensWinnerCode = decidedOnPens
+                          ? (match.winner === "HOME_TEAM" ? match.homeTeam?.code : match.awayTeam?.code)
+                          : null
 
                         return (
                           <div
@@ -479,8 +496,14 @@ export default async function BracketPage({
                                 </div>
                               )}
                               {finished && (
-                                <div className="flex justify-end my-1 pr-1">
-                                  <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>–</span>
+                                <div className="flex items-center justify-center my-1">
+                                  {decidedOnPens ? (
+                                    <span className="font-pixel px-1.5 py-0.5" style={{ fontSize: "5px", color: "#FFD700", background: "#1a1500", border: "1px solid #665500" }}>
+                                      🥅 n.s. — {pensWinnerCode} door
+                                    </span>
+                                  ) : (
+                                    <span className="font-pixel" style={{ fontSize: "6px", color: "var(--c-text-4)" }}>–</span>
+                                  )}
                                 </div>
                               )}
 

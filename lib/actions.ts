@@ -594,7 +594,7 @@ export async function syncMatchesViaCron(secret: string): Promise<SyncResult> {
 // Kernlogica van de synchronisatie. Privé (dus géén server action) en
 // gedeeld door zowel de admin-knop als de cron-job.
 async function runMatchSync(): Promise<SyncResult> {
-  const { fetchMatches, fetchTeams, mapStage, mapStatus } = await import("./football-data")
+  const { fetchMatches, fetchTeams, mapStage, mapStatus, onPitchScore } = await import("./football-data")
 
   // Sync teams
   const { getDutchName } = await import("./dutch-names")
@@ -627,12 +627,15 @@ async function runMatchSync(): Promise<SyncResult> {
     const existing = await prisma.match.findUnique({ where: { externalId: m.id } })
     const wasFinished = existing?.status === "FINISHED"
     const nowFinished = status === "FINISHED"
+    // Echte uitslag op het veld (strafschoppenreeks eruit; winnaar zit los in
+    // score.winner). Voorkomt dat bv. een 1-1 n.s. 6-5 als 7-6 wordt opgeslagen.
+    const onPitch = onPitchScore(m.score)
     // Uitslag of winnaar gewijzigd t.o.v. wat we al hadden? (football-data
     // corrigeert soms een score ná afloop — bv. 5-0 → 4-0.)
     const scoreChanged =
       !!existing &&
-      (existing.homeScore !== m.score.fullTime.home ||
-        existing.awayScore !== m.score.fullTime.away ||
+      (existing.homeScore !== onPitch.home ||
+        existing.awayScore !== onPitch.away ||
         existing.winner !== (m.score.winner ?? null))
 
     await prisma.match.upsert({
@@ -644,8 +647,8 @@ async function runMatchSync(): Promise<SyncResult> {
         matchday: m.matchday,
         homeTeamId: homeTeam?.id ?? null,
         awayTeamId: awayTeam?.id ?? null,
-        homeScore: m.score.fullTime.home,
-        awayScore: m.score.fullTime.away,
+        homeScore: onPitch.home,
+        awayScore: onPitch.away,
         winner: m.score.winner ?? null,
         status,
         kickoff: new Date(m.utcDate),
@@ -657,8 +660,8 @@ async function runMatchSync(): Promise<SyncResult> {
         groupName: m.group,
         homeTeamId: homeTeam?.id ?? null,
         awayTeamId: awayTeam?.id ?? null,
-        homeScore: m.score.fullTime.home,
-        awayScore: m.score.fullTime.away,
+        homeScore: onPitch.home,
+        awayScore: onPitch.away,
         winner: m.score.winner ?? null,
         status,
         kickoff: new Date(m.utcDate),

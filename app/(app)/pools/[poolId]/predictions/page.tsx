@@ -379,6 +379,7 @@ export default async function PoolPredictionsPage({
                     status: match.status,
                     homeScore: match.homeScore,
                     awayScore: match.awayScore,
+                    winner: match.winner,
                     homeTeam: match.homeTeam ? {
                       code: match.homeTeam.code,
                       nameNl: match.homeTeam.nameNl,

@@ -26,9 +26,31 @@ type FDMatch = {
   score: {
     fullTime: FDScore
     halfTime: FDScore
+    regularTime?: FDScore | null
+    extraTime?: FDScore | null
+    penalties?: FDScore | null
+    duration?: string | null
     winner: string | null
   }
   venue: string | null
+}
+
+/**
+ * De échte uitslag op het veld. football-data v4 telt de strafschoppenreeks
+ * mee in `fullTime` (bv. 1-1, daarna 6-5 n.s. → fullTime 7-6). Voor de poule
+ * willen we het gelijkspel na (eventuele verlenging en) reguliere tijd, dus
+ * trekken we de strafschoppen er weer vanaf. Wie doorgaat zit los in
+ * `score.winner` en blijft dus gewoon kloppen.
+ */
+export function onPitchScore(score: {
+  fullTime: FDScore
+  penalties?: FDScore | null
+}): { home: number | null; away: number | null } {
+  const { fullTime, penalties } = score
+  return {
+    home: fullTime.home === null ? null : fullTime.home - (penalties?.home ?? 0),
+    away: fullTime.away === null ? null : fullTime.away - (penalties?.away ?? 0),
+  }
 }
 
 async function fdFetch<T>(path: string): Promise<T> {

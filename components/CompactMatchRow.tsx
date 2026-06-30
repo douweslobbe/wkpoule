@@ -20,6 +20,7 @@ type Match = {
   status: string
   homeScore: number | null
   awayScore: number | null
+  winner?: string | null
   homeTeam: { code: string; nameNl: string | null; name: string } | null
   awayTeam: { code: string; nameNl: string | null; name: string } | null
 }
@@ -49,6 +50,16 @@ export function CompactMatchRow({
   const live = match.status === "LIVE"
   const deadline = new Date(match.kickoff.getTime() - 30 * 60 * 1000)
   const isUnfilled = isOwnView && !locked && myPred === undefined
+
+  // Knock-out beslist na strafschoppen: gelijke stand op het veld, wél een winnaar.
+  const decidedOnPens =
+    finished && match.stage !== "GROUP" &&
+    match.homeScore !== null && match.awayScore !== null &&
+    match.homeScore === match.awayScore &&
+    (match.winner === "HOME_TEAM" || match.winner === "AWAY_TEAM")
+  const pensWinnerCode = decidedOnPens
+    ? (match.winner === "HOME_TEAM" ? match.homeTeam?.code : match.awayTeam?.code)
+    : null
 
   const [home, setHome] = useState(myPred?.homeScore?.toString() ?? "")
   const [away, setAway] = useState(myPred?.awayScore?.toString() ?? "")
@@ -235,7 +246,9 @@ export function CompactMatchRow({
         <div className="flex items-center gap-2 my-1 pl-8">
           <div style={{ flex: 1, height: "1px", background: "var(--c-border)" }} />
           <span className="font-pixel shrink-0" style={{ fontSize: "6px", color: "var(--c-text-5)" }}>
-            {(finished || live) ? "–" : isOwnView && !locked ? (
+            {decidedOnPens ? (
+              <span style={{ color: "#FFD700" }}>🥅 {pensWinnerCode} n.s.</span>
+            ) : (finished || live) ? "–" : isOwnView && !locked ? (
               <span style={{ color: statusColor }}>{statusLabel || "VS"}</span>
             ) : "VS"}
           </span>
@@ -336,6 +349,9 @@ export function CompactMatchRow({
               }}>
                 {match.awayScore ?? "?"}
               </span>
+              {decidedOnPens && (
+                <span className="font-pixel ml-1 whitespace-nowrap" style={{ fontSize: "6px", color: "#FFD700" }}>🥅 {pensWinnerCode} n.s.</span>
+              )}
             </div>
           ) : (
             <span className="font-pixel px-2" style={{ fontSize: "9px", color: "var(--c-text-5)" }}>VS</span>
