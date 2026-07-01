@@ -1668,9 +1668,11 @@ export async function adminSetSurvivorPick(
   const entry = await prisma.survivorEntry.findUnique({ where: { userId } })
   if (!entry) return { error: "Deze gebruiker doet niet mee aan WK Survivor" }
 
-  if (mode === "HARDCORE" && !entry.hardcoreAlive) {
-    return { error: "Gebruiker is uitgeschakeld in HARDCORE — geen pick mogelijk" }
-  }
+  // NB: een HARDCORE-pick voor een 'uitgeschakelde' gebruiker is hier bewust wél
+  // toegestaan — dit is juist de coulance-tool voor wie een pick miste (die wordt
+  // door de no-pick-regel automatisch uitgeschakeld). Of iemand weer meedoet,
+  // bepaalt rebuildSurvivor() hieronder op basis van de echte picks + uitslagen:
+  // een gemist gat dat nu gevuld wordt herleeft, een écht verloren pick blijft uit.
 
   // Team moet daadwerkelijk in deze ronde spelen
   const teamIds = await getTeamIdsInRound(round as SurvivorRound)
@@ -1698,6 +1700,10 @@ export async function adminSetSurvivorPick(
     create: { entryId: entry.id, userId, mode, teamId, round, cycle },
     update: { teamId, cycle, result: "PENDING", goalDiff: null },
   })
+
+  // Alive-status, eliminatieronde en highscore-totaal opnieuw afleiden uit alle
+  // picks. Zo herleeft een coulance-pick die het gemiste gat vult meteen.
+  await rebuildSurvivor()
 
   revalidatePath("/survivor")
   revalidatePath("/admin")
